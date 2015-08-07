@@ -3,15 +3,18 @@ module DESPOT
 using POMDPs
 using Distributions
 
+typealias DESPOTState Int64
+abstract DESPOTProblem
+
 include("types.jl")
 include("config.jl")
 include("history.jl")
 include("randomStreams.jl")
-include("problems/RockSample/rockSample.jl")
+#include("problems/RockSample/rockSample.jl")
 include("lowerBound/lowerBound.jl")
 include("upperBound/upperBoundNonStochastic.jl")
 include("beliefUpdate/beliefUpdate.jl")
-include("beliefUpdate/beliefUpdateParticle.jl")
+#include("beliefUpdate/beliefUpdateParticle.jl")
 include("qnode.jl")
 include("vnode.jl")
 include("solver.jl")
@@ -22,16 +25,18 @@ import POMDPs: POMDP, Solver, Policy, Belief, action
 
 export
     DESPOTSolver,
+    DESPOTPomdp,
+    DESPOTPolicy,
+    DESPOTProblem,
     solve,
-    action,
-    value
+    action
 
 # TYPES
 
 type DESPOTBelief <: Belief
     particles::Array{Particle,1}
 end
-  
+
 type DESPOTPomdp <: POMDP
     config::Config
     randomStreams::RandomStreams
@@ -39,22 +44,21 @@ type DESPOTPomdp <: POMDP
     world::World
     history::History
 
-    function DESPOTPomdp (;
-                            problem::DESPOTProblem,
-                            searchDepth::Uint32 = 90
-                            discount::Float64 = 0.95
-                            rootSeed::Uint64 = 42
-                            timePerMove::Float64 = 1                 # sec
-                            nParticles::Uint32 = 500
-                            pruningConstant::Float64 = 0
-                            eta::Float64 = 0.95
-                            simLen::Int64 = -1
-                            approximateUBound::Bool = false
-                            particleWtThreshold::Float64 = 1e-20
-                            numEffParticleFraction::Float64 = 0.05
-                            tiny::Float64 = 1e-6
-                            maxTrials::Int64 = -1
-                            randMax::Int64 = 2147483647
+    function DESPOTPomdp (problem::DESPOTProblem;
+                            searchDepth::Uint32 = 90,
+                            discount::Float64 = 0.95,
+                            rootSeed::Uint64 = 42,
+                            timePerMove::Float64 = 1,                 # sec
+                            nParticles::Uint32 = 500,
+                            pruningConstant::Float64 = 0,
+                            eta::Float64 = 0.95,
+                            simLen::Int64 = -1,
+                            approximateUBound::Bool = false,
+                            particleWtThreshold::Float64 = 1e-20,
+                            numEffParticleFraction::Float64 = 0.05,
+                            tiny::Float64 = 1e-6,
+                            maxTrials::Int64 = -1,
+                            randMax::Int64 = 2147483647,
                             debug::Uint8 = 0
                           )
         this = new()
@@ -90,16 +94,20 @@ type DESPOTPomdp <: POMDP
         
         # Instantiate history
         this.history = History()
+    end
 end
 
 type DESPOTPolicy <: Policy
     solver::DESPOTSolver
     pomdp ::DESPOTPomdp
+    bu::DESPOTBeliefUpdate
     
     function DESPOTPolicy(solver::DESPOTSolver, pomdp::DESPOTPomdp)
         this = new()
-        solver = DESPOTSolver
-        
+        this.bu = BeliefUpdate(getBeliefUpdateSeed(pomdp.randomStreams))
+        this.solver = DESPOTSolver(DESPOTBelief(initialBelief), this.bu, pomdp.randomStreams)
+        this.pomdp = pomdp
+    end
 end
 
 # FUNCTIONS
@@ -107,15 +115,18 @@ end
 function solve (solver::DESPOTSolver, pomdp::DESPOTPomdp)
     policy = DESPOTPolicy (solver, pomdp)
     return policy
-return 
-
+end
 
 function action(policy::DESPOTPolicy, belief::Belief)
     newRoot (policy.solver, policy.pomdp.problem, belief.particles, policy.pomdp.config)
     action, nTrials = search(policy.solver, policy.pomdp.problem, policy.pomdp.config)
     return action
 end
-    
-    
+
+function isterminal(pomdp::DESPOTPomdp, state::DESPOTState = nothing)
+    # current belief state is taken from the POMDP structure
+    return finished(pomdp.solver, pomdp.solver)
+end
+
 end # module
 

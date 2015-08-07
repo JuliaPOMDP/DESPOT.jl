@@ -1,6 +1,9 @@
+#import DESPOT: DESPOTProblem
+using DESPOT
+
 type DESPOTSolver <: Solver
   initialBelief::Array{StateProbability,1}
-  bu::BeliefUpdate
+  bu::DESPOTBeliefUpdate
   randomStreams::RandomStreams
   #history::History
   root::VNode
@@ -9,7 +12,7 @@ type DESPOTSolver <: Solver
 
   # default constructor
   function DESPOTSolver (initialBelief::Array{StateProbability,1},
-                   bu::BeliefUpdate,
+                   bu::DESPOTBeliefUpdate,
                    randomStreams::RandomStreams)
     this = new()
     # supplied variables
@@ -25,7 +28,7 @@ type DESPOTSolver <: Solver
    end
 end
 
-function initSolver(solver::DESPOTSolver, problem::Problem, config::Config)
+function initSolver(solver::DESPOTSolver, problem::DESPOTProblem, config::Config)
 
   # Construct particle pool
   belief = initialBelief(problem)
