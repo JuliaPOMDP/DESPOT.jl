@@ -5,8 +5,9 @@ using Distributions
 
 typealias DESPOTState Int64
 abstract DESPOTProblem
+abstract DESPOTUpperBound
 
-include("types.jl")
+#include("types.jl")
 include("config.jl")
 include("history.jl")
 include("randomStreams.jl")
@@ -28,10 +29,24 @@ export
     DESPOTPomdp,
     DESPOTPolicy,
     DESPOTProblem,
+    DESPOTParticle,
+    DESPOTStateProbability,
+    DESPOTUpperBound,
     solve,
     action
 
 # TYPES
+
+type DESPOTParticle
+  state::Int64
+  id::Uint16
+  wt::Float32
+end
+
+type DESPOTStateProbability
+  s::Int64
+  p::Float64
+end
 
 type DESPOTBelief <: Belief
     particles::Array{Particle,1}
@@ -40,7 +55,7 @@ end
 type DESPOTPomdp <: POMDP
     config::Config
     randomStreams::RandomStreams
-    problem::Problem
+    problem::DESPOTProblem
     world::World
     history::History
 
