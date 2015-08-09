@@ -2,7 +2,7 @@
 using DESPOT
 
 type DESPOTSolver <: Solver
-  initialBelief::Array{StateProbability,1}
+  initialBelief::Array{DESPOTStateProbability,1}
   bu::DESPOTBeliefUpdate
   randomStreams::RandomStreams
   #history::History
@@ -11,7 +11,7 @@ type DESPOTSolver <: Solver
   nodeCount::Int64
 
   # default constructor
-  function DESPOTSolver (initialBelief::Array{StateProbability,1},
+  function DESPOTSolver (initialBelief::Array{DESPOTStateProbability,1},
                    bu::DESPOTBeliefUpdate,
                    randomStreams::RandomStreams)
     this = new()
@@ -44,7 +44,7 @@ function initSolver(solver::DESPOTSolver, problem::DESPOTProblem, config::Config
   return nothing
 end
 
-function newRoot(solver::DESPOTSolver, problem::Problem, particles::Array{Particle,1}, config::Config)
+function newRoot(solver::DESPOTSolver, problem::DESPOTProblem, particles::Array{DESPOTParticle,1}, config::Config)
   
   lb::Float64, solver.rootDefaultAction = lowerBound(problem, solver.history, particles, 0, config)
   ub::Float64 = upperBound(problem, particles) #TODO: may need to put randomStreams back there
@@ -54,7 +54,7 @@ function newRoot(solver::DESPOTSolver, problem::Problem, particles::Array{Partic
 end
 
 
-function search(solver::DESPOTSolver, problem::Problem, config::Config)
+function search(solver::DESPOTSolver, problem::DESPOTProblem, config::Config)
   nTrials = 0
   startTime = time()
   stopNow = false
@@ -93,7 +93,7 @@ function search(solver::DESPOTSolver, problem::Problem, config::Config)
   end
 end
 
-function trial(solver::DESPOTSolver, problem::Problem, node::VNode, nTrials::Int64, config::Config)
+function trial(solver::DESPOTSolver, problem::DESPOTProblem, node::VNode, nTrials::Int64, config::Config)
     if (node.depth >= config.searchDepth) || isTerminal(problem, node.particles[1].state)
       return 0 # nodes added
     end
@@ -144,7 +144,7 @@ function trial(solver::DESPOTSolver, problem::Problem, node::VNode, nTrials::Int
     return nNodesAdded
 end
 
-function expandOneStep (solver::DESPOTSolver, problem::Problem, node::VNode, config::Config)
+function expandOneStep (solver::DESPOTSolver, problem::DESPOTProblem, node::VNode, config::Config)
   
   qStar::Float64 = -Inf
   nextState::Int64 = -1
@@ -188,7 +188,7 @@ function expandOneStep (solver::DESPOTSolver, problem::Problem, node::VNode, con
   return node
 end
 
-function updateBelief (solver::DESPOTSolver, problem::Problem, action::Int64, obs::Int64, config::Config)
+function updateBelief (solver::DESPOTSolver, problem::DESPOTProblem, action::Int64, obs::Int64, config::Config)
   particles = beliefUpdateParticle(problem,
                                    solver.bu,
                                    solver.root.particles,
@@ -200,7 +200,7 @@ function updateBelief (solver::DESPOTSolver, problem::Problem, action::Int64, ob
   newRoot(solver, problem, particles, config)
 end
 
-function finished(solver::DESPOTSolver, problem::Problem)
+function finished(solver::DESPOTSolver, problem::DESPOTProblem)
   for p in solver.root.particles
     if !isTerminal(problem, p.state)
       return false

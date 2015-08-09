@@ -17,7 +17,7 @@
 
 
 type QNode
-  obsToParticles::Dict{Int64, Array{Particle,1}}
+  obsToParticles::Dict{Int64, Array{DESPOTParticle,1}}
   depth::Int64
   action::Int64
   firstStepReward::Float64
@@ -27,8 +27,8 @@ type QNode
   nVisits::Int64                # Needed for large problems
   
       # default constructor
-      function QNode( problem::Problem,
-                      obsToParticles::Dict{Int64, Array{Particle,1}},
+      function QNode( problem::DESPOTProblem,
+                      obsToParticles::Dict{Int64, Array{DESPOTParticle,1}},
                       depth::Int64,
                       action::Int64,
                       firstStepReward::Float64,

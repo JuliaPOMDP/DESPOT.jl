@@ -4,7 +4,7 @@
 # AND-node for each action, and some bookkeeping information.
 
 type VNode
-  particles::Array{Particle,1}
+  particles::Array{DESPOTParticle,1}
   lb::Float64
   ub::Float64
   depth::Int64
@@ -29,7 +29,7 @@ type VNode
 
   # default constructor
   function VNode( 
-               particles::Array{Particle,1},
+               particles::Array{DESPOTParticle,1},
                lBound::Float64,
                uBound::Float64,
                depth::Int64,

@@ -6,6 +6,16 @@ using Distributions
 typealias DESPOTState Int64
 abstract DESPOTProblem
 abstract DESPOTUpperBound
+type DESPOTParticle
+  state::Int64
+  id::Uint16
+  wt::Float32
+end
+
+type DESPOTStateProbability
+  s::Int64
+  p::Float64
+end
 
 #include("types.jl")
 include("config.jl")
@@ -13,7 +23,6 @@ include("history.jl")
 include("randomStreams.jl")
 #include("problems/RockSample/rockSample.jl")
 include("lowerBound/lowerBound.jl")
-include("upperBound/upperBoundNonStochastic.jl")
 include("beliefUpdate/beliefUpdate.jl")
 #include("beliefUpdate/beliefUpdateParticle.jl")
 include("qnode.jl")
@@ -37,19 +46,10 @@ export
 
 # TYPES
 
-type DESPOTParticle
-  state::Int64
-  id::Uint16
-  wt::Float32
-end
 
-type DESPOTStateProbability
-  s::Int64
-  p::Float64
-end
 
 type DESPOTBelief <: Belief
-    particles::Array{Particle,1}
+    particles::Array{DESPOTParticle,1}
 end
 
 type DESPOTPomdp <: POMDP
@@ -60,12 +60,12 @@ type DESPOTPomdp <: POMDP
     history::History
 
     function DESPOTPomdp (problem::DESPOTProblem;
-                            searchDepth::Uint32 = 90,
+                            searchDepth::Int64 = 90,
                             discount::Float64 = 0.95,
-                            rootSeed::Uint64 = 42,
-                            timePerMove::Float64 = 1,                 # sec
-                            nParticles::Uint32 = 500,
-                            pruningConstant::Float64 = 0,
+                            rootSeed::Int64 = 42,
+                            timePerMove::Float64 = 1.,                 # sec
+                            nParticles::Int64 = 500,
+                            pruningConstant::Float64 = 0.,
                             eta::Float64 = 0.95,
                             simLen::Int64 = -1,
                             approximateUBound::Bool = false,
@@ -74,7 +74,7 @@ type DESPOTPomdp <: POMDP
                             tiny::Float64 = 1e-6,
                             maxTrials::Int64 = -1,
                             randMax::Int64 = 2147483647,
-                            debug::Uint8 = 0
+                            debug::Int64 = 0
                           )
         this = new()
         
@@ -100,12 +100,12 @@ type DESPOTPomdp <: POMDP
         this.config.debug = debug
         
         # Instantiate random streams
-        this.randomStreams = RandomStreams(config.nParticles,
-                                           config.searchDepth,
-                                           config.rootSeed)
+        this.randomStreams = RandomStreams(this.config.nParticles,
+                                           this.config.searchDepth,
+                                           this.config.rootSeed)
         
         # Instantiate world
-        this.world = World (problem, getWorldSeed(this.randomStreams))
+        this.world = World (this.problem, getWorldSeed(this.randomStreams))
         
         # Instantiate history
         this.history = History()
@@ -126,6 +126,7 @@ type DESPOTPolicy <: Policy
 end
 
 # FUNCTIONS
+function start_state(problem::DESPOTProblem) = error("$(typeof(problem)) does not implement start_state")
 
 function solve (solver::DESPOTSolver, pomdp::DESPOTPomdp)
     policy = DESPOTPolicy (solver, pomdp)

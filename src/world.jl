@@ -11,9 +11,9 @@ type World
     rewards::Array{Float64,1}
 
      # default constructor
-     function World (problem::Problem, seed::Uint32)
+     function World (problem::DESPOTProblem, seed::Uint32)
           this = new()
-          this.state        = getStartState(problem)    # state
+          this.state        = start_state(problem)      # state
           this.initialState = this.state                # initialState
           this.seed         = seed                      # seed
           this.initialSeed  = seed                      # initialSeed
@@ -46,7 +46,7 @@ function discountedReturn(world::World, config::Config)
 end
 
 # Advances the current state of the world
-function step(world::World, problem::Problem, action::Int64, config::Config)
+function step(world::World, problem::DESPOTProblem, action::Int64, config::Config)
 
     if OS_NAME == :Linux
         seed = Cuint[world.seed]
