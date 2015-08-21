@@ -30,38 +30,24 @@ function resetWorld(world::World)
     rewards = 0
 end
 
-function undiscountedReturn(world::World)
-    return sum(world.rewards)
-end
 
-function discountedReturn(world::World, config::Config)
-    result = 0
-    multiplier = 1
+# function step(world::World, action::Int64, config::DESPOTConfig)
+# 
+#     if OS_NAME == :Linux
+#         seed = Cuint[world.seed]
+#         randomNumber = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) / config.randMax
+#     else #Windows, etc
+#         srand(world.seed)
+#         randomNumber = rand()
+#     end
+#     
+#     nextState, reward, obs = step(problem, world.state, randomNumber, action)
+#     world.state = nextState
+#     println("Action = $action")
+#     println("State = $nextState"); printState(problem, nextState)
+#     print  ("Observation = "); printObs(problem, obs)
+#     println("Reward = $reward")
+#     push!(world.rewards, reward)
+#     return obs, reward
+# end
 
-    for r in world.rewards
-        result += multiplier * r
-        multiplier *= config.discount
-    end
-    return result
-end
-
-# Advances the current state of the world
-function step(world::World, problem::DESPOTProblem, action::Int64, config::Config)
-
-    if OS_NAME == :Linux
-        seed = Cuint[world.seed]
-        randomNumber = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) / config.randMax
-    else #Windows, etc
-        srand(world.seed)
-        randomNumber = rand()
-    end
-    
-    nextState, reward, obs = step(problem, world.state, randomNumber, action)
-    world.state = nextState
-    println("Action = $action")
-    println("State = $nextState"); printState(problem, nextState)
-    print  ("Observation = "); printObs(problem, obs)
-    println("Reward = $reward")
-    push!(world.rewards, reward)
-    return obs, reward
-end

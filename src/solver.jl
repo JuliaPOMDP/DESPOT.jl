@@ -1,60 +1,61 @@
-#import DESPOT: DESPOTProblem
 using DESPOT
+import DESPOT: update_belief!
 
 type DESPOTSolver <: Solver
-  initialBelief::Array{DESPOTStateProbability,1}
-  bu::DESPOTBeliefUpdate
-  randomStreams::RandomStreams
-  #history::History
-  root::VNode
-  rootDefaultAction::Int64
-  nodeCount::Int64
+    initialBelief::DESPOTBelief
+    bu::DESPOTBeliefUpdate
+    randomStreams::RandomStreams
+    #history::History
+    root::VNode
+    rootDefaultAction::Int64
+    nodeCount::Int64
 
   # default constructor
-  function DESPOTSolver (initialBelief::Array{DESPOTStateProbability,1},
-                   bu::DESPOTBeliefUpdate,
-                   randomStreams::RandomStreams)
-    this = new()
-    # supplied variables
-    this.initialBelief = initialBelief    # initialBelief
-    this.bu = bu
-    this.randomStreams = randomStreams    # randomStreams
-    
-    # internal variables
-    # this.history = History()        # history
-    # skip root initialization for now
-    rootDefaultAction = -1 # rootDefaultAction
-    return this
-   end
+    function DESPOTSolver (pomdp::DESPOTPomdp)
+
+        this = new()
+        # supplied variables
+        this.initialBelief = initial_belief(pomdp.problem)
+        this.randomStreams = pomdp.randomStreams
+        
+        # internal variables
+        # this.history = History()        # history
+        # skip root initialization for now
+        rootDefaultAction = -1 # rootDefaultAction
+        return this
+    end
 end
 
-function initSolver(solver::DESPOTSolver, problem::DESPOTProblem, config::Config)
+function initSolver(solver::DESPOTSolver, pomdp::DESPOTPomdp)
+#function initSolver(policy::DESPOTPolicy)
 
   # Construct particle pool
-  belief = initialBelief(problem)
-  particlePool = Array(Particle, 0)
+  belief = initial_belief(pomdp.problem)
+  particlePool = belief.particles
 
-  for b in belief
-    push!(particlePool, Particle(b.s, 0, b.p))
-  end
+#   #TODO: cleanup particles vs state probabilities stuff - it can be simpler
+#   for b in belief.particles
+#     push!(particlePool, DESPOTParticle(b.s, 0, b.p))
+#   end
 
   shuffle!(particlePool)
-  particles = sampleParticles(solver.bu, particlePool, config.nParticles, config)
-  #newRoot(solver, problem, particles, config)
-  return nothing
-end
-
-function newRoot(solver::DESPOTSolver, problem::DESPOTProblem, particles::Array{DESPOTParticle,1}, config::Config)
+  particles = sampleParticles(pomdp.bu, particlePool, pomdp.config.nParticles, pomdp.config)
   
-  lb::Float64, solver.rootDefaultAction = lowerBound(problem, solver.history, particles, 0, config)
-  ub::Float64 = upperBound(problem, particles) #TODO: may need to put randomStreams back there
-  solver.root = VNode(particles, lb, ub, 0, 1., false, config)
+  newRoot(solver, pomdp, particles)
+  return nothing
+end
+
+function newRoot(solver::DESPOTSolver, pomdp::DESPOTPomdp, particles::Array{DESPOTParticle,1})
+  
+  lb::Float64, solver.rootDefaultAction = lower_bound(pomdp.problem, particles, 0, pomdp.config)
+  ub::Float64 = upper_bound(pomdp, particles)
+  solver.root = VNode(particles, lb, ub, 0, 1., false, pomdp.config)
 
   return nothing
 end
 
 
-function search(solver::DESPOTSolver, problem::DESPOTProblem, config::Config)
+function search(solver::DESPOTSolver, pomdp::DESPOTPomdp)
   nTrials = 0
   startTime = time()
   stopNow = false
@@ -63,15 +64,15 @@ function search(solver::DESPOTSolver, problem::DESPOTProblem, config::Config)
   while ((excessUncertainty(solver.root.lb,
                             solver.root.ub,
                             solver.root.lb,
-                            solver.root.ub, 0, config) > 1e-6)
+                            solver.root.ub, 0, pomdp.config) > 1e-6)
                             && !stopNow)
 
     #println("trial #$(nTrials)")
-    trial(solver, problem, solver.root, nTrials, config)
+    trial(solver, pomdp, solver.root, nTrials)
     nTrials += 1
     
-    if ((config.maxTrials > 0) && (nTrials >= config.maxTrials)) ||
-       ((config.timePerMove > 0) && ((time() - startTime) >= config.timePerMove))
+    if ((pomdp.config.maxTrials > 0) && (nTrials >= pomdp.config.maxTrials)) ||
+       ((pomdp.config.timePerMove > 0) && ((time() - startTime) >= pomdp.config.timePerMove))
        
        stopNow = true
     end
@@ -80,7 +81,7 @@ function search(solver::DESPOTSolver, problem::DESPOTProblem, config::Config)
   @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
   @printf("Number of trials: %d\n", nTrials)
 
-  if (config.pruningConstant != 0)
+  if (pomdp.config.pruningConstant != 0)
     # Number of non-child belief nodes pruned
     totalPruned = prune(solver.root)
     act = solver.root.prunedAction
@@ -89,40 +90,43 @@ function search(solver::DESPOTSolver, problem::DESPOTProblem, config::Config)
       println("Root not in tree")
     return solver.rootDefaultAction, nTrials
   else
-    return getLowerBoundAction(solver.root, config), nTrials
+    return getLowerBoundAction(solver.root, pomdp.config), nTrials
   end
 end
 
-function trial(solver::DESPOTSolver, problem::DESPOTProblem, node::VNode, nTrials::Int64, config::Config)
-    if (node.depth >= config.searchDepth) || isTerminal(problem, node.particles[1].state)
+function trial(solver::DESPOTSolver, pomdp::DESPOTPomdp, node::VNode, nTrials::Int64)
+    if (node.depth >= pomdp.config.searchDepth) || isterminal(pomdp.problem, node.particles[1].state)
       return 0 # nodes added
     end
       
     if isempty(node.qnodes)
-        expandOneStep(solver, problem, node, config)
+        expandOneStep(solver, pomdp, node)
     end
 
     aStar = node.bestUBAction
     nNodesAdded = 0
-    oStar, weightedEuStar = getBestWEUO(node.qnodes[aStar], solver.root, config) # it's an array!
+    oStar, weightedEuStar = getBestWEUO(node.qnodes[aStar], solver.root, pomdp.config) # it's an array!
     
     if weightedEuStar > 0.
-      add(solver.history, aStar, oStar)
-      nNodesAdded = trial(solver, problem, node.qnodes[aStar].obsToNode[oStar], nTrials, config) # obsToNode is a Dict
-      removeLast(solver.history)
+      add(pomdp.history, aStar, oStar)
+      nNodesAdded = trial(solver,
+                          pomdp,
+                          node.qnodes[aStar].obsToNode[oStar], # obsToNode is a Dict
+                          nTrials) 
+      removeLast(pomdp.history)
     end
     node.nTreeNodes += nNodesAdded
 
     # Backup
-    potentialLBound = node.qnodes[aStar].firstStepReward + config.discount * getLowerBound(node.qnodes[aStar])
+    potentialLBound = node.qnodes[aStar].firstStepReward + pomdp.config.discount * getLowerBound(node.qnodes[aStar])
     node.lb = max(node.lb, potentialLBound)
 
     # As the upper bound of a_star may become smaller than the upper bound of
     # another action, we need to check all actions - unlike the lower bound.
     node.ub = -Inf
 
-    for a in 0:problem.nActions-1
-        ub = node.qnodes[a].firstStepReward + config.discount * getUpperBound(node.qnodes[a]) # it's an array!
+    for a in 0:pomdp.problem.nActions-1
+        ub = node.qnodes[a].firstStepReward + pomdp.config.discount * getUpperBound(node.qnodes[a]) # it's an array!
         if ub > node.ub
             node.ub = ub
             node.bestUBAction = a
@@ -130,7 +134,7 @@ function trial(solver::DESPOTSolver, problem::DESPOTProblem, node::VNode, nTrial
     end
 
     # Sanity check
-    if (node.lb > node.ub + config.tiny)
+    if (node.lb > node.ub + pomdp.config.tiny)
       println ("depth = $(node.depth)")
       #error("Lower bound ($(node.lb)) is higher than upper bound ($(node.ub))")
       warn("Lower bound ($(node.lb)) is higher than upper bound ($(node.ub))")
@@ -144,7 +148,7 @@ function trial(solver::DESPOTSolver, problem::DESPOTProblem, node::VNode, nTrial
     return nNodesAdded
 end
 
-function expandOneStep (solver::DESPOTSolver, problem::DESPOTProblem, node::VNode, config::Config)
+function expandOneStep (solver::DESPOTSolver, pomdp::DESPOTPomdp, node::VNode)
   
   qStar::Float64 = -Inf
   nextState::Int64 = -1
@@ -152,34 +156,35 @@ function expandOneStep (solver::DESPOTSolver, problem::DESPOTProblem, node::VNod
   obs::Int64 = -1
   firstStepReward::Float64 = 0.
     
-  for action in 0:problem.nActions-1
+  for action in 0:pomdp.problem.nActions-1
 
-    obsToParticles = Dict{Int64,Vector{Particle}}()
+    obsToParticles = Dict{Int64,Vector{DESPOTParticle}}()
     for p in node.particles
-      nextState, reward, obs = step(problem,
+      nextState, reward, obs = step(pomdp.problem,
                                     p.state,
                                     solver.randomStreams.streams[p.id+1,node.depth+1],
                                     action)
 
-      if isTerminal(problem, nextState) && (obs != problem.kTerminal)
+      if isterminal(pomdp.problem, nextState) && (obs != pomdp.problem.kTerminal)
         error("Terminal state in a particle mismatches observation")
       end
       
       if !haskey(obsToParticles,obs)
-          obsToParticles[obs] = Particle[]
+          obsToParticles[obs] = DESPOTParticle[]
       end
-      tempParticle = Particle(nextState,p.id,p.wt)
+      tempParticle = DESPOTParticle(nextState,p.id,p.wt)
       push!(obsToParticles[obs], tempParticle)
       firstStepReward += reward * p.wt
     end
     
     firstStepReward /= node.weight
-    newQNode = QNode(problem, obsToParticles, node.depth, action, firstStepReward, solver.history, config)
+    #newQNode = QNode(pomdp.problem, obsToParticles, node.depth, action, firstStepReward, pomdp.history, pomdp.config)
+    newQNode = QNode(pomdp, obsToParticles, node.depth, action, firstStepReward)
     node.qnodes[action] = newQNode
 
     remainingReward = getUpperBound(newQNode)
-    if (firstStepReward + config.discount*remainingReward) > (qStar + config.tiny)
-      qStar = firstStepReward + config.discount * remainingReward
+    if (firstStepReward + pomdp.config.discount*remainingReward) > (qStar + pomdp.config.tiny)
+      qStar = firstStepReward + pomdp.config.discount * remainingReward
       node.bestUBAction = action
     end
     
@@ -188,23 +193,4 @@ function expandOneStep (solver::DESPOTSolver, problem::DESPOTProblem, node::VNod
   return node
 end
 
-function updateBelief (solver::DESPOTSolver, problem::DESPOTProblem, action::Int64, obs::Int64, config::Config)
-  particles = beliefUpdateParticle(problem,
-                                   solver.bu,
-                                   solver.root.particles,
-                                   action,
-                                   obs,
-                                   config)
-                                   
-  add(solver.history, action, obs)
-  newRoot(solver, problem, particles, config)
-end
 
-function finished(solver::DESPOTSolver, problem::DESPOTProblem)
-  for p in solver.root.particles
-    if !isTerminal(problem, p.state)
-      return false
-    end
-  end
-  return true
-end

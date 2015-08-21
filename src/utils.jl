@@ -4,7 +4,7 @@ function excessUncertainty(l::Float64,
                            rootL::Float64,
                            rootU::Float64,
                            depth::Int64,
-                           config::Config)
+                           config::DESPOTConfig)
 
   eu =  (u-l) - #width of current node
         (config.eta * (rootU-rootL)) * # epsilon
@@ -17,7 +17,7 @@ end
 # root: Root of the search tree, passed to facilitate computation of the
 # excess uncertainty
 
-function getBestWEUO(qnode::QNode, root::VNode, config::Config)
+function getBestWEUO(qnode::QNode, root::VNode, config::DESPOTConfig)
   weightedEuStar = -Inf
   oStar = 0.
   
@@ -50,7 +50,7 @@ function belief(qnode::QNode, obs::Int64)
   return qnode.obsToNode[obs]
 end
 
-function validateBounds(lb::Float64, ub::Float64, config::Config)
+function validateBounds(lb::Float64, ub::Float64, config::DESPOTConfig)
   if (ub >= lb)
     return
   end
@@ -58,10 +58,11 @@ function validateBounds(lb::Float64, ub::Float64, config::Config)
   if (ub > lb - config.tiny) || config.approximateUBound
     ub = lb
   else
+    println("lower bound - $lb, upper bound - $ub")
     @assert(false)
   end
 end
 
-function almostTheSame(x::Float64,y::Float64,config::Config)
+function almost_the_same(x::Float64,y::Float64,config::DESPOTConfig)
   return abs(x-y) < config.tiny
 end

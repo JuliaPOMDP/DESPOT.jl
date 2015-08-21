@@ -9,35 +9,43 @@ type RandomStreams
     lenStreams::Uint32
     streams::Array{Float64,2}     # each particle is associated with a single stream of numbers
     seed::Uint32
+    worldSeed::Uint32
+    beliefUpdateSeed::Uint32
+    modelSeed::Uint32
 
   # default constructor
-  RandomStreams(numStreams::Uint32,
+  function RandomStreams(numStreams::Uint32,
                 lenStreams::Uint32,
-                seed::Uint32) =
-          new (
-              # internal variables
-              numStreams::Uint32,                     # defaultValue
-              lenStreams::Uint32,                     # pruned action
-              Array(Float64, numStreams, lenStreams), # streams
-              seed::Uint32                            # seed
-          )
+                seed::Uint32)
+          this = new() 
+          
+          this.numStreams = numStreams
+          this.lenStreams = lenStreams
+          this.streams = Array(Float64, numStreams, lenStreams)
+          this.seed = seed
+          this.worldSeed = seed $ numStreams
+          this.beliefUpdateSeed = seed $ (numStreams + 1)
+          this.modelSeed = seed $ (numStreams + 2)
+          
+          return this
+    end
 end
 
 function getStreamSeed(streams::RandomStreams, streamId::Uint32)
   return streams.seed $ streamId # bitwise XOR
 end
 
-function getWorldSeed(streams::RandomStreams)
-  return streams.seed $ streams.numStreams
-end
-
-function getBeliefUpdateSeed(streams::RandomStreams)
-  return streams.seed $ (streams.numStreams + 1)
-end
-
-function getModelSeed(streams::RandomStreams)
-  return streams.seed $ (streams.numStreams + 2)
-end
+# function getWorldSeed(streams::RandomStreams)
+#   return streams.seed $ streams.numStreams
+# end
+# 
+# function getBeliefUpdateSeed(streams::RandomStreams)
+#   return streams.seed $ (streams.numStreams + 1)
+# end
+# 
+# function getModelSeed(streams::RandomStreams)
+#   return streams.seed $ (streams.numStreams + 2)
+# end
 
 function fillRandomStreams(emptyStreams::RandomStreams, randMax::Int64)
     # Populate random streams

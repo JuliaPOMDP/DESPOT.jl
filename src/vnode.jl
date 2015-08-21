@@ -35,7 +35,7 @@ type VNode
                depth::Int64,
                weight::Float64,
                inTree::Bool,
-               config::Config)
+               config::DESPOTConfig)
 
         this = new(
             particles,        # particles
@@ -55,37 +55,26 @@ type VNode
             )
         
         validateBounds(lBound, uBound, config)
-        #solver.nodeCount += 1          # global number of VNodes
-        #println("nodeCount: $nodeCount")
-        #finalizer(this, destructor)
         return this
   end
 end
 
-# function destructor(node::VNode)
-#     node.solver.nodeCount -= 1
-# end
-
-function getLowerBoundAction(node::VNode, config::Config)
+function getLowerBoundAction(node::VNode, config::DESPOTConfig)
   aStar = -1
   qStar = -Inf
   for (a,qnode) in node.qnodes
-    #println("a=$a, number of qnodes is $(length(node.qnodes))") 
     remainingReward = getLowerBound(qnode)
-    #println("a=$a, remaining reward is $remainingReward") 
     if qnode.firstStepReward + config.discount * remainingReward > qStar + config.tiny
       qStar = qnode.firstStepReward + config.discount * remainingReward
-      #println("a=$a, qStar is $qStar") 
       aStar = a
     end
   end
-  #println("aStar: $aStar")
   return aStar
 end
 
 #TODO: fix pruning
 
-function prune(node::VNode, totalPruned::Int64, config::Config)
+function prune(node::VNode, totalPruned::Int64, config::DESPOTConfig)
   # Cost if the node were pruned
   cost = (config.discount^node.depth) * node.weight * node.defaultValue
                 - config.pruningConstant

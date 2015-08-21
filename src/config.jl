@@ -1,4 +1,4 @@
-type Config
+type DESPOTConfig
   # Maximum depth of the search tree
   searchDepth::Uint32
   # Discount factor
@@ -28,7 +28,7 @@ type Config
   debug::Uint8
   
   # construct empty
-  function Config()
+  function DESPOTConfig()
    this = new()
    return this
   end

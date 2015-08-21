@@ -27,29 +27,21 @@ type QNode
   nVisits::Int64                # Needed for large problems
   
       # default constructor
-      function QNode( problem::DESPOTProblem,
+      function QNode( pomdp::DESPOTPomdp,
                       obsToParticles::Dict{Int64, Array{DESPOTParticle,1}},
                       depth::Int64,
                       action::Int64,
-                      firstStepReward::Float64,
-                      history::History,
-                      config::Config)
+                      firstStepReward::Float64)
                       
-         this = new(
-            # supplied variables
-            obsToParticles,             # obsToParticles
-            depth,                      # depth
-            action,                     # action
-            firstStepReward,            # firstStepReward
-            history,                    # history
-
-            # internal variables
-            0,                          # weightSum
-            Dict{Int64,VNode}(),        # obsToNode
-            0                           # nVisits
-            )
-                
-            this.weightSum = 0.
+            this = new()
+            this.obsToParticles = obsToParticles
+            this.depth = depth
+            this.action = action
+            this.firstStepReward = firstStepReward
+            this.history = pomdp.history
+            this.weightSum = 0
+            this.obsToNode = Dict{Int64,VNode}()
+            this.nVisits = 0
             
             for (obs, particles) in this.obsToParticles
                 obsWs = 0.
@@ -58,11 +50,11 @@ type QNode
                 end
                 this.weightSum += obsWs
 
-                add(history, action, obs)
-                l::Float64, action::Int64 = lowerBound(problem, history, particles, depth + 1, config)
-                u::Float64 = upperBound(problem, particles)
-                removeLast(history)
-                this.obsToNode[obs] = VNode(particles, l, u, this.depth + 1, obsWs, false, config) # TODO: check depth
+                add(this.history, action, obs)
+                l::Float64, action::Int64 = lower_bound(pomdp.problem, particles, depth + 1, pomdp.config)
+                u::Float64 = upper_bound(pomdp, particles)
+                removeLast(this.history)
+                this.obsToNode[obs] = VNode(particles, l, u, this.depth + 1, obsWs, false, pomdp.config) # TODO: check depth
             end
             return this
         end
@@ -85,7 +77,7 @@ function getLowerBound(qnode::QNode)
 end
 
 #TODO: Fix this
-function prune(qnode::QNode, totalPruned::Int64, config::Config)
+function prune(qnode::QNode, totalPruned::Int64, config::DESPOTConfig)
   cost = 0.
   for (obs,node) in qnode.obsToNode
     cost, totalPruned += prune(node, totalPruned, config)

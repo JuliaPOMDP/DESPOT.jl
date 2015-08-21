@@ -1,5 +1,5 @@
-#abstract Problem
-abstract UpperBound
+
+abstract DESPOTUpperBound
 
 type DESPOTParticle
   state::Int64
