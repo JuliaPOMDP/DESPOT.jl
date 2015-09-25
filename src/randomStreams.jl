@@ -5,64 +5,64 @@
 
 
 type RandomStreams
-    numStreams::Uint32
-    lenStreams::Uint32
+    num_streams::Int64
+    len_streams::Int64
     streams::Array{Float64,2}     # each particle is associated with a single stream of numbers
     seed::Uint32
-    worldSeed::Uint32
-    beliefUpdateSeed::Uint32
-    modelSeed::Uint32
+#     world_seed::Uint32
+#     belief_update_seed::Uint32
+#     model_seed::Uint32
 
   # default constructor
-  function RandomStreams(numStreams::Uint32,
-                lenStreams::Uint32,
+  function RandomStreams(num_streams::Int64,
+                len_streams::Int64,
                 seed::Uint32)
           this = new() 
           
-          this.numStreams = numStreams
-          this.lenStreams = lenStreams
-          this.streams = Array(Float64, numStreams, lenStreams)
+          this.num_streams = num_streams
+          this.len_streams = len_streams
+          this.streams = Array(Float64, num_streams, len_streams)
           this.seed = seed
-          this.worldSeed = seed $ numStreams
-          this.beliefUpdateSeed = seed $ (numStreams + 1)
-          this.modelSeed = seed $ (numStreams + 2)
+#           this.world_seed = seed $ num_streams
+#           this.belief_update_seed = seed $ (num_streams + 1)
+#           this.model_seed = seed $ (num_streams + 2)
           
           return this
     end
 end
 
-function getStreamSeed(streams::RandomStreams, streamId::Uint32)
-  return streams.seed $ streamId # bitwise XOR
+function get_stream_seed(streams::RandomStreams, streamId::Uint32)
+    return streams.seed $ streamId # bitwise XOR
 end
 
-# function getWorldSeed(streams::RandomStreams)
-#   return streams.seed $ streams.numStreams
-# end
-# 
-# function getBeliefUpdateSeed(streams::RandomStreams)
-#   return streams.seed $ (streams.numStreams + 1)
-# end
-# 
-# function getModelSeed(streams::RandomStreams)
-#   return streams.seed $ (streams.numStreams + 2)
-# end
+function get_world_seed(streams::RandomStreams)
+  return streams.seed $ streams.num_streams
+end
 
-function fillRandomStreams(emptyStreams::RandomStreams, randMax::Int64)
+function get_belief_update_seed(streams::RandomStreams)
+  return streams.seed $ (streams.num_streams + 1)
+end
+
+function get_model_seed(streams::RandomStreams)
+  return streams.seed $ (streams.num_streams + 2)
+end
+
+function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
     # Populate random streams
     if OS_NAME == :Linux
         ccall((:srand, "libc"), Void, (Cuint,), 1)
-        for i in 1:emptyStreams.numStreams
-            seed = Cuint[getStreamSeed(emptyStreams, convert(Uint32, i-1))]
+        for i in 1:empty_streams.num_streams
+            seed = Cuint[get_stream_seed(empty_streams, convert(Uint32, i-1))]
             ccall( (:rand_r, "libc"), Int, (Ptr{Cuint},), seed)
-            for j = 1:emptyStreams.lenStreams
-                emptyStreams.streams[i,j] = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) / randMax
+            for j = 1:empty_streams.len_streams
+                empty_streams.streams[i,j] = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) / rand_max
             end
         end
     else #Windows, etc
-        for i in 1:emptyStreams.numStreams
-            seed  = getStreamSeed(emptyStreams, convert(Uint32, i-1))
+        for i in 1:empty_streams.num_streams
+            seed  = get_stream_seed(empty_streams, convert(Uint32, i-1))
             srand(seed)
-            emptyStreams.streams[i,:] = rand(convert(Int64, emptyStreams.lenStreams))
+            empty_streams.streams[i,:] = rand(convert(Int64, empty_streams.len_streams))
         end
     end  
 end

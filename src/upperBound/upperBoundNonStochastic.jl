@@ -1,63 +1,117 @@
-using DESPOT
-import DESPOT: upper_bound
+import DESPOT:
+    upper_bound,
+    init_upper_bound
 
 type UpperBoundNonStochastic <: DESPOTUpperBound
 
-    upperBoundAct::Array{Int64,1}
-    upperBoundMemo::Array{Float64,1}
+    upper_bound_act::Vector{Int64}
+    upper_bound_memo::Vector{Float64}
     
     # Constructor
-    function UpperBoundNonStochastic(pomdp::DESPOTPomdp) #TODO: see if we need streams here
+    function UpperBoundNonStochastic(pomdp::POMDP)
     
-    this = new()
-    #nextLevelUbMemo = rs.upperBoundMemo # establish nextLevelUbMemo as an alias to rs.upperBoundMemo
-    
-    # this executes just once per problem run
-    this.upperBoundAct = Array(Int64, pomdp.problem.nStates)    # upperBoundAct
-    fill!(this.upperBoundAct, 0)
-    this.upperBoundMemo = Array(Float64, pomdp.problem.nStates) # upperBoundMemo
-    currentLevelUbMemo = Array(Float64, pomdp.problem.nStates)
-    fill!(currentLevelUbMemo, -Inf)
+        this = new()
+        #next_level_ub_memo = rs.upper_bound_memo # establish next_level_ub_memo as an alias to rs.upper_bound_memo
+        
+        # this executes just once per problem run
+        this.upper_bound_act = Array(Int64, n_states(pomdp))    # upper_bound_act
+        fill!(this.upper_bound_act, 0)
+        this.upper_bound_memo = Array(Float64, n_states(pomdp)) # upper_bound_memo
 
-    nextLevelUbMemo = [fringeUpperBound(pomdp.problem, s, pomdp.config) for s = 0:pomdp.problem.nStates-1]
+    #     current_level_ub_memo = Array(Float64, n_states(pomdp))
+    #     fill!(current_level_ub_memo, -Inf)
+    # 
+    #     next_level_ub_memo = [fringe_upper_bound(pomdp, s, config) for s = 0:n_states(pomdp)-1]
+    # 
+    #     for i in 1:config.search_depth # length of horizon
+    #         #for s in 0:pomdp.problem.nStates-1
+    #         for s in states(pomdp)
+    #             #for a = 0:pomdp.problem.nActions-1
+    #             for a in actions(pomdp)
+    #                 #println("current state: $s")
+    #                 next_state, r = step(pomdp, s, a) # TODO: change this
+    #                 #println("next state: $next_state")
+    #                 possibly_improved_value = r + config.discount * next_level_ub_memo[next_state+1] # TODO: move discount into pomdp
+    #                 if (possibly_improved_value > current_level_ub_memo[s+1])
+    #                     current_level_ub_memo[s+1] = possibly_improved_value
+    #                     if i == config.search_depth
+    #                         # Set best actions when last level is being computed
+    #                         pomdp.upper_bound_act[s+1] = a #TODO: move to solver?
+    #                     end
+    #                 end
+    #             end # for a
+    #         end #for s
+    #         
+    #         # swap array references
+    #         tmp = current_level_ub_memo
+    #         current_level_ub_memo = next_level_ub_memo
+    #         next_level_ub_memo = tmp
+    # 
+    #         fill!(current_level_ub_memo,-Inf)
+    #     end
+    # 
+    #     #TODO: this can probably be done more optimally (by referencing rs.upper_bound_memo to start with),
+    #     # however, this only runs once per problem and is probably not a big deal. Leave it as is for now.
+    #     copy!(pomdp.upper_bound_memo, next_level_ub_memo) #TODO: move upper bound to solver or reference from this struct?
+    return this
+  end
+end
 
-    for i in 1:pomdp.config.searchDepth # length of horizon
-        for s in 0:pomdp.problem.nStates-1
-            for a = 0:pomdp.problem.nActions-1
-                nextState, r = step(pomdp.problem, s, a)
-                possiblyImprovedValue = r + pomdp.config.discount * nextLevelUbMemo[nextState+1]
-                if (possiblyImprovedValue > currentLevelUbMemo[s+1])
-                    currentLevelUbMemo[s+1] = possiblyImprovedValue
-                    if i == pomdp.config.searchDepth
+function init_upper_bound(ub::UpperBoundNonStochastic,
+                    pomdp::POMDP,
+                    config::DESPOTConfig)
+                          
+    current_level_ub_memo = Array(Float64, n_states(pomdp))
+    fill!(current_level_ub_memo, -Inf)
+
+    next_level_ub_memo = [fringe_upper_bound(pomdp, s) for s = 0:n_states(pomdp)-1]
+
+    for i in 1:config.search_depth # length of horizon
+        #for s in 0:pomdp.problem.nStates-1
+        for s in states(pomdp)
+            #for a = 0:pomdp.problem.nActions-1
+            for a in actions(pomdp)
+                #println("current state: $s")
+                next_state, r = step(pomdp, s, a) # TODO: change this
+                #println("next state: $next_state")
+                possibly_improved_value = r + pomdp.discount * next_level_ub_memo[next_state+1] # TODO: move discount into pomdp
+                if (possibly_improved_value > current_level_ub_memo[s+1])
+                    current_level_ub_memo[s+1] = possibly_improved_value
+                    if i == config.search_depth
                         # Set best actions when last level is being computed
-                        pomdp.problem.upperBoundAct[s+1] = a
+                        ub.upper_bound_act[s+1] = a
+                        #upper_bound_act[s+1] = a
                     end
                 end
             end # for a
         end #for s
         
         # swap array references
-        tmp = currentLevelUbMemo
-        currentLevelUbMemo = nextLevelUbMemo
-        nextLevelUbMemo = tmp
+        tmp = current_level_ub_memo
+        current_level_ub_memo = next_level_ub_memo
+        next_level_ub_memo = tmp
 
-        fill!(currentLevelUbMemo,-Inf)
+        fill!(current_level_ub_memo,-Inf)
     end
 
-    #TODO: this can probably be done more optimally (by referencing rs.upperBoundMemo to start with),
+    #TODO: this can probably be done more optimally (by referencing rs.upper_bound_memo to start with),
     # however, this only runs once per problem and is probably not a big deal. Leave it as is for now.
-    copy!(pomdp.problem.upperBoundMemo, nextLevelUbMemo)
-    return this
-  end
+    copy!(ub.upper_bound_memo, next_level_ub_memo)
+    
+    return nothing
 end
 
-function upper_bound(pomdp::DESPOTPomdp, particles::Vector{DESPOTParticle})
-  ws = 0.
-  totalCost = 0.
+function upper_bound(ub::UpperBoundNonStochastic,
+                     pomdp::POMDP,
+                     #particles::Vector{Particle}, #TODO: figure out why this does not work
+                     particles::Vector,
+                     config::DESPOTConfig)
+  weight_sum = 0.
+  total_cost = 0.
 
   for p in particles
-    ws += p.wt
-    totalCost += p.wt * pomdp.problem.upperBoundMemo[p.state+1]
+    weight_sum += p.weight
+    total_cost += p.weight * ub.upper_bound_memo[p.state+1]
   end
-  return totalCost / ws
+  return total_cost / weight_sum
 end

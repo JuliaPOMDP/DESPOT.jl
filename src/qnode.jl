@@ -4,83 +4,95 @@
 # the VNodes that the simulations reach at the next level
 
   # Fields:
-  # obsToParticles: a mapping from observations seen to the particles (after
+  # obs_to_particles: a mapping from observations seen to the particles (after
   # the transition) that generated the observations. The particles for each
   # observation become the representative set for the corresponding v-node
   # at the next level.
   # depth: depth of the v-node *above* this node.
   # action: action that led to this q-node.
-  # firstStepReward: The average first step reward of particles when they
+  # first_step_reward: The average first step reward of particles when they
   # took action 'action'.
   # history: history up to the v-node *above* this node.
   # debug: Flag controlling debugging output.
 
 
 type QNode
-  obsToParticles::Dict{Int64, Array{DESPOTParticle,1}}
+  obs_to_particles::Dict{Int64, Vector{Particle}}
   depth::Int64
   action::Int64
-  firstStepReward::Float64
+  first_step_reward::Float64
   history::History
-  weightSum::Float64
-  obsToNode::Dict
-  nVisits::Int64                # Needed for large problems
+  weight_sum::Float64
+  obs_to_node::Dict
+  n_visits::Int64                # Needed for large problems
+  lb::DESPOTLowerBound
+  ub::DESPOTUpperBound
   
       # default constructor
-      function QNode( pomdp::DESPOTPomdp,
-                      obsToParticles::Dict{Int64, Array{DESPOTParticle,1}},
+      function QNode( pomdp::POMDP,
+                      lb::DESPOTLowerBound,
+                      ub::DESPOTUpperBound,
+                      obs_to_particles::Dict{Int64, Vector{Particle}},
                       depth::Int64,
                       action::Int64,
-                      firstStepReward::Float64)
+                      first_step_reward::Float64,
+                      history::History,
+                      config::DESPOTConfig)
                       
             this = new()
-            this.obsToParticles = obsToParticles
+            this.obs_to_particles = obs_to_particles
             this.depth = depth
             this.action = action
-            this.firstStepReward = firstStepReward
-            this.history = pomdp.history
-            this.weightSum = 0
-            this.obsToNode = Dict{Int64,VNode}()
-            this.nVisits = 0
+            this.first_step_reward = first_step_reward
+            this.history = history
+            this.weight_sum = 0
+            this.obs_to_node = Dict{Int64,VNode}()
+            this.n_visits = 0
+            this.lb = lb
+            this.ub = ub
             
-            for (obs, particles) in this.obsToParticles
-                obsWs = 0.
+            for (obs, particles) in this.obs_to_particles
+                obs_weight_sum = 0.
                 for p in particles
-                    obsWs += p.wt
+                    obs_weight_sum += p.weight
                 end
-                this.weightSum += obsWs
+                this.weight_sum += obs_weight_sum
 
                 add(this.history, action, obs)
-                l::Float64, action::Int64 = lower_bound(pomdp.problem, particles, depth + 1, pomdp.config)
-                u::Float64 = upper_bound(pomdp, particles)
-                removeLast(this.history)
-                this.obsToNode[obs] = VNode(particles, l, u, this.depth + 1, obsWs, false, pomdp.config) # TODO: check depth
+                l::Float64, action::Int64 = DESPOT.lower_bound(lb,
+                                                               pomdp,
+                                                               particles,
+                                                               ub.upper_bound_act,
+                                                               config)
+                u::Float64 = upper_bound(ub, pomdp, particles, config)
+                remove_last(this.history)
+                this.obs_to_node[obs] = VNode(particles, l, u, this.depth + 1, obs_weight_sum, false, config) # TODO: check depth
             end
             return this
         end
 end
 
-function getUpperBound(qnode::QNode)
+function get_upper_bound(qnode::QNode)
   ub = 0.
-  for (obs,node) in qnode.obsToNode
+  for (obs, node) in qnode.obs_to_node
       ub += node.ub * node.weight
   end
-  return ub/qnode.weightSum
+  return ub/qnode.weight_sum
 end
 
-function getLowerBound(qnode::QNode)
+function get_lower_bound(qnode::QNode)
   lb = 0.
-  for (obs,node) in qnode.obsToNode
+  for (obs, node) in qnode.obs_to_node
       lb += node.lb * node.weight
   end
-  return lb/qnode.weightSum
+  return lb/qnode.weight_sum
 end
 
 #TODO: Fix this
-function prune(qnode::QNode, totalPruned::Int64, config::DESPOTConfig)
+function prune(qnode::QNode, total_pruned::Int64, config::DESPOTConfig)
   cost = 0.
-  for (obs,node) in qnode.obsToNode
-    cost, totalPruned += prune(node, totalPruned, config)
+  for (obs,node) in qnode.obs_to_node
+    cost, total_pruned += prune(node, total_pruned, config)
   end
-  return cost, totalPruned
+  return cost, total_pruned
 end

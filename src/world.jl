@@ -11,9 +11,9 @@ type World
     rewards::Array{Float64,1}
 
      # default constructor
-     function World (problem::DESPOTProblem, seed::Uint32)
+     function World (pomdp::POMDP, seed::Uint32)
           this = new()
-          this.state        = start_state(problem)      # state
+          this.state        = start_state(pomdp)      # state
           this.initialState = this.state                # initialState
           this.seed         = seed                      # seed
           this.initialSeed  = seed                      # initialSeed

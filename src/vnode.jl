@@ -4,100 +4,101 @@
 # AND-node for each action, and some bookkeeping information.
 
 type VNode
-  particles::Array{DESPOTParticle,1}
+  particles::Array{Particle,1}
   lb::Float64
   ub::Float64
   depth::Int64
-  defaultValue::Float64             # Value of the default policy (= lbound value
+  default_value::Float64            # Value of the default policy (= lbound value
                                     # before any backups are performed)
-  prunedAction::Int64               # Best action at the node after pruning
+  pruned_action::Int64              # Best action at the node after pruning
   weight::Float64                   # Sum of particle weights at this belief
-  bestUBAction::Int64               # Action that gives the highest upper bound
-  inTree::Bool                      # True if the node is visited by Solver::trial().
+  best_ub_action::Int64             # Action that gives the highest upper bound
+  in_tree::Bool                     # True if the node is visited by Solver::trial().
                                     # In order to determine if a node is a fringe node
                                     # of the belief tree, we need to expand it one level.
                                     # The nodes added during this expansion of a fringe
                                     # node are not considered to be within the tree unless
                                     # explicitly visited by Solver::Trial(), so we use
                                     # this indicator variable.
-  nTreeNodes::Int64                 # Number of nodes with inTree == true in the subtree
+  n_tree_nodes::Int64               # Number of nodes with inTree == true in the subtree
                                     # rooted at this node
-  qnodes::Dict{Int,QNode}           # Dict of children q-nodes
-  nVisits::Int64                    # Needed for large domains
-  nActionsAllowed::Int64            # current number of action branches allowed in the node, needed for large domains
-  qStar::Float64                    # best current Q-value, needed for large domains
+  q_nodes::Dict{Int,QNode}          # Dict of children q-nodes
+  n_visits::Int64                   # Needed for large domains
+  n_actions_allowed::Int64          # current number of action branches allowed in the node, needed for large domains
+  q_star::Float64                   # best current Q-value, needed for large domains
 
   # default constructor
   function VNode( 
-               particles::Array{DESPOTParticle,1},
-               lBound::Float64,
-               uBound::Float64,
+               #particles::Array{Particle,1},#TODO: Figure out why this does not work
+               particles::Vector,
+               l_bound::Float64,
+               u_bound::Float64,
                depth::Int64,
                weight::Float64,
-               inTree::Bool,
+               in_tree::Bool,
                config::DESPOTConfig)
 
         this = new(
             particles,        # particles
-            lBound,           # lBound
-            uBound,           # uBound
+            l_bound,          # l_bound
+            u_bound,          # u_bound
             depth,            # depth
-            lBound,           # defaultValue
+            l_bound,          # default_value
             -1,               # pruned action
             weight,           # weight
-            -1,               # bestUBAction
-            inTree,           # inTree
-            inTree ? 1:0,     # nTreeNodes
-            Dict{Int,QNode}(),# qnodes
-            0,                # nVisits
-            0,                # nActionsAllowed
-            -Inf,             # qStar
+            -1,               # best_ub_action
+            in_tree,          # in_tree
+            in_tree ? 1:0,    # n_tree_nodes
+            Dict{Int,QNode}(),# q_nodes
+            0,                # n_visits
+            0,                # n_actions_allowed
+            -Inf,             # q_star
             )
         
-        validateBounds(lBound, uBound, config)
+        validate_bounds(l_bound, u_bound, config)
         return this
   end
 end
 
-function getLowerBoundAction(node::VNode, config::DESPOTConfig)
-  aStar = -1
-  qStar = -Inf
-  for (a,qnode) in node.qnodes
-    remainingReward = getLowerBound(qnode)
-    if qnode.firstStepReward + config.discount * remainingReward > qStar + config.tiny
-      qStar = qnode.firstStepReward + config.discount * remainingReward
-      aStar = a
+function get_lb_action(node::VNode, config::DESPOTConfig, discount::Float64)
+  a_star = -1
+  q_star = -Inf
+  for (a,q_node) in node.q_nodes
+    remaining_reward = get_lower_bound(q_node)
+    if q_node.first_step_reward + discount * remaining_reward > q_star + config.tiny
+      q_star = q_node.first_step_reward + discount * remaining_reward
+      a_star = a
     end
   end
-  return aStar
+  return a_star
 end
 
 #TODO: fix pruning
 
-function prune(node::VNode, totalPruned::Int64, config::DESPOTConfig)
+function prune(node::VNode, total_pruned::Int64, config::DESPOTConfig)
   # Cost if the node were pruned
-  cost = (config.discount^node.depth) * node.weight * node.defaultValue
-                - config.pruningConstant
+  cost = (config.discount^node.depth) * node.weight * node.default_value
+                - config.pruning_constant
 
   if !node.inTree # Leaf
-    @assert(nodes.nTreeNodes == 0)
-    return cost, totalPruned
+    @assert(nodes.n_tree_nodes == 0)
+    return cost, total_pruned
   end
 
-  for qnode in node.qnodes
-    firstStepReward = config.discount^depth * weight * qnode.firstStepReward
-    bestChildValue, totalPruned = prune(qnode, totalPruned, config)
+  for q_node in node.q_nodes
+    first_step_reward = config.discount^depth * weight * q_node.first_step_reward
+    best_child_value, total_pruned = prune(q_node, total_pruned, config)
 
     # config.pruningCost to include the cost of the current node
-    newCost = firstStepReward + bestChildValue - config.pruningConstant
-    if newCost > cost
-      cost = newCost
-      prunedAction = qnode.action
+    new_cost = first_step_reward + best_child_value - config.pruning_constant
+    if new_cost > cost
+      cost = new_cost
+      pruned_action = q_node.action
     end
   end
-  if prunedAction == -1
-    totalPruned +=1
+  if pruned_action == -1
+    total_pruned +=1
   end
-  return cost, totalPruned
+  return cost, total_pruned
 end
 

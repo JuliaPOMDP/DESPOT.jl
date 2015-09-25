@@ -13,12 +13,12 @@ function add(history::History, action::Int64, obs::Int64)
     push!(history.observations, obs)
 end
 
-function removeLast(history::History)
+function remove_last(history::History)
     pop!(history.actions)
     pop!(history.observations)
 end
 
-function historySize(history::History)
+function history_size(history::History)
     return length(history.actions)
 end
 

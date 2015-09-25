@@ -18,7 +18,7 @@ function resetBelief(beliefUpdate::DESPOTBeliefUpdateParticle)
     beliefUpdate.numUpdates = 0
 end
 
-function normalize(particles::Array{DESPOTParticle,1})
+function normalize(particles::Vector{Particle})
   probSum = 0.
   for p in particles
     probSum += p.wt
@@ -29,9 +29,9 @@ function normalize(particles::Array{DESPOTParticle,1})
 end
 
 # TODO: This probably can be replaced by just a weighted sampling call - check later
-function sampleParticles(bu::DESPOTBeliefUpdateParticle, pool::Array{DESPOTParticle,1}, N::Uint32, config::DESPOTConfig)
+function sampleParticles(bu::DESPOTBeliefUpdateParticle, pool::Vector{Particle}, N::Uint32, config::DESPOTConfig)
 
-    sampledParticles = Array(DESPOTParticle, 0)
+    sampledParticles = Vector{Particle}
 
     # Ensure particle weights sum to exactly 1
     sumWithoutLast = 0;
@@ -97,10 +97,10 @@ function run_belief_update (bu::DESPOTBeliefUpdateParticle,
             randomNumber = rand()
         end
         nextState, reward, nextObs = step(rs, p.state, randomNumber, action)
-        obsProbability = obsProb(rs, obs, nextState, action)
+        obs_probability = obsProb(rs, obs, nextState, action)
 
-        if obsProbability > 0.
-            newParticle = Particle(nextState, p.id, p.wt * obsProbability)
+        if obs_probability > 0.
+            newParticle = Particle(nextState, p.id, p.wt * obs_probability)
             push!(newSet, newParticle)
         end
     end
@@ -114,10 +114,10 @@ function run_belief_update (bu::DESPOTBeliefUpdateParticle,
         numSampled = 0
         while numSampled < config.nParticles
             s = randomState(rs, bu.beliefUpdateSeed)
-            obsProbability = obsProb(rs, obs, s, action)
-            if obsProbability > 0.
+            obs_probability = obsProb(rs, obs, s, action)
+            if obs_probability > 0.
                 numSampled += 1
-                newParticle = Particle (s, numSampled, obsProbability)
+                newParticle = Particle (s, numSampled, obs_probability)
                 push!(newSet, newParticle)
             end
         end
