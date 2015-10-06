@@ -1,61 +1,88 @@
-#using DESPOT
-import DESPOT
+using POMDPs
+using DESPOT
+using Types
 
 include("rockSample.jl")
+include("rockSampleParticleLB.jl")
+include("rockSampleFringeUB.jl")
 include("../../upperBound/upperBoundNonStochastic.jl")
 include("../../beliefUpdate/beliefUpdateParticle.jl")
 
-function main(gridSize::Int64 = 4, numRocks::Int64 = 4)
+function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
 
-    # create a DESPOTPomdp object 
-    problem = RockSample(gridSize, numRocks) 
-    pomdp = DESPOTPomdp (problem)
-    init_problem(pomdp)
+#    println("$(methods(DESPOTSolver))")
+    pomdp       = RockSample(grid_size, num_rocks)
+    custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
+    custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
+    current_belief = initial_belief(pomdp)  # pomdp's initial belief
+    #println("$(current_belief.particles[1:10])"); exit()
+    updated_belief = create_belief(pomdp)
+    solver      = DESPOTSolver(pomdp,
+                               current_belief,
+                               lb = custom_lb, # use the custom lower bound
+                               ub = custom_ub) # use the custom lower bound
+    state       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
+    next_state  = POMDPs.create_state(pomdp)
+    obs         = POMDPs.create_observation(pomdp)
+    rewards     = Array(Float64,0)
+    transition_distribution  = POMDPs.create_transition_distribution(pomdp)
+    observation_distribution = POMDPs.create_observation_distribution(pomdp)
 
     # Here is how you can adjust the default DESPOT parameters, if they were not passed
-    # through the optional arguments of the DESPOTPomdp constructor above (if desired).
+    # through the optional arguments of the DESPOTSolver constructor above (if desired).
     
-    # control computational resource use either by limiting timePerMove
+    # control use of computational resources either by limiting time_per_move
     # or by limiting the number of trials per move (or both). Setting either
     # to 0 or a negative number disables that limit.
     
-    pomdp.config.searchDepth = 90
-    pomdp.config.discount = 0.95
-    pomdp.config.rootSeed = 42
-    pomdp.config.timePerMove = 1                 # sec
-    pomdp.config.nParticles = 500
-    pomdp.config.pruningConstant = 0
-    pomdp.config.eta = 0.95
-    pomdp.config.simLen = -1
-    pomdp.config.approximateUBound = false
-    pomdp.config.particleWtThreshold = 1e-20
-    pomdp.config.numEffParticleFraction = 0.05
-    pomdp.config.tiny = 1e-6
-    pomdp.config.maxTrials = -1
-    pomdp.config.randMax = 2147483647
-    pomdp.config.debug = 0
+    solver.config.search_depth = 90
+    solver.config.root_seed = 42
+    solver.config.time_per_move = 1                 # sec
+    solver.config.n_particles = 500
+    solver.config.pruning_constant = 0
+    solver.config.eta = 0.95
+    solver.config.sim_len = -1
+    solver.config.approximate_ubound = false
+#     solver.config.particle_weight_threshold = 1e-20
+#     solver.config.eff_particle_fraction = 0.05
+    solver.config.tiny = 1e-6
+    solver.config.max_trials = -1
+    solver.config.rand_max = 2147483647
+    solver.config.debug = 0
     
-    UpperBoundNonStochastic(pomdp)
-    belief = initial_belief(problem)  # create initial belief from the problem's initial belief
-    solver = DESPOTSolver(pomdp)
-    policy = solve (solver, pomdp)
-    
-    simStep = 0
-
+    # construct a belief updater and use the same values for parameters as the solver,
+    # wherever appropriate
+    bu = ParticleBeliefUpdater(pomdp::POMDP,
+                               convert(Uint32, DESPOT.get_belief_update_seed(solver.random_streams)),
+                               solver.config.rand_max,
+                               1e-20,
+                               0.05)
+                              
+    # This call uses predefined seed and rand_max values for consistency
+    rng = DESPOTDefaultRNG(convert(Uint32, DESPOT.get_world_seed(solver.random_streams)),
+                           solver.config.rand_max)
+    policy = POMDPs.solve(solver, pomdp)
+        
+    sim_step = 0
     tic() # start the clock
-    while (!is_finished(solver, pomdp) && 
-        (pomdp.config.simLen == -1 || simStep < pomdp.config.simLen))
-        a = action(policy, belief)
-        #println("In testRockSample: $(methods(step))")
-        obs, reward = execute_action(pomdp, a)
-#        obs, reward = step(pomdp, a)
-        update_belief!(belief, pomdp, a, obs)
-        simStep += 1
+#    while (!is_finished(solver, pomdp) &&
+    while !isterminal(pomdp, state) &&
+        (solver.config.sim_len == -1 || simStep < solver.config.sim_len)
+        action = POMDPs.action(policy, current_belief)
+        POMDPs.transition(pomdp, state, action, transition_distribution)
+        next_state = POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
+        POMDPs.observation(pomdp, next_state, action, observation_distribution)
+        r = POMDPs.reward(pomdp, state, action)
+        push!(rewards, r)
+        obs = POMDPs.rand!(rng, obs, observation_distribution) #TODO: check argument order
+        state = next_state
+        POMDPs.belief(bu, pomdp, current_belief, action, obs, updated_belief)
+        current_belief = updated_belief
+        sim_step += 1
     end
-    runTime = toq() # stop the clock
+    run_time = toq() # stop the clock
     
-    @printf("Number of steps = %d\n", simStep)
-    @printf("Discounted return = %.2f\n", discounted_return(pomdp))
-    @printf("Undiscounted return = %.2f\n", undiscounted_return(pomdp))
-    @printf("Runtime = %.2f sec\n", runTime)
+    @printf("Number of steps = %d\n", sim_step)
+    @printf("Discounted return = %.2f\n", sum(rewards))
+    @printf("Runtime = %.2f sec\n", run_time)
 end

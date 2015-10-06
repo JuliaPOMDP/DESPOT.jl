@@ -7,6 +7,8 @@ type ParticleBeliefUpdater <: POMDPs.BeliefUpdater
     transition_distribution::AbstractDistribution
     observation_distribution::AbstractDistribution
     rand_max::Int64
+    particle_weight_threshold::Float64
+    eff_particle_fraction::Float64
     
     #pre-allocated variables (TODO: add the rest at some point)
     n_particles::Int64
@@ -28,6 +30,8 @@ type ParticleBeliefUpdater <: POMDPs.BeliefUpdater
         this.transition_distribution  = POMDPs.create_transition_distribution(pomdp)
         this.observation_distribution = POMDPs.create_observation_distribution(pomdp)
         this.rand_max = rand_max
+        this.particle_weight_threshold = particle_weight_threshold
+        this.eff_particle_fraction = eff_particle_fraction
         
         # init preallocated variables
         this.n_particles = 0
@@ -80,7 +84,7 @@ function belief(bu::ParticleBeliefUpdater,
  
         bu.obs_probability = pdf(bu.observation_distribution, obs)
         if bu.obs_probability > 0.0
-            bu.new_particle = Particle(bu.next_state, p.weight * obs_probability)
+            bu.new_particle = Particle(bu.next_state, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)
         end
     end
@@ -114,20 +118,20 @@ function belief(bu::ParticleBeliefUpdater,
     end
     updated_belief.particles = updated_belief.particles[viable_particle_indices]
 
-    if length(new_set) != 0
-        normalize(new_set)
+    if length(updated_belief.particles) != 0
+        normalize(updated_belief.particles)
     end
 
     # Resample if we have < N particles or number of effective particles drops
     # below the threshold
     num_eff_particles = 0
-    for p in new_set
+    for p in updated_belief.particles
         num_eff_particles += p.weight^2
     end
 
     num_eff_particles = 1./num_eff_particles
     if (num_eff_particles < bu.n_particles * bu.eff_particle_fraction) ||
-        (length(new_set) < bu.n_particles)
+        (length(updated_belief.particles) < bu.n_particles)
         resampled_new_set = sample_particles(updated_belief.particles,
                                              bu.n_particles,
                                              bu.belief_update_seed,

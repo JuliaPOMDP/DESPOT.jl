@@ -90,6 +90,7 @@ function init_solver(solver::DESPOTSolver, pomdp::POMDP)
 #                                         
 #     # use the (potentially more numerous) new particles
 #     solver.belief.particles = sampled_particles
+    fill_random_streams(solver.random_streams, solver.config.rand_max)
     init_upper_bound(solver.ub, pomdp, solver.config)
     init_lower_bound(solver.lb, pomdp, solver.config)
 #    new_root(solver, pomdp, sampled_particles)
@@ -173,7 +174,8 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     n_nodes_added = 0
     o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star], solver.root, solver.config, pomdp.discount) # it's an array!
     
-    println("o_star=$o_star, weighted_eu_star=$weighted_eu_star")
+#     println("o_star=$o_star, weighted_eu_star=$weighted_eu_star")
+#     exit()
     
     if weighted_eu_star > 0.
         add(solver.history, a_star, o_star)
@@ -181,7 +183,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
                             pomdp,
                             node.q_nodes[a_star].obs_to_node[o_star], # obs_to_node is a Dict
                             n_trials) 
-        removeLast(solver.history)
+        remove_last(solver.history)
     end
     node.n_tree_nodes += n_nodes_added
 
@@ -235,11 +237,11 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                                            node.particles[i].state,
                                            solver.random_streams.streams[i,node.depth+1],
                                            action)
-#             println("state = $(node.particles[i].state), action = $action")                               
-#             println("next_state = $next_state, reward = $reward, obs=$obs")
+#             println("s=$(node.particles[i].state), a=$action, rnumber=$(solver.random_streams.streams[i,node.depth+1])")                               
+#             println("s'=$next_state, r=$reward, o=$obs")
 #             exit()
 
-            if isterminal(pomdp, next_state) && (obs != pomdp.kTerminal)
+            if isterminal(pomdp, next_state) && (obs != pomdp.TERMINAL_OBS)
                 error("Terminal state in a particle mismatches observation")
             end
 
@@ -278,9 +280,11 @@ function step(solver::DESPOTSolver, pomdp::POMDP, state::Any, rand_num::Float64,
     
     solver.rng.number = rand_num
     POMDPs.transition(pomdp, state, action, solver.transition_distribution)
-    POMDPs.rand!(solver.rng, solver.next_state, solver.transition_distribution)
+#    println("s: $state, a: $action, T[$state,$action]=$(pomdp.T[state+1,action+1])")
+    solver.next_state = POMDPs.rand!(solver.rng, solver.next_state, solver.transition_distribution)
+#    println("solver.step: s': $(solver.next_state)")
     POMDPs.observation(pomdp, solver.next_state, action, solver.observation_distribution)
-    POMDPs.rand!(solver.rng, solver.observation, solver.observation_distribution)
+    solver.observation = POMDPs.rand!(solver.rng, solver.observation, solver.observation_distribution)
     solver.reward = POMDPs.reward(pomdp, state, action)
     
     return solver.next_state, solver.reward, solver.observation
