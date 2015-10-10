@@ -50,8 +50,8 @@ function reset_belief(bu::ParticleBeliefUpdater)
 end
 
 #TODO: figure out why particles::Vector{Particle} does not work
-function normalize(particles::Vector) 
-  prob_sum = 0.
+function normalize!(particles::Vector) 
+  prob_sum = 0.0
   for p in particles
     prob_sum += p.weight
   end
@@ -67,7 +67,7 @@ function belief(bu::ParticleBeliefUpdater,
                 obs::Any,
                 updated_belief::ParticleBelief = create_belief(pomdp))
                 
-    #new_set = Array(Particle, 0)
+    println("num current particles 1: $(length(current_belief.particles))")
     bu.n_particles = length(current_belief.particles)
     updated_belief.particles = []
 
@@ -77,6 +77,7 @@ function belief(bu::ParticleBeliefUpdater,
         srand(bu.belief_update_seed)
     end
     
+    println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
     # Step forward all particles
     for p in current_belief.particles     
@@ -95,7 +96,9 @@ function belief(bu::ParticleBeliefUpdater,
     end
     
 #     println("bu: $(updated_belief.particles[400:405])")
-    normalize(updated_belief.particles)
+    println("num particles before: $(length(updated_belief.particles))")
+    normalize!(updated_belief.particles)
+    println("num particles after: $(length(updated_belief.particles))")
     #println("bu norm.: $(updated_belief.particles[10:15])")
 
     if length(updated_belief.particles) == 0
@@ -112,7 +115,7 @@ function belief(bu::ParticleBeliefUpdater,
                 push!(updated_belief.particles, bu.new_particle)
             end
         end
-        normalize(updated_belief.particles)
+        normalize!(updated_belief.particles)
         return updated_belief.particles
     end
 
@@ -126,7 +129,7 @@ function belief(bu::ParticleBeliefUpdater,
     updated_belief.particles = updated_belief.particles[viable_particle_indices]
 
     if length(updated_belief.particles) != 0
-        normalize(updated_belief.particles)
+        normalize!(updated_belief.particles)
     end
 
     # Resample if we have < N particles or number of effective particles drops

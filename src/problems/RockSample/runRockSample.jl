@@ -35,7 +35,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     
     solver.config.search_depth = 90
     solver.config.root_seed = 42
-    solver.config.time_per_move = 15                 # sec
+    solver.config.time_per_move = 10                 # sec
     solver.config.n_particles = 500
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
@@ -44,7 +44,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
 #     solver.config.particle_weight_threshold = 1e-20
 #     solver.config.eff_particle_fraction = 0.05
     solver.config.tiny = 1e-6
-    solver.config.max_trials = -1
+    solver.config.max_trials = -1 # default: -1
     solver.config.rand_max = 2147483647
     solver.config.debug = 0
     
@@ -76,10 +76,10 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         push!(rewards, r)
         obs = POMDPs.rand!(rng, obs, observation_distribution)
         state = next_state
-        #println("current: $(current_belief.particles[400:405])")
+        println("current belief of length $(length(current_belief.particles)) before: $(current_belief.particles[400:405])")
         POMDPs.belief(bu, pomdp, current_belief, action, obs, updated_belief)
-        current_belief = updated_belief
-        #println("updated: $(updated_belief.particles[400:405])")
+        current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
+        println("current belief of length $(length(current_belief.particles)) after: $(current_belief.particles[400:405])")
         println("Action = $action")
         println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced
         print  ("Observation = "); show_obs(pomdp, obs) #TODO: change once abstract types are introduced
