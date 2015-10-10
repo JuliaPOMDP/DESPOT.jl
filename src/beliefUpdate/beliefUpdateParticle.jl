@@ -13,6 +13,7 @@ type ParticleBeliefUpdater <: POMDPs.BeliefUpdater
     #pre-allocated variables (TODO: add the rest at some point)
     n_particles::Int64
     next_state::Any
+    observation::Any
     new_particle::Particle
     num_sampled::Int64
     obs_probability::Float64
@@ -36,6 +37,7 @@ type ParticleBeliefUpdater <: POMDPs.BeliefUpdater
         # init preallocated variables
         this.n_particles = 0
         this.next_state = POMDPs.create_state(pomdp)
+        this.observation = POMDPs.create_observation(pomdp)
         this.new_particle = Particle{typeof(this.next_state)}(this.next_state, 1)
         this.num_sampled = 0
         this.obs_probability = -1.0
@@ -75,21 +77,26 @@ function belief(bu::ParticleBeliefUpdater,
         srand(bu.belief_update_seed)
     end
     
+    #println("in update, current: $(current_belief.particles[10:15])")
     # Step forward all particles
     for p in current_belief.particles     
         POMDPs.transition(pomdp, p.state, action, bu.transition_distribution)
-        POMDPs.rand!(bu.rng, bu.next_state, bu.transition_distribution) # update state to next state
+        bu.next_state = POMDPs.rand!(bu.rng, bu.next_state, bu.transition_distribution) # update state to next state
+#         if (p.state == bu.next_state)
+#             println("States equal: $(p.state) and $(bu.next_state)")
+#         end
         POMDPs.observation(pomdp, bu.next_state, action, bu.observation_distribution)
-        POMDPs.rand!(bu.rng, obs, bu.observation_distribution)
- 
-        bu.obs_probability = pdf(bu.observation_distribution, obs)
+        bu.observation = POMDPs.rand!(bu.rng, obs, bu.observation_distribution)
+        bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
         if bu.obs_probability > 0.0
             bu.new_particle = Particle(bu.next_state, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)
         end
     end
     
+#     println("bu: $(updated_belief.particles[400:405])")
     normalize(updated_belief.particles)
+    #println("bu norm.: $(updated_belief.particles[10:15])")
 
     if length(updated_belief.particles) == 0
         # No resulting state is consistent with the given observation, so create
@@ -98,10 +105,10 @@ function belief(bu::ParticleBeliefUpdater,
         bu.num_sampled = 0
         while bu.num_sampled < bu.n_particles
             s = random_state(pomdp, convert(Uint32, bu.belief_update_seed))
-            bu.obs_probability = pdf(bu.observation_distribution, obs)
+            bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
             if bu.obs_probability > 0.
                 bu.num_sampled += 1
-                bu.new_particle = Particle(s, bu.num_sampled, obs_probability)
+                bu.new_particle = Particle(s, bu.obs_probability)
                 push!(updated_belief.particles, bu.new_particle)
             end
         end
@@ -138,6 +145,7 @@ function belief(bu::ParticleBeliefUpdater,
                                              bu.rand_max)
         updated_belief.particles = resampled_new_set
     end
+    #println("bu end: $(updated_belief.particles[10:15])")
     return updated_belief.particles
 end
 

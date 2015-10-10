@@ -10,12 +10,10 @@ include("../../beliefUpdate/beliefUpdateParticle.jl")
 
 function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
 
-#    println("$(methods(DESPOTSolver))")
     pomdp       = RockSample(grid_size, num_rocks)
     custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
     current_belief = initial_belief(pomdp)  # pomdp's initial belief
-    #println("$(current_belief.particles[1:10])"); exit()
     updated_belief = create_belief(pomdp)
     solver      = DESPOTSolver(pomdp,
                                current_belief,
@@ -37,7 +35,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     
     solver.config.search_depth = 90
     solver.config.root_seed = 42
-    solver.config.time_per_move = 1                 # sec
+    solver.config.time_per_move = 15                 # sec
     solver.config.n_particles = 500
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
@@ -64,20 +62,28 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     policy = POMDPs.solve(solver, pomdp)
         
     sim_step = 0
+    println("\nSTARTING STATE:$state")
+    show_state(pomdp, state) #TODO: wrap RockSample in a module
     tic() # start the clock
-#    while (!is_finished(solver, pomdp) &&
     while !isterminal(pomdp, state) &&
         (solver.config.sim_len == -1 || simStep < solver.config.sim_len)
+        println("\n*************** STEP $(sim_step+1) ***************")
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
         next_state = POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
         POMDPs.observation(pomdp, next_state, action, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
-        obs = POMDPs.rand!(rng, obs, observation_distribution) #TODO: check argument order
+        obs = POMDPs.rand!(rng, obs, observation_distribution)
         state = next_state
+        #println("current: $(current_belief.particles[400:405])")
         POMDPs.belief(bu, pomdp, current_belief, action, obs, updated_belief)
         current_belief = updated_belief
+        #println("updated: $(updated_belief.particles[400:405])")
+        println("Action = $action")
+        println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced
+        print  ("Observation = "); show_obs(pomdp, obs) #TODO: change once abstract types are introduced
+        println("Reward = $r")
         sim_step += 1
     end
     run_time = toq() # stop the clock

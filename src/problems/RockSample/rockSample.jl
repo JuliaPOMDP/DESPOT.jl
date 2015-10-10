@@ -11,6 +11,9 @@ import POMDPs:
        initial_belief,
        isterminal,
        rand!
+       
+import Base:
+       print
 
 typealias RockSampleState       Int64
 typealias RockSampleAction      Int64
@@ -481,8 +484,9 @@ end
 function rand!(rng::AbstractRNG,
                sample::RockSampleState,
                distribution::RockSampleTransitionDistribution)
-              
+    
     sample = distribution.pomdp.T[distribution.state+1, distribution.action+1]
+#    println("s=$(distribution.state), a=$(distribution.action), s'=$sample")
     return sample
 end
 
@@ -617,7 +621,7 @@ function rock_set_of(pomdp::RockSample, s::RockSampleState)
     return s & ((1 << pomdp.n_rocks)-1)
 end
 
-function display_state(pomdp::RockSample, s::RockSampleState)
+function show_state(pomdp::RockSample, s::RockSampleState)
   ac = cell_of(pomdp, s)
   for i in 0:pomdp.grid_size-1
     for j in 0:pomdp.grid_size-1
@@ -651,7 +655,7 @@ function random_state(pomdp::RockSample, seed::Uint32)
     return random_number % pomdp.n_states
 end
 
-function display_obs(pomdp::RockSample, obs::RockSampleObservation)
+function show_obs(pomdp::RockSample, obs::RockSampleObservation)
     if obs == pomdp.NONE_OBS
         println("NONE")
     elseif obs == pomdp.GOOD_OBS
