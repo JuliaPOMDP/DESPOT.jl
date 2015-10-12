@@ -129,8 +129,50 @@ function create_observation(pomdp::RockSample)
     return -1
 end
 
+# Creates a default belief structure to store the problem's initial belief
 function create_belief(pomdp::RockSample)
-    return ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0)) #TODO: figure out how to write as a Vector
+    particles = Array(Particle{RockSampleState},0) 
+    belief = ParticleBelief{RockSampleState}(particles)
+    #return ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
+    #return ParticleBelief{RockSampleState}(particles)
+    println("In create_belief: $(typeof(belief))")
+    return belief
+end
+
+function initial_belief(pomdp::RockSample,
+                        #belief::ParticleBelief{RockSampleState} = create_belief(pomdp))
+                        belief = create_belief(pomdp))
+
+    println("In initial_belief: $(typeof(belief))")
+    fill_initial_belief_particles!(pomdp, belief.particles)
+    return belief
+end
+
+function initial_belief(pomdp::RockSample, belief::DESPOT.DESPOTBelief{RockSampleState})
+    
+    println("In initial_belief2: $(typeof(belief))")
+    println(typeof(belief.particles))
+    fill_initial_belief_particles!(pomdp, belief.particles)    
+    return belief
+end
+
+function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Particle{RockSampleState}})
+    
+    p = 1.0/(1 << pomdp.n_rocks)
+    for k = 0:(1 << pomdp.n_rocks)-1
+        push!(particles, Particle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), p))
+    end
+    
+    #TODO: this should not really be here, but can't think of a better place until belief is fixed
+    #shuffle!(belief.particles) #TODO: Uncomment!!!
+    sampled_particles = sample_particles(particles,
+                                         500,
+                                         convert(Uint32, 42 $ 501),
+                                         2147483647)
+                                        
+    # use the (potentially more numerous) new particles
+    particles = sampled_particles
+    return nothing
 end
 
 # accessor functions
@@ -218,26 +260,6 @@ end
 
 function start_state(pomdp::RockSample)
    return make_state(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start);
-end
-
-function initial_belief(pomdp::RockSample; belief = create_belief(pomdp))
-  #particles = Vector{Particle}
-  #println(typeof(belief))
-  p = 1.0/(1 << pomdp.n_rocks)
-  for k = 0:(1 << pomdp.n_rocks)-1
-    push!(belief.particles, Particle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), p))
-  end
-  
-  #TODO: this should not really be here, but can't think of a better place until belief is fixed
-  #shuffle!(belief.particles) #TODO: Uncomment!!!
-  sampled_particles = sample_particles(belief.particles,
-                                        500,
-                                        convert(Uint32, 42 $ 501),
-                                        2147483647)
-                                        
-    # use the (potentially more numerous) new particles
-    belief.particles = sampled_particles
-  return belief
 end
 
 function init_general(pomdp::RockSample, seed::Array{Uint32,1})

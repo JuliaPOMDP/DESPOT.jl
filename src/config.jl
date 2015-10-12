@@ -2,7 +2,7 @@ type DESPOTConfig
   # Maximum depth of the search tree
   search_depth::Int64
   # Random-number seed
-  root_seed::Uint32
+  main_seed::Uint32
   # Amount of CPU time used for search during each move. Does not include the
   # time taken to prune the tree and update the belief.
   time_per_move::Float64

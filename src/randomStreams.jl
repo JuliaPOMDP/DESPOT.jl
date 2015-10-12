@@ -39,10 +39,6 @@ function get_world_seed(streams::RandomStreams)
   return streams.seed $ streams.num_streams
 end
 
-function get_belief_update_seed(streams::RandomStreams)
-  return streams.seed $ (streams.num_streams + 1)
-end
-
 function get_model_seed(streams::RandomStreams)
   return streams.seed $ (streams.num_streams + 2)
 end

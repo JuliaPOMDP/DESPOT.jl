@@ -2,11 +2,10 @@
 #using DESPOT
 
 type DESPOTSolver <: POMDPs.Solver
-    belief::ParticleBelief
+    belief::DESPOTBelief
     lb::DESPOTLowerBound
     ub::DESPOTUpperBound
     random_streams::RandomStreams
-    history::History
     root::VNode
     root_default_action::Int64
     node_count::Int64
@@ -21,11 +20,11 @@ type DESPOTSolver <: POMDPs.Solver
 
   # default constructor
     function DESPOTSolver  (pomdp::POMDP,
-                            belief::ParticleBelief;
+                            belief::DESPOTBelief;
                             lb::DESPOTLowerBound = DESPOTDefaultLowerBound(),
                             ub::DESPOTUpperBound = DESPOTDefaultUpperBound(),
                             search_depth::Int64 = 90,
-                            root_seed::Int64 = 42,
+                            main_seed::Uint32 = convert(Uint32, 42),
                             time_per_move::Float64 = 1.0,                 # sec
                             n_particles::Int64 = 500,
                             pruning_constant::Float64 = 0.0,
@@ -48,7 +47,7 @@ type DESPOTSolver <: POMDPs.Solver
         # Instantiate and initialize config
         this.config = DESPOTConfig()
         this.config.search_depth = search_depth
-        this.config.root_seed = root_seed
+        this.config.main_seed = main_seed
         this.config.time_per_move = time_per_move
         this.config.n_particles = n_particles
         this.config.pruning_constant = pruning_constant
@@ -63,9 +62,8 @@ type DESPOTSolver <: POMDPs.Solver
         # Instantiate random streams
         this.random_streams = RandomStreams(this.config.n_particles,
                                            this.config.search_depth,
-                                           this.config.root_seed)
+                                           this.config.main_seed)
         
-        this.history = History()        
         this.root_default_action = -1 # root_default_action
         
         this.rng = DESPOTRandomNumber(-1)
@@ -178,12 +176,12 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
 #     exit()
     
     if weighted_eu_star > 0.
-        add(solver.history, a_star, o_star)
+        add(solver.belief.history, a_star, o_star)
         n_nodes_added = trial(solver,
                             pomdp,
                             node.q_nodes[a_star].obs_to_node[o_star], # obs_to_node is a Dict
                             n_trials) 
-        remove_last(solver.history)
+        remove_last(solver.belief.history)
     end
     node.n_tree_nodes += n_nodes_added
 
@@ -261,7 +259,7 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                           node.depth,
                           action,
                           first_step_reward,
-                          solver.history,
+                          solver.belief.history,
                           solver.config)
         node.q_nodes[action] = new_qnode
 

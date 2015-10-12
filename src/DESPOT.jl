@@ -9,7 +9,9 @@ import POMDPs:
         action,
         create_policy,
         rand!
-        
+
+include("history.jl")
+
 abstract DESPOTUpperBound
 abstract DESPOTLowerBound
 abstract DESPOTBeliefUpdate
@@ -17,6 +19,27 @@ abstract DESPOTBeliefUpdate
 type DESPOTRandomNumber <: AbstractRNG
     number::Float64
 end
+
+#TODO: figure out how to do this properly!
+type DESPOTBelief{T} <: Belief
+    particles::Vector{Particle{T}} # Array(Particle{T},0)
+    history::History # History()    
+#     function DESPOTBelief()
+#         this = new()
+#         this.particles = Array(Particle{T},0)
+#         this.history = History()
+#         return this
+#     end
+end
+
+#DESPOTBelief{T}() = DESPOTBelief()
+
+# function DESPOTBelief{T}()
+#     this = new()
+#     this.particles = Array(Particle{T},0)
+#     this.history = History()
+#     return this
+# end
 
 function rand!(rng::DESPOTRandomNumber)
     return rng.number
@@ -46,7 +69,7 @@ function rand!(rng::DESPOTDefaultRNG)
 end
 
 include("config.jl")
-include("history.jl")
+
 include("randomStreams.jl")
 #include("world.jl")
 include("qnode.jl")
@@ -92,7 +115,7 @@ fringe_upper_bound(pomdp::POMDP, state::Any) =
 
 # FUNCTIONS
 
-function action(policy::DESPOTPolicy, belief::ParticleBelief)
+function action(policy::DESPOTPolicy, belief::DESPOTBelief)
     new_root (policy.solver, policy.pomdp, belief.particles)
     a, n_trials = search(policy.solver, policy.pomdp)
     return a
@@ -174,10 +197,18 @@ export
     DESPOTSolver,
     DESPOTUpperBound,
     DESPOTLowerBound,
+    DESPOTBelief,
     DESPOTBeliefUpdate,
     DESPOTConfig,
     DESPOTDefaultRNG,
     DESPOTRandomNumber,
+    ##################
+    History, #TODO: need to handle history-related stuff better, place somewhere else
+    add,
+    remove_last,
+    history_size,
+    truncate,
+    ##################
     solve,
     action,
     start_state,

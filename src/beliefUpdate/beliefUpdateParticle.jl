@@ -1,35 +1,44 @@
 import POMDPs: belief
+using DESPOT
 
-type ParticleBeliefUpdater <: POMDPs.BeliefUpdater
+type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
     num_updates::Int64
-    belief_update_seed::Int64
+
     rng::DESPOTDefaultRNG
     transition_distribution::AbstractDistribution
     observation_distribution::AbstractDistribution
+    state_type::DataType
+    observation_type::DataType
+    seed::Uint32
     rand_max::Int64
+    belief_update_seed::Uint32
     particle_weight_threshold::Float64
     eff_particle_fraction::Float64
+    
     
     #pre-allocated variables (TODO: add the rest at some point)
     n_particles::Int64
     next_state::Any
     observation::Any
     new_particle::Particle
-    num_sampled::Int64
+    n_sampled::Int64
     obs_probability::Float64
     
     #default constructor
-    function ParticleBeliefUpdater(pomdp::POMDP,
-                                   belief_update_seed::Uint32 = 42,
-                                   rand_max::Int64 = 2147483647,
-                                   particle_weight_threshold::Float64 = 1e-20,
-                                   eff_particle_fraction::Float64 = 0.05)
+    function DESPOTBeliefUpdater(pomdp::POMDP;
+                                 seed::Uint32 = convert(Uint32, 42),
+                                 rand_max::Int64 = 2147483647,
+                                 n_particles = 500,
+                                 particle_weight_threshold::Float64 = 1e-20,
+                                 eff_particle_fraction::Float64 = 0.05)
         this = new()
-        this.num_updates = 0                               # num_updates
-        this.belief_update_seed = belief_update_seed       # belief_update_seed
-        this.rng = DESPOTDefaultRNG(belief_update_seed, rand_max)
+        this.num_updates = 0                               
+        this.belief_update_seed = seed $ (n_particles + 1)       
+        this.rng = DESPOTDefaultRNG(this.belief_update_seed, rand_max)
         this.transition_distribution  = POMDPs.create_transition_distribution(pomdp)
         this.observation_distribution = POMDPs.create_observation_distribution(pomdp)
+        this.state_type = typeof(POMDPs.create_state(pomdp))
+        this.observation_type = typeof(POMDPs.create_observation(pomdp))
         this.rand_max = rand_max
         this.particle_weight_threshold = particle_weight_threshold
         this.eff_particle_fraction = eff_particle_fraction
@@ -39,13 +48,26 @@ type ParticleBeliefUpdater <: POMDPs.BeliefUpdater
         this.next_state = POMDPs.create_state(pomdp)
         this.observation = POMDPs.create_observation(pomdp)
         this.new_particle = Particle{typeof(this.next_state)}(this.next_state, 1)
-        this.num_sampled = 0
+        this.n_sampled = 0
         this.obs_probability = -1.0
         return this
     end
 end
 
-function reset_belief(bu::ParticleBeliefUpdater)
+# Special create_belief version for DESPOTBeliefUpdater
+function create_belief(bu::DESPOTBeliefUpdater)
+    particles = Array(Particle{bu.state_type},0) 
+    history = History() #TODO: change to parametric
+    belief = DESPOTBelief{bu.state_type}(particles, history)
+    #return DESPOTBelief{RockSampleState}()
+    return belief
+end
+
+function get_belief_update_seed(bu::DESPOTBeliefUpdater)
+  return bu.seed $ (bu.n_particles + 1)
+end
+
+function reset_belief(bu::DESPOTBeliefUpdater)
     bu.num_updates = 0
 end
 
@@ -60,14 +82,14 @@ function normalize!(particles::Vector)
   end
 end
 
-function belief(bu::ParticleBeliefUpdater,
+function belief(bu::DESPOTBeliefUpdater,
                 pomdp::POMDP,
-                current_belief::ParticleBelief,
+                current_belief::DESPOTBelief,
                 action::Any,
                 obs::Any,
-                updated_belief::ParticleBelief = create_belief(pomdp))
+                updated_belief::DESPOTBelief = create_belief(pomdp))
                 
-    println("num current particles 1: $(length(current_belief.particles))")
+#     println("num current particles 1: $(length(current_belief.particles))")
     bu.n_particles = length(current_belief.particles)
     updated_belief.particles = []
 
@@ -77,7 +99,7 @@ function belief(bu::ParticleBeliefUpdater,
         srand(bu.belief_update_seed)
     end
     
-    println("num current particles 2: $(length(current_belief.particles))")
+#     println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
     # Step forward all particles
     for p in current_belief.particles     
@@ -96,21 +118,21 @@ function belief(bu::ParticleBeliefUpdater,
     end
     
 #     println("bu: $(updated_belief.particles[400:405])")
-    println("num particles before: $(length(updated_belief.particles))")
+#    println("num particles before: $(length(updated_belief.particles))")
     normalize!(updated_belief.particles)
-    println("num particles after: $(length(updated_belief.particles))")
+#    println("num particles after: $(length(updated_belief.particles))")
     #println("bu norm.: $(updated_belief.particles[10:15])")
 
     if length(updated_belief.particles) == 0
         # No resulting state is consistent with the given observation, so create
         # states randomly until we have enough that are consistent.
         warn("Particle filter empty. Bootstrapping with random states")
-        bu.num_sampled = 0
-        while bu.num_sampled < bu.n_particles
+        bu.n_sampled = 0
+        while bu.n_sampled < bu.n_particles
             s = random_state(pomdp, convert(Uint32, bu.belief_update_seed))
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
             if bu.obs_probability > 0.
-                bu.num_sampled += 1
+                bu.n_sampled += 1
                 bu.new_particle = Particle(s, bu.obs_probability)
                 push!(updated_belief.particles, bu.new_particle)
             end
@@ -148,8 +170,11 @@ function belief(bu::ParticleBeliefUpdater,
                                              bu.rand_max)
         updated_belief.particles = resampled_new_set
     end
-    #println("bu end: $(updated_belief.particles[10:15])")
-    return updated_belief.particles
+    
+    # Finally, update history
+    add(updated_belief.history, action, obs)
+    
+    return updated_belief
 end
 
 
