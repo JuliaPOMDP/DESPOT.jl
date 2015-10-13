@@ -164,11 +164,13 @@ function belief(bu::DESPOTBeliefUpdater,
     num_eff_particles = 1./num_eff_particles
     if (num_eff_particles < bu.n_particles * bu.eff_particle_fraction) ||
         (length(updated_belief.particles) < bu.n_particles)
-        resampled_new_set = sample_particles(updated_belief.particles,
-                                             bu.n_particles,
-                                             bu.belief_update_seed,
-                                             bu.rand_max)
-        updated_belief.particles = resampled_new_set
+        resampled_set = Array(Particle{bu.state_type}, 0)
+        sample_particles!(resampled_set, 
+                          updated_belief.particles,
+                          bu.n_particles,
+                          bu.belief_update_seed,
+                          bu.rand_max)
+        updated_belief.particles = resampled_set
     end
     
     # Finally, update history

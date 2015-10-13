@@ -22,8 +22,11 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
                              n_particles = n_particles)
                              
     current_belief = create_belief(bu)
+    println("main 1: n_particles: $(length(current_belief.particles))")
     updated_belief = create_belief(bu)
+    println("main 2: n_particles: $(length(updated_belief.particles))")
     initial_belief(pomdp, current_belief)
+    println("main 3: n_particles: $(length(current_belief.particles))")
     
     custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
@@ -54,7 +57,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     solver.config.time_per_move = 15                 # sec
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
-    solver.config.sim_len = -1
+    solver.config.sim_len = -1 # default: -1
     solver.config.max_trials = -1 # default: -1
     solver.config.approximate_ubound = false
     solver.config.tiny = 1e-6
@@ -70,7 +73,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     show_state(pomdp, state) #TODO: wrap RockSample in a module
     tic() # start the clock
     while !isterminal(pomdp, state) &&
-        (solver.config.sim_len == -1 || simStep < solver.config.sim_len)
+        (solver.config.sim_len == -1 || sim_step < solver.config.sim_len)
         println("\n*************** STEP $(sim_step+1) ***************")
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
@@ -83,6 +86,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
 # #         println("current belief of length $(length(current_belief.particles)) before: $(current_belief.particles[400:405])")
         POMDPs.belief(bu, pomdp, current_belief, action, obs, updated_belief)
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
+        println("main 4: n_particles: $(length(current_belief.particles))")
         #println("current belief of length $(length(current_belief.particles)) after: $(current_belief.particles[400:405])")
         println("Action = $action")
         println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced

@@ -76,12 +76,11 @@ function almost_the_same(x::Float64, y::Float64, config::DESPOTConfig)
 end
 
 # TODO: This probably can be replaced by just a weighted sampling call - check later
-function sample_particles(pool::Vector, #TODO: 
-                          N::Int64,
-                          seed::Uint32,
-                          rand_max::Int64)
-
-    sampled_particles = Array(Particle, 0)
+function sample_particles!(sampled_particles::Vector,
+                           pool::Vector, #TODO: see if this can be tightened
+                           N::Int64,
+                           seed::Uint32,
+                           rand_max::Int64)
 
     # Ensure particle weights sum to exactly 1
     sum_without_last =  0;

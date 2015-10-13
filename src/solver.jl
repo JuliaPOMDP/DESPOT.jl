@@ -104,8 +104,9 @@ function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
                                                             particles,
                                                             solver.ub.upper_bound_act,
                                                             solver.config)
-  println("root lb: $lbound, default action: $(solver.root_default_action)")
-  #exit()
+  #println("root lb: $lbound, default action: $(solver.root_default_action)")
+  println("new_root: n_particles: $(length(particles))")
+  println("new_root: particles: $(particles[400:405])")
                                                            
   ubound::Float64 = upper_bound(solver.ub,
                                 pomdp,
@@ -138,7 +139,6 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
     
     if ((solver.config.max_trials > 0) && (n_trials >= solver.config.max_trials)) ||
        ((solver.config.time_per_move > 0) && ((time() - startTime) >= solver.config.time_per_move))
-       
        stop_now = true
     end
   end
@@ -146,11 +146,11 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
   @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
   @printf("Number of trials: %d\n", n_trials)
 
-  if (solver.config.pruning_constant != 0)
+  if solver.config.pruning_constant != 0
     # Number of non-child belief nodes pruned
     total_pruned = prune(solver.root)
     act = solver.root.prunedAction
-    return act == -1 ? solver.root_default_action : act, currentTrials
+    return (act == -1 ? solver.root_default_action : act), currentTrials
   elseif !solver.root.in_tree
       println("Root not in tree")
     return solver.root_default_action, n_trials
@@ -196,7 +196,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
 
     for a in 0:pomdp.n_actions-1
         ub = node.q_nodes[a].first_step_reward +
-              pomdp.discount * get_upper_bound(node.q_nodes[a]) # it's an array!
+              pomdp.discount * get_upper_bound(node.q_nodes[a]) # it's an array
         if ub > node.ub
             node.ub = ub
             node.best_ub_action = a
