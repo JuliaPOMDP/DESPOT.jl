@@ -117,7 +117,7 @@ fringe_upper_bound(pomdp::POMDP, state::Any) =
 
 function action(policy::DESPOTPolicy, belief::DESPOTBelief)
     new_root (policy.solver, policy.pomdp, belief.particles)
-    a, n_trials = search(policy.solver, policy.pomdp)
+    a, n_trials = search(policy.solver, policy.pomdp) #TODO: return n_trials some other way
     return a
 end
 

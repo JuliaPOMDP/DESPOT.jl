@@ -22,11 +22,11 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
                              n_particles = n_particles)
                              
     current_belief = create_belief(bu)
-    println("main 1: n_particles: $(length(current_belief.particles))")
+#    println("main 1: n_particles: $(length(current_belief.particles))")
     updated_belief = create_belief(bu)
-    println("main 2: n_particles: $(length(updated_belief.particles))")
+#    println("main 2: n_particles: $(length(updated_belief.particles))")
     initial_belief(pomdp, current_belief)
-    println("main 3: n_particles: $(length(current_belief.particles))")
+#    println("main 3: n_particles: $(length(current_belief.particles))")
     
     custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
@@ -54,11 +54,11 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     # Setting either parameter to 0 or a negative number disables that limit.
     
     solver.config.search_depth = 90
-    solver.config.time_per_move = 15                 # sec
+    solver.config.time_per_move = -1                # sec
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
-    solver.config.sim_len = -1 # default: -1
-    solver.config.max_trials = -1 # default: -1
+    solver.config.sim_len = 3 # default: -1
+    solver.config.max_trials = 100 # default: -1
     solver.config.approximate_ubound = false
     solver.config.tiny = 1e-6
     solver.config.debug = 0

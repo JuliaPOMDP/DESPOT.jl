@@ -93,6 +93,7 @@ function belief(bu::DESPOTBeliefUpdater,
     bu.n_particles = length(current_belief.particles)
     updated_belief.particles = []
 
+    #TODO: is this needed here?
     if OS_NAME == :Linux
         seed = Cuint[bu.belief_update_seed]
     else #Windows, etc
@@ -102,15 +103,19 @@ function belief(bu::DESPOTBeliefUpdater,
 #     println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
     # Step forward all particles
+    i=1
+    println("random seed: $seed")
     for p in current_belief.particles     
         POMDPs.transition(pomdp, p.state, action, bu.transition_distribution)
         bu.next_state = POMDPs.rand!(bu.rng, bu.next_state, bu.transition_distribution) # update state to next state
 #         if (p.state == bu.next_state)
 #             println("States equal: $(p.state) and $(bu.next_state)")
 #         end
+        
         POMDPs.observation(pomdp, bu.next_state, action, bu.observation_distribution)
-        bu.observation = POMDPs.rand!(bu.rng, obs, bu.observation_distribution)
+        bu.observation = POMDPs.rand!(bu.rng, bu.observation, bu.observation_distribution)
         bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
+#        println(bu.obs_probability)
         if bu.obs_probability > 0.0
             bu.new_particle = Particle(bu.next_state, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)

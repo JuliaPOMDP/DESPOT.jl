@@ -528,7 +528,7 @@ end
 
 # for "external" execution - produce [next] observation
 function rand!(rng::AbstractRNG,
-               sample::RockSampleState,
+               sample::RockSampleObservation,
                distribution::RockSampleObservationDistribution)
               
     if (distribution.action < 5)
@@ -538,6 +538,7 @@ function rand!(rng::AbstractRNG,
         rock_cell = distribution.pomdp.rocks[distribution.action - 4] # would be [action-5] with 0-based indexing
         agent_cell = cell_of(distribution.pomdp, distribution.next_state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
+        
         if (rand!(rng) <= eff) == rock_status(distribution.action - 5, distribution.next_state)
             sample = distribution.pomdp.GOOD_OBS
         else
@@ -584,7 +585,8 @@ function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObs
   rockCell = distribution.pomdp.rocks[rock+1]
   agentCell = cell_of(distribution.pomdp, distribution.next_state)
 
-  eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
+  #eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1] #UNCOMMENT!!!
+  eff = 0.5
   if (obs == rock_status(rock, distribution.next_state))
     return eff
   else
