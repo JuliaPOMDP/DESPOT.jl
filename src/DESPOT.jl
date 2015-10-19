@@ -46,12 +46,12 @@ function rand!(rng::DESPOTRandomNumber)
 end
 
 type DESPOTDefaultRNG <: AbstractRNG
-    seed::Uint32
+    seed::Array{Uint32,1}
     rand_max::Int64
-    
+      
     function DESPOTDefaultRNG(seed::Uint32, rand_max::Int64)
         this = new()
-        this.seed = seed
+        this.seed = Cuint[seed]
         this.rand_max = rand_max
         return this
     end    
@@ -59,8 +59,8 @@ end
 
 function rand!(rng::DESPOTDefaultRNG)
     if OS_NAME == :Linux
-        seed = Cuint[rng.seed]
-        random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) / rng.rand_max
+#        seed = Cuint[rng.seed]
+        random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc
         srand(seed)
         random_number = rand()

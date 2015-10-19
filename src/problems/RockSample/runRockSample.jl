@@ -84,7 +84,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         obs = POMDPs.rand!(rng, obs, observation_distribution)
         state = next_state
 # #         println("current belief of length $(length(current_belief.particles)) before: $(current_belief.particles[400:405])")
-        POMDPs.belief(bu, pomdp, current_belief, action, obs, updated_belief)
+        POMDPs.update(bu, current_belief, action, obs, updated_belief)
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
         println("main 4: n_particles: $(length(current_belief.particles))")
         #println("current belief of length $(length(current_belief.particles)) after: $(current_belief.particles[400:405])")

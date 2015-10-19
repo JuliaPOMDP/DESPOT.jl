@@ -1,9 +1,9 @@
-import POMDPs: belief
+import POMDPs: update
 using DESPOT
 
 type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
+    pomdp::POMDP
     num_updates::Int64
-
     rng::DESPOTDefaultRNG
     transition_distribution::AbstractDistribution
     observation_distribution::AbstractDistribution
@@ -32,6 +32,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
                                  particle_weight_threshold::Float64 = 1e-20,
                                  eff_particle_fraction::Float64 = 0.05)
         this = new()
+        this.pomdp = pomdp
         this.num_updates = 0                               
         this.belief_update_seed = seed $ (n_particles + 1)       
         this.rng = DESPOTDefaultRNG(this.belief_update_seed, rand_max)
@@ -82,8 +83,7 @@ function normalize!(particles::Vector)
   end
 end
 
-function belief(bu::DESPOTBeliefUpdater,
-                pomdp::POMDP,
+function update(bu::DESPOTBeliefUpdater,
                 current_belief::DESPOTBelief,
                 action::Any,
                 obs::Any,
@@ -100,20 +100,30 @@ function belief(bu::DESPOTBeliefUpdater,
         srand(bu.belief_update_seed)
     end
     
+    
+    
 #     println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
-    # Step forward all particles
+# # #     # Step forward all particles
     i=1
     println("random seed: $seed")
-    for p in current_belief.particles     
-        POMDPs.transition(pomdp, p.state, action, bu.transition_distribution)
-        bu.next_state = POMDPs.rand!(bu.rng, bu.next_state, bu.transition_distribution) # update state to next state
+    for p in current_belief.particles
+        rand_num = rand!(bu.rng) #TODO: preallocate for speed
+        rng = DESPOTRandomNumber(rand_num)
+        
+        POMDPs.transition(bu.pomdp, p.state, action, bu.transition_distribution)
+        bu.next_state = POMDPs.rand!(rng, bu.next_state, bu.transition_distribution) # update state to next state
 #         if (p.state == bu.next_state)
 #             println("States equal: $(p.state) and $(bu.next_state)")
 #         end
+
+        if i < 11
+            println("random number [$i]: $rand_num")
+            i=i+1
+        end
         
-        POMDPs.observation(pomdp, bu.next_state, action, bu.observation_distribution)
-        bu.observation = POMDPs.rand!(bu.rng, bu.observation, bu.observation_distribution)
+        POMDPs.observation(bu.pomdp, bu.next_state, action, bu.observation_distribution)
+        bu.observation = POMDPs.rand!(rng, bu.observation, bu.observation_distribution)
         bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
 #        println(bu.obs_probability)
         if bu.obs_probability > 0.0

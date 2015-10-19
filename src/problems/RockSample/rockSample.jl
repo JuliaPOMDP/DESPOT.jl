@@ -539,7 +539,9 @@ function rand!(rng::AbstractRNG,
         agent_cell = cell_of(distribution.pomdp, distribution.next_state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
-        if (rand!(rng) <= eff) == rock_status(distribution.action - 5, distribution.next_state)
+        rand_num = rand!(rng) #TODO: remove -debug
+        if (rand_num <= eff) == rock_status(distribution.action - 5, distribution.next_state)  #TODO: remove -debug       
+        #if (rand!(rng) <= eff) == rock_status(distribution.action - 5, distribution.next_state)
             sample = distribution.pomdp.GOOD_OBS
         else
             sample = distribution.pomdp.BAD_OBS
