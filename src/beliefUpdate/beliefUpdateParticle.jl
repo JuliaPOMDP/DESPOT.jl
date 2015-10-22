@@ -93,20 +93,23 @@ function update(bu::DESPOTBeliefUpdater,
     bu.n_particles = length(current_belief.particles)
     updated_belief.particles = []
 
-    #TODO: is this needed here?
-    if OS_NAME == :Linux
-        seed = Cuint[bu.belief_update_seed]
-    else #Windows, etc
-        srand(bu.belief_update_seed)
-    end
+    #reset RNG
+    bu.rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
+
+#     #TODO: is this needed here?
+#     if OS_NAME == :Linux
+#         seed = Cuint[bu.belief_update_seed]
+#     else #Windows, etc
+#         srand(bu.belief_update_seed)
+#     end
     
     
     
 #     println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
 # # #     # Step forward all particles
-    i=1
-    println("random seed: $seed")
+#     i=1
+#    println("random seed: $seed")
     for p in current_belief.particles
         rand_num = rand!(bu.rng) #TODO: preallocate for speed
         rng = DESPOTRandomNumber(rand_num)
@@ -117,10 +120,10 @@ function update(bu::DESPOTBeliefUpdater,
 #             println("States equal: $(p.state) and $(bu.next_state)")
 #         end
 
-        if i < 11
-            println("random number [$i]: $rand_num")
-            i=i+1
-        end
+#         if i < 11
+#             println("random number [$i]: $rand_num")
+#             i=i+1
+#         end
         
         POMDPs.observation(bu.pomdp, bu.next_state, action, bu.observation_distribution)
         bu.observation = POMDPs.rand!(rng, bu.observation, bu.observation_distribution)
