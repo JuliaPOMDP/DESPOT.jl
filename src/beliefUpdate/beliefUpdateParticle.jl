@@ -108,7 +108,9 @@ function update(bu::DESPOTBeliefUpdater,
 #     println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
 # # #     # Step forward all particles
-#     i=1
+     i=1
+     debug = 0
+     
 #    println("random seed: $seed")
     for p in current_belief.particles
         rand_num = rand!(bu.rng) #TODO: preallocate for speed
@@ -120,15 +122,32 @@ function update(bu::DESPOTBeliefUpdater,
 #             println("States equal: $(p.state) and $(bu.next_state)")
 #         end
 
-#         if i < 11
-#             println("random number [$i]: $rand_num")
-#             i=i+1
+
+         #get observation distribution for (a,s') tuple
+         POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
+#         bu.observation = POMDPs.rand!(rng, bu.observation, bu.observation_distribution)
+        
+        low = 490
+        high = 500
+        if (i <= high) && (i >= low)
+            debug = 1
+        else
+            debug = 0
+        end
+        
+        bu.obs_probability = pdf(bu.observation_distribution, obs, debug)
+        
+        if (i <= high) && (i >= low)
+            println("random number [$i]: $rand_num")
+            println("obs[$i]=$(obs), prob = $(bu.obs_probability)")
+        end
+        i=i+1
+        
+#         #TODO: remove
+#         if (abs(bu.obs_probability - 0.02)>1.0e-6)
+#             println(bu.obs_probability)
 #         end
         
-        POMDPs.observation(bu.pomdp, bu.next_state, action, bu.observation_distribution)
-        bu.observation = POMDPs.rand!(rng, bu.observation, bu.observation_distribution)
-        bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
-#        println(bu.obs_probability)
         if bu.obs_probability > 0.0
             bu.new_particle = Particle(bu.next_state, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)
@@ -136,9 +155,9 @@ function update(bu::DESPOTBeliefUpdater,
     end
     
 #     println("bu: $(updated_belief.particles[400:405])")
-#    println("num particles before: $(length(updated_belief.particles))")
+    println("before: $(updated_belief.particles[495:500])")
     normalize!(updated_belief.particles)
-#    println("num particles after: $(length(updated_belief.particles))")
+    println("after: $(updated_belief.particles[495:500])")
     #println("bu norm.: $(updated_belief.particles[10:15])")
 
     if length(updated_belief.particles) == 0

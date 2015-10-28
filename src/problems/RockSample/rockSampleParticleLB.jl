@@ -47,7 +47,7 @@ function lower_bound(lb::RockSampleParticleLB,
                      config::DESPOTConfig)
 
     state_seen = Dict{Int64,Int64}() #TODO: move to the structure
-#    println("$(particles[490:500])"); exit()
+#    println("$(particles[1:5])"); #exit()
     
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok

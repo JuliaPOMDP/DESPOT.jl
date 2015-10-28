@@ -53,7 +53,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     # limiting time_per_move, by limiting the number of trials per move, or both.
     # Setting either parameter to 0 or a negative number disables that limit.
     
-    solver.config.search_depth = 90
+    solver.config.search_depth = 90 #default: 90
     solver.config.time_per_move = -1                # sec
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
@@ -78,13 +78,15 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
         next_state = POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
-        POMDPs.observation(pomdp, next_state, action, observation_distribution)
+        POMDPs.observation(pomdp, state, action, next_state, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
         obs = POMDPs.rand!(rng, obs, observation_distribution)
         state = next_state
 # #         println("current belief of length $(length(current_belief.particles)) before: $(current_belief.particles[400:405])")
         POMDPs.update(bu, current_belief, action, obs, updated_belief)
+        println("current belief: $(current_belief.particles[1:5])")
+        println("updated belief: $(updated_belief.particles[1:5])")
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
         println("main 4: n_particles: $(length(current_belief.particles))")
         #println("current belief of length $(length(current_belief.particles)) after: $(current_belief.particles[400:405])")

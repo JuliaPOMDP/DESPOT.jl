@@ -106,7 +106,7 @@ function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
                                                             solver.config)
   #println("root lb: $lbound, default action: $(solver.root_default_action)")
   println("new_root: n_particles: $(length(particles))")
-  println("new_root: particles: $(particles[400:405])")
+  println("new_root: particles: $(particles[401:405])")
                                                            
   ubound::Float64 = upper_bound(solver.ub,
                                 pomdp,
@@ -134,6 +134,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
                              pomdp.discount) > 1e-6)
                              && !stop_now)
 
+#    println("trial $(n_trials+1)")
     trial(solver, pomdp, solver.root, n_trials)
     n_trials += 1
     
@@ -172,7 +173,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     n_nodes_added = 0
     o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star], solver.root, solver.config, pomdp.discount) # it's an array!
     
-#     println("o_star=$o_star, weighted_eu_star=$weighted_eu_star")
+#     println("o_star=$o_star, a_star=$a_star, weighted_eu_star=$weighted_eu_star")
 #     exit()
     
     if weighted_eu_star > 0.
@@ -281,9 +282,10 @@ function step(solver::DESPOTSolver, pomdp::POMDP, state::Any, rand_num::Float64,
 #    println("s: $state, a: $action, T[$state,$action]=$(pomdp.T[state+1,action+1])")
     solver.next_state = POMDPs.rand!(solver.rng, solver.next_state, solver.transition_distribution)
 #    println("solver.step: s': $(solver.next_state)")
-    POMDPs.observation(pomdp, solver.next_state, action, solver.observation_distribution)
+    POMDPs.observation(pomdp, state, action, solver.next_state, solver.observation_distribution)
     solver.observation = POMDPs.rand!(solver.rng, solver.observation, solver.observation_distribution)
     solver.reward = POMDPs.reward(pomdp, state, action)
+#    println("s'=$(solver.next_state), o=$(solver.observation), r=$(solver.reward)")
     
     return solver.next_state, solver.reward, solver.observation
 end

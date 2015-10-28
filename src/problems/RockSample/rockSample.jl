@@ -32,12 +32,13 @@ end
 
 type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
     pomdp::POMDP
-    next_state::RockSampleState
+    state::RockSampleState
     action::RockSampleAction
+    next_state::RockSampleState
 end
 
 function create_observation_distribution(pomdp::POMDP)
-    return RockSampleObservationDistribution(pomdp, -1, -1)
+    return RockSampleObservationDistribution(pomdp, -1, -1, -1)
 end
 
 type RockSample <: POMDPs.POMDP
@@ -503,11 +504,13 @@ function transition(pomdp::RockSample,
 end
 
 function observation(pomdp::RockSample,
-                     next_state::RockSampleState,
+                     state::RockSampleState,
                      action::RockSampleAction,
+                     next_state::RockSampleState,
                      distribution::RockSampleObservationDistribution =
                                 create_observation_distribution(pomdp))
     distribution.pomdp = pomdp
+    distribution.state = next_state    
     distribution.action = action
     distribution.next_state = next_state
 
@@ -536,11 +539,11 @@ function rand!(rng::AbstractRNG,
                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
     else
         rock_cell = distribution.pomdp.rocks[distribution.action - 4] # would be [action-5] with 0-based indexing
-        agent_cell = cell_of(distribution.pomdp, distribution.next_state)
+        agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
         rand_num = rand!(rng) #TODO: remove -debug
-        if (rand_num <= eff) == rock_status(distribution.action - 5, distribution.next_state)  #TODO: remove -debug       
+        if (rand_num <= eff) == rock_status(distribution.action - 5, distribution.state)  #TODO: remove -debug       
         #if (rand!(rng) <= eff) == rock_status(distribution.action - 5, distribution.next_state)
             sample = distribution.pomdp.GOOD_OBS
         else
@@ -561,7 +564,7 @@ function step(pomdp::RockSample,
     return newState, reward
 end
 
-function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation)
+function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation, debug::Int64)
   # Terminal state should match terminal obs
   if isterminal(distribution.pomdp, distribution.next_state)
       if obs == distribution.pomdp.TERMINAL_OBS
@@ -587,9 +590,17 @@ function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObs
   rockCell = distribution.pomdp.rocks[rock+1]
   agentCell = cell_of(distribution.pomdp, distribution.next_state)
 
-  #eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1] #UNCOMMENT!!!
-  eff = 0.5
-  if (obs == rock_status(rock, distribution.next_state))
+  eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
+  if debug > 0
+      println("rock status: $(rock_status(rock, distribution.next_state))")
+      println("obs: $obs")
+  end
+  
+  
+#   if (obs == rock_status(rock, distribution.next_state))
+  rstatus = rock_status(rock, distribution.next_state)
+  if ((obs == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
+     ((obs == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
     return eff
   else
     return 1. - eff
