@@ -52,7 +52,7 @@ type QNode
             this.ub = ub
             
             for (obs, particles) in this.obs_to_particles
-                obs_weight_sum = 0.
+                obs_weight_sum = 0.0
                 for p in particles
                     obs_weight_sum += p.weight
                 end
@@ -66,7 +66,7 @@ type QNode
                                                                config)
                 u::Float64 = upper_bound(ub, pomdp, particles, config)
                 remove_last(this.history)
-                this.obs_to_node[obs] = VNode(particles, l, u, this.depth + 1, obs_weight_sum, false, config) # TODO: check depth
+                this.obs_to_node[obs] = VNode(particles, l, u, this.depth+1, obs_weight_sum, false, config) # TODO: check depth
             end
             return this
         end

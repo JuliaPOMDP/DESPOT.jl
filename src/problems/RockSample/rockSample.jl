@@ -157,32 +157,36 @@ function initial_belief(pomdp::RockSample, belief::DESPOT.DESPOTBelief{RockSampl
     
 #     println("In initial_belief2: $(typeof(belief))")
 #     println(typeof(belief.particles))
-    println("initial_belief: pointer before: $(pointer(belief.particles))")
+#     println("initial_belief: pointer before: $(pointer(belief.particles))")
     fill_initial_belief_particles!(pomdp, belief.particles)
-    println("initial_belief: pointer after: $(pointer(belief.particles))")
-    println("initial_belief: n_particles: $(length(belief.particles))")
+#     println("initial_belief: pointer after: $(pointer(belief.particles))")
+#     println("initial_belief: n_particles: $(length(belief.particles))")
     return belief
 end
 
 #function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Particle{RockSampleState}})
 function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Particle{RockSampleState}})    
     
+    n_particles = length(particles)
+    println("fill_initial_belief: n_particles = $n_particles")
     pool = Array(Particle{RockSampleState},0)   
-    println("fill: particle pointer: $(pointer(particles))")
+#    println("fill: particle pointer: $(pointer(particles))")
     
     p = 1.0/(1 << pomdp.n_rocks)
-    for k = 0:(1 << pomdp.n_rocks)-1
+    for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
         push!(pool, Particle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), p))
     end
     
     #TODO: this should not really be here, but can't think of a better place until belief is fixed
     #shuffle!(belief.particles) #TODO: Uncomment!!!
-    sampled_particles = sample_particles!(particles,
-                                          pool,
-                                          500,
-                                          convert(Uint32, 42 $ 501),
-                                          2147483647)
-    println("fill: sampled pointer: $(pointer(sampled_particles))")                                        
+
+    #sampled_particles = sample_particles!(particles,
+   sample_particles!(particles,
+                     pool,
+                     n_particles,
+                     convert(Uint32, 42 $ (n_particles+1)), #TODO: fix this
+                     2147483647) #TODO: fix this
+    #println("fill: sampled pointer: $(pointer(sampled_particles))")                                        
     # use the (potentially more numerous) new particles
     #particles = sampled_particles
     println("fill: particle pointer: $(pointer(particles))")
@@ -721,7 +725,7 @@ function show_obs(pomdp::RockSample, obs::RockSampleObservation)
 end
 
 #TODO: hack! Only needed until belief is fixed
-function sample_particles(pool::Vector, #TODO: 
+function sample_particles(pool::Vector,
                           N::Int64,
                           seed::Uint32,
                           rand_max::Int64)

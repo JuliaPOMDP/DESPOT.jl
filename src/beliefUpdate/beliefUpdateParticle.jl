@@ -43,9 +43,9 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
         this.rand_max = rand_max
         this.particle_weight_threshold = particle_weight_threshold
         this.eff_particle_fraction = eff_particle_fraction
+        this.n_particles = n_particles
         
         # init preallocated variables
-        this.n_particles = 0
         this.next_state = POMDPs.create_state(pomdp)
         this.observation = POMDPs.create_observation(pomdp)
         this.new_particle = Particle{typeof(this.next_state)}(this.next_state, 1)
@@ -57,7 +57,7 @@ end
 
 # Special create_belief version for DESPOTBeliefUpdater
 function create_belief(bu::DESPOTBeliefUpdater)
-    particles = Array(Particle{bu.state_type},0) 
+    particles = Array(Particle{bu.state_type},bu.n_particles) 
     history = History() #TODO: change to parametric
     belief = DESPOTBelief{bu.state_type}(particles, history)
     #return DESPOTBelief{RockSampleState}()
@@ -90,7 +90,9 @@ function update(bu::DESPOTBeliefUpdater,
                 updated_belief::DESPOTBelief = create_belief(pomdp))
                 
 #     println("num current particles 1: $(length(current_belief.particles))")
-    bu.n_particles = length(current_belief.particles)
+    if bu.n_particles != length(current_belief.particles)
+        err("belief size mismatch: belief updater - $(bu.n_particles) particles, belief - $(length(current_belief.particles))")  
+    end
     updated_belief.particles = []
 
     #reset RNG
@@ -108,10 +110,12 @@ function update(bu::DESPOTBeliefUpdater,
 #     println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
 # # #     # Step forward all particles
-     i=1
-     debug = 0
+    i=1
+    debug = 0
+    low = 1
+    high = 5
      
-#    println("random seed: $seed")
+    println("random seed: $(bu.belief_update_seed)")
     for p in current_belief.particles
         rand_num = rand!(bu.rng) #TODO: preallocate for speed
         rng = DESPOTRandomNumber(rand_num)
@@ -127,8 +131,6 @@ function update(bu::DESPOTBeliefUpdater,
          POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
 #         bu.observation = POMDPs.rand!(rng, bu.observation, bu.observation_distribution)
         
-        low = 490
-        high = 500
         if (i <= high) && (i >= low)
             debug = 1
         else
@@ -154,10 +156,10 @@ function update(bu::DESPOTBeliefUpdater,
         end
     end
     
-#     println("bu: $(updated_belief.particles[400:405])")
-    println("before: $(updated_belief.particles[495:500])")
+#    println("bu: $(updated_belief.particles)")
+#    println("before: $(updated_belief.particles[495:500])")
     normalize!(updated_belief.particles)
-    println("after: $(updated_belief.particles[495:500])")
+#    println("after: $(updated_belief.particles)")
     #println("bu norm.: $(updated_belief.particles[10:15])")
 
     if length(updated_belief.particles) == 0
@@ -201,7 +203,7 @@ function update(bu::DESPOTBeliefUpdater,
     num_eff_particles = 1./num_eff_particles
     if (num_eff_particles < bu.n_particles * bu.eff_particle_fraction) ||
         (length(updated_belief.particles) < bu.n_particles)
-        resampled_set = Array(Particle{bu.state_type}, 0)
+        resampled_set = Array(Particle{bu.state_type}, bu.n_particles)
         sample_particles!(resampled_set, 
                           updated_belief.particles,
                           bu.n_particles,

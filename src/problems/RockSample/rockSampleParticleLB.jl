@@ -46,14 +46,15 @@ function lower_bound(lb::RockSampleParticleLB,
                      ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
 
+#    println("$(particles)")
     state_seen = Dict{Int64,Int64}() #TODO: move to the structure
-#    println("$(particles[1:5])"); #exit()
+#     println("$(particles[1:5])"); #exit()
     
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
     if length(particles) > 0
         if isterminal(pomdp, particles[1].state)
-            return 0., -1 # lower bound value and best action
+            return 0.0, -1 # lower bound value and best action
         end
     end
 

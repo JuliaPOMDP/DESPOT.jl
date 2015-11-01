@@ -98,7 +98,7 @@ end
 #TODO: Figure out why particles::Vector{Particles} does not work
 function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
   
-  #println(particles)
+#  println(particles)
   lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
                                                             pomdp,
                                                             particles,
@@ -106,7 +106,7 @@ function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
                                                             solver.config)
   #println("root lb: $lbound, default action: $(solver.root_default_action)")
   println("new_root: n_particles: $(length(particles))")
-  println("new_root: particles: $(particles[401:405])")
+#   println("new_root: particles: $(particles[401:405])")
                                                            
   ubound::Float64 = upper_bound(solver.ub,
                                 pomdp,
@@ -134,7 +134,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
                              pomdp.discount) > 1e-6)
                              && !stop_now)
 
-#    println("trial $(n_trials+1)")
+    println("trial $(n_trials+1)")
     trial(solver, pomdp, solver.root, n_trials)
     n_trials += 1
     
@@ -144,6 +144,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
     end
   end
 
+  println("root particles after: $(solver.root.particles[1:5])")
   @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
   @printf("Number of trials: %d\n", n_trials)
 
@@ -173,7 +174,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     n_nodes_added = 0
     o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star], solver.root, solver.config, pomdp.discount) # it's an array!
     
-#     println("o_star=$o_star, a_star=$a_star, weighted_eu_star=$weighted_eu_star")
+    println("o_star=$o_star, a_star=$a_star, weighted_eu_star=$weighted_eu_star")
 #     exit()
     
     if weighted_eu_star > 0.
@@ -210,6 +211,8 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
         #error("Lower bound ($(node.lb)) is higher than upper bound ($(node.ub))")
         warn("Lower bound ($(node.lb)) is higher than upper bound ($(node.ub))")
     end
+
+    println("root lb = $(node.lb), ub = $(node.ub)")
 
     if !node.in_tree
         node.in_tree = true

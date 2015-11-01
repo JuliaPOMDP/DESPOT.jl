@@ -13,6 +13,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     pomdp       = RockSample(grid_size, num_rocks)
     seed = convert(Uint32, 42)
     n_particles = 500 # number of particles to use in the solver and the belief updater
+                    # default: 500
     rand_max = 2147483647
     
     # construct a belief updater and specify some of the optional keyword parameters
@@ -57,8 +58,8 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     solver.config.time_per_move = -1                # sec
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
-    solver.config.sim_len = 3 # default: -1
-    solver.config.max_trials = 100 # default: -1
+    solver.config.sim_len = 1 # default: -1
+    solver.config.max_trials = 6 # default: -1
     solver.config.approximate_ubound = false
     solver.config.tiny = 1e-6
     solver.config.debug = 0
