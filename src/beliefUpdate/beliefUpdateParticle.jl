@@ -48,7 +48,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
         # init preallocated variables
         this.next_state = POMDPs.create_state(pomdp)
         this.observation = POMDPs.create_observation(pomdp)
-        this.new_particle = Particle{typeof(this.next_state)}(this.next_state, 1)
+        this.new_particle = Particle{typeof(this.next_state)}(this.next_state, 1, 1) #placeholder
         this.n_sampled = 0
         this.obs_probability = -1.0
         return this
@@ -110,12 +110,12 @@ function update(bu::DESPOTBeliefUpdater,
 #     println("num current particles 2: $(length(current_belief.particles))")
     #println("in update, current: $(current_belief.particles[10:15])")
 # # #     # Step forward all particles
-    i=1
-    debug = 0
-    low = 1
-    high = 5
+#     i=1
+    debug = 0 #TODO: remove
+#     low = 1
+#     high = 5
      
-    println("random seed: $(bu.belief_update_seed)")
+#     println("random seed: $(bu.belief_update_seed)")
     for p in current_belief.particles
         rand_num = rand!(bu.rng) #TODO: preallocate for speed
         rng = DESPOTRandomNumber(rand_num)
@@ -131,19 +131,19 @@ function update(bu::DESPOTBeliefUpdater,
          POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
 #         bu.observation = POMDPs.rand!(rng, bu.observation, bu.observation_distribution)
         
-        if (i <= high) && (i >= low)
-            debug = 1
-        else
-            debug = 0
-        end
+#         if (i <= high) && (i >= low)
+#             debug = 1
+#         else
+#             debug = 0
+#         end
         
         bu.obs_probability = pdf(bu.observation_distribution, obs, debug)
         
-        if (i <= high) && (i >= low)
-            println("random number [$i]: $rand_num")
-            println("obs[$i]=$(obs), prob = $(bu.obs_probability)")
-        end
-        i=i+1
+#         if (i <= high) && (i >= low)
+#             println("random number [$i]: $rand_num")
+#             println("obs[$i]=$(obs), prob = $(bu.obs_probability)")
+#         end
+#         i=i+1
         
 #         #TODO: remove
 #         if (abs(bu.obs_probability - 0.02)>1.0e-6)
@@ -151,7 +151,8 @@ function update(bu::DESPOTBeliefUpdater,
 #         end
         
         if bu.obs_probability > 0.0
-            bu.new_particle = Particle(bu.next_state, p.weight * bu.obs_probability)
+#            bu.new_particle = Particle(bu.next_state, p.weight * bu.obs_probability)
+            bu.new_particle = Particle(bu.next_state, p.id, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)
         end
     end

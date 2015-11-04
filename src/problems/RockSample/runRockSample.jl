@@ -58,8 +58,8 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     solver.config.time_per_move = -1                # sec
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
-    solver.config.sim_len = 1 # default: -1
-    solver.config.max_trials = 6 # default: -1
+    solver.config.sim_len = -1 # default: -1
+    solver.config.max_trials = 1000 # default: -1
     solver.config.approximate_ubound = false
     solver.config.tiny = 1e-6
     solver.config.debug = 0
@@ -86,10 +86,10 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         state = next_state
 # #         println("current belief of length $(length(current_belief.particles)) before: $(current_belief.particles[400:405])")
         POMDPs.update(bu, current_belief, action, obs, updated_belief)
-        println("current belief: $(current_belief.particles[1:5])")
-        println("updated belief: $(updated_belief.particles[1:5])")
+#         println("current belief: $(current_belief.particles[1:5])")
+#         println("updated belief: $(updated_belief.particles[1:5])")
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
-        println("main 4: n_particles: $(length(current_belief.particles))")
+#         println("main 4: n_particles: $(length(current_belief.particles))")
         #println("current belief of length $(length(current_belief.particles)) after: $(current_belief.particles[400:405])")
         println("Action = $action")
         println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced

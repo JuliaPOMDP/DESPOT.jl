@@ -168,13 +168,13 @@ end
 function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Particle{RockSampleState}})    
     
     n_particles = length(particles)
-    println("fill_initial_belief: n_particles = $n_particles")
+#     println("fill_initial_belief: n_particles = $n_particles")
     pool = Array(Particle{RockSampleState},0)   
 #    println("fill: particle pointer: $(pointer(particles))")
     
     p = 1.0/(1 << pomdp.n_rocks)
     for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
-        push!(pool, Particle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), p))
+        push!(pool, Particle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), k, p))
     end
     
     #TODO: this should not really be here, but can't think of a better place until belief is fixed
@@ -189,8 +189,8 @@ function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Par
     #println("fill: sampled pointer: $(pointer(sampled_particles))")                                        
     # use the (potentially more numerous) new particles
     #particles = sampled_particles
-    println("fill: particle pointer: $(pointer(particles))")
-    println("fill: n_particles: $(length(particles))")
+#     println("fill: particle pointer: $(pointer(particles))")
+#     println("fill: n_particles: $(length(particles))")
     return nothing
 end
 
@@ -595,10 +595,10 @@ function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObs
   agentCell = cell_of(distribution.pomdp, distribution.next_state)
 
   eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
-  if debug > 0
-      println("rock status: $(rock_status(rock, distribution.next_state))")
-      println("obs: $obs")
-  end
+#   if debug > 0
+#       println("rock status: $(rock_status(rock, distribution.next_state))")
+#       println("obs: $obs")
+#   end
   
   
 #   if (obs == rock_status(rock, distribution.next_state))

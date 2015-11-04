@@ -105,7 +105,7 @@ function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
                                                             solver.ub.upper_bound_act,
                                                             solver.config)
   #println("root lb: $lbound, default action: $(solver.root_default_action)")
-  println("new_root: n_particles: $(length(particles))")
+#   println("new_root: n_particles: $(length(particles))")
 #   println("new_root: particles: $(particles[401:405])")
                                                            
   ubound::Float64 = upper_bound(solver.ub,
@@ -134,7 +134,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
                              pomdp.discount) > 1e-6)
                              && !stop_now)
 
-    println("trial $(n_trials+1)")
+#     println("trial $(n_trials+1)")
     trial(solver, pomdp, solver.root, n_trials)
     n_trials += 1
     
@@ -144,7 +144,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
     end
   end
 
-  println("root particles after: $(solver.root.particles[1:5])")
+#   println("root particles after: $(solver.root.particles[1:5])")
   @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
   @printf("Number of trials: %d\n", n_trials)
 
@@ -174,7 +174,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     n_nodes_added = 0
     o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star], solver.root, solver.config, pomdp.discount) # it's an array!
     
-    println("o_star=$o_star, a_star=$a_star, weighted_eu_star=$weighted_eu_star")
+#     println("o_star=$o_star, a_star=$a_star, weighted_eu_star=$weighted_eu_star")
 #     exit()
     
     if weighted_eu_star > 0.
@@ -212,7 +212,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
         warn("Lower bound ($(node.lb)) is higher than upper bound ($(node.ub))")
     end
 
-    println("root lb = $(node.lb), ub = $(node.ub)")
+#     println("root lb = $(node.lb), ub = $(node.ub)")
 
     if !node.in_tree
         node.in_tree = true
@@ -232,17 +232,26 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
         
     for action in 0:pomdp.n_actions-1
 
+        #TODO: make generic
         obs_to_particles = Dict{Int64,Vector{Particle}}()
-        for i in 1:length(node.particles)
+#         for i in 1:length(node.particles)
+        for p in node.particles
+            #TODO: use pre-allocated variables
             next_state, reward, obs = step(solver,
                                            pomdp,
-                                           node.particles[i].state,
-                                           solver.random_streams.streams[i,node.depth+1],
+                                           #node.particles[i].state,
+                                           p.state,
+                                           solver.random_streams.streams[p.id+1,node.depth+1],
+                                           #solver.random_streams.streams[i,node.depth+1],
                                            action)
+#             if (action==5) && (obs==0)
+#               println("i=$(p.id), s=$(p.state), a=$action, s'=$next_state, o=$obs, r=$reward, rnumber=$(solver.random_streams.streams[p.id+1,node.depth+1])")  
+#              println("i=$i, s=$(node.particles[i].state), a=$action, s'=$next_state, o=$obs, r=$reward, rnumber=$(solver.random_streams.streams[i,node.depth+1])")  
 #             println("s=$(node.particles[i].state), a=$action, rnumber=$(solver.random_streams.streams[i,node.depth+1])")                               
 #             println("s'=$next_state, r=$reward, o=$obs")
 #             exit()
-
+#             end
+            
             if isterminal(pomdp, next_state) && (obs != pomdp.TERMINAL_OBS)
                 error("Terminal state in a particle mismatches observation")
             end
@@ -250,9 +259,11 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
             if !haskey(obs_to_particles,obs)
                 obs_to_particles[obs] = Particle[]
             end
-            temp_particle = Particle(next_state, node.particles[i].weight)
+            #TODO: fix this
+            temp_particle = Particle(next_state, p.id, p.weight)
+#            temp_particle = Particle(next_state, node.particles[i].weight)
             push!(obs_to_particles[obs], temp_particle)
-            first_step_reward += reward * node.particles[i].weight
+            first_step_reward += reward * p.weight
         end
         
         first_step_reward /= node.weight
