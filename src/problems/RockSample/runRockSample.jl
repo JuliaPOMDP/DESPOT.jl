@@ -55,18 +55,18 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     # Setting either parameter to 0 or a negative number disables that limit.
     
     solver.config.search_depth = 90 #default: 90
-    solver.config.time_per_move = -1                # sec
+    solver.config.time_per_move = 1 # sec, default: 1, unlimited: -1
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95
     solver.config.sim_len = -1 # default: -1
-    solver.config.max_trials = 1000 # default: -1
+    solver.config.max_trials = -1 # default: -1
     solver.config.approximate_ubound = false
     solver.config.tiny = 1e-6
     solver.config.debug = 0
                               
     # This call uses predefined seed and rand_max values for consistency
     rng = DESPOTDefaultRNG(convert(Uint32, DESPOT.get_world_seed(solver.random_streams)),
-                           solver.config.rand_max)
+                           solver.config.rand_max, 1) #TODO: think whether to keep debug here
     policy = POMDPs.solve(solver, pomdp)
         
     sim_step = 0
@@ -80,9 +80,11 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         POMDPs.transition(pomdp, state, action, transition_distribution)
         next_state = POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
         POMDPs.observation(pomdp, state, action, next_state, observation_distribution)
+        observation_distribution.debug = 1 #TODO: remove -debug
+        println("main loop: debug = $(observation_distribution.debug)")
+        obs = POMDPs.rand!(rng, obs, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
-        obs = POMDPs.rand!(rng, obs, observation_distribution)
         state = next_state
 # #         println("current belief of length $(length(current_belief.particles)) before: $(current_belief.particles[400:405])")
         POMDPs.update(bu, current_belief, action, obs, updated_belief)

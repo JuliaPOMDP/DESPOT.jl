@@ -35,6 +35,23 @@ type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
     state::RockSampleState
     action::RockSampleAction
     next_state::RockSampleState
+    debug::Int64 #TODO: consider removing
+    
+    #TODO: consider removing, not really needed except for debugging
+    function RockSampleObservationDistribution(pomdp::POMDP,
+                                               state::RockSampleState,
+                                               action::RockSampleAction,
+                                               next_state::RockSampleState,
+                                               debug::Int64 = 0)
+        this = new()
+        this.pomdp = pomdp
+        this.state = state
+        this.action = action
+        this.next_state = next_state
+        this.debug = debug
+        
+        return this
+    end
 end
 
 function create_observation_distribution(pomdp::POMDP)
@@ -522,7 +539,6 @@ function observation(pomdp::RockSample,
     return nothing
 end
 
-# for "external" execution - produce next state
 # TODO: see if there is a way to clean-up the interface and pass sample by reference
 function rand!(rng::AbstractRNG,
                sample::RockSampleState,
@@ -533,11 +549,17 @@ function rand!(rng::AbstractRNG,
     return sample
 end
 
-# for "external" execution - produce [next] observation
 function rand!(rng::AbstractRNG,
                sample::RockSampleObservation,
                distribution::RockSampleObservationDistribution)
-              
+    
+    rand_num = rand!(rng) #TODO: remove -debug
+#        println("debug: $(distribution.debug)")
+    if distribution.debug == 1 #TODO: remove -debug
+            println("debug: $(distribution.debug)")
+            println ("obs rand_num: $rand_num")
+    end
+    
     if (distribution.action < 5)
         sample = isterminal(distribution.pomdp, distribution.next_state) ?
                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
@@ -546,7 +568,8 @@ function rand!(rng::AbstractRNG,
         agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
-        rand_num = rand!(rng) #TODO: remove -debug
+
+        
         if (rand_num <= eff) == rock_status(distribution.action - 5, distribution.state)  #TODO: remove -debug       
         #if (rand!(rng) <= eff) == rock_status(distribution.action - 5, distribution.next_state)
             sample = distribution.pomdp.GOOD_OBS

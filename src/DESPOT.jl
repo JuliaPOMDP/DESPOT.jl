@@ -48,11 +48,13 @@ end
 type DESPOTDefaultRNG <: AbstractRNG
     seed::Array{Uint32,1}
     rand_max::Int64
+    debug::Int64
       
-    function DESPOTDefaultRNG(seed::Uint32, rand_max::Int64)
+    function DESPOTDefaultRNG(seed::Uint32, rand_max::Int64, debug::Int64 = 0)
         this = new()
         this.seed = Cuint[seed]
         this.rand_max = rand_max
+        this.debug = debug
         return this
     end    
 end
