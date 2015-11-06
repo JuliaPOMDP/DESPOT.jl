@@ -75,11 +75,9 @@ type RockSample <: POMDPs.POMDP
     
     #internal variables and structures
     rock_set_start::Int64
-#    ub_action::Array{Int64,1} # TODO: move to solver?
     rock_at_cell::Array{Int64,1}
     cell_to_coords::Array{Vector{Int64},1}
     observation_effectiveness::Array{Float64,2}
-#    ub_memo::Array{Float64,1} # TODO: move to solver?
     rocks::Array{Int64,1}
     T::Array{RockSampleState,2}
     R::Array{RockSampleReward,2}
@@ -95,7 +93,7 @@ type RockSample <: POMDPs.POMDP
     # the const value for 'seed' is meant to provide compatibility with the C++ version of DESPOT
     function RockSample(grid_size::Int64 = 4,
                         n_rocks::Int64 = 4;
-                        seed::Uint32 = convert(Uint32, 476),
+                        seed::Uint32 = convert(Uint32, 476), #TODO: ugly, fix this
                         discount::Float64 = 0.95)
                 
           this = new()
@@ -114,12 +112,10 @@ type RockSample <: POMDPs.POMDP
           this.half_eff_distance = 20
               
           #internal variables and structures
-          this.rock_set_start = 0               
-#          this.ub_action = Array(Int64,this.n_states)        
+          this.rock_set_start = 0                
           this.rock_at_cell = Array(Int64, this.n_cells)
           this.cell_to_coords = Array(Vector{Int64}, this.n_cells)
           this.observation_effectiveness = Array(Float64, this.n_cells, this.n_cells)
-#          this.ub_memo = Array(Float64,(grid_size*grid_size+1)*(1 << n_rocks))
           this.rocks = Array(Int64, this.n_rocks)                       # locations              
           this.T = Array(Int64, this.n_states, this.n_actions)
           this.R = Array(Float64, this.n_states, this.n_actions)
@@ -147,23 +143,12 @@ function create_observation(pomdp::RockSample)
     return -1
 end
 
-
-# function create_belief(pomdp::RockSample)
-#     particles = Array(Particle{RockSampleState},0) 
-#     belief = ParticleBelief{RockSampleState}(particles)
-#     #return ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
-#     #return ParticleBelief{RockSampleState}(particles)
-#     println("In create_belief: $(typeof(belief))")
-#     return belief
-# end
-
 # Creates a default belief structure to store the problem's initial belief
 function create_belief(pomdp::RockSample)
     return ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
 end
 
 function initial_belief(pomdp::RockSample,
-                        #belief::ParticleBelief{RockSampleState} = create_belief(pomdp))
                         belief::ParticleBelief{RockSampleState} = create_belief(pomdp))
 
     fill_initial_belief_particles!(pomdp, belief.particles)
@@ -172,22 +157,14 @@ end
 
 function initial_belief(pomdp::RockSample, belief::DESPOT.DESPOTBelief{RockSampleState})
     
-#     println("In initial_belief2: $(typeof(belief))")
-#     println(typeof(belief.particles))
-#     println("initial_belief: pointer before: $(pointer(belief.particles))")
     fill_initial_belief_particles!(pomdp, belief.particles)
-#     println("initial_belief: pointer after: $(pointer(belief.particles))")
-#     println("initial_belief: n_particles: $(length(belief.particles))")
     return belief
 end
 
-#function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Particle{RockSampleState}})
 function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Particle{RockSampleState}})    
     
     n_particles = length(particles)
-#     println("fill_initial_belief: n_particles = $n_particles")
     pool = Array(Particle{RockSampleState},0)   
-#    println("fill: particle pointer: $(pointer(particles))")
     
     p = 1.0/(1 << pomdp.n_rocks)
     for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
@@ -197,17 +174,11 @@ function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Par
     #TODO: this should not really be here, but can't think of a better place until belief is fixed
     #shuffle!(belief.particles) #TODO: Uncomment!!!
 
-    #sampled_particles = sample_particles!(particles,
    sample_particles!(particles,
                      pool,
                      n_particles,
                      convert(Uint32, 42 $ (n_particles+1)), #TODO: fix this
                      2147483647) #TODO: fix this
-    #println("fill: sampled pointer: $(pointer(sampled_particles))")                                        
-    # use the (potentially more numerous) new particles
-    #particles = sampled_particles
-#     println("fill: particle pointer: $(pointer(particles))")
-#     println("fill: n_particles: $(length(particles))")
     return nothing
 end
 
@@ -344,13 +315,9 @@ function init_problem (pomdp::RockSample)
         srand(seed[1])
     end
   
-#     println("seed 1: $seed")
     for i in 0 : pomdp.n_rocks-1
         if OS_NAME == :Linux
-#            seed = Cuint[convert(Uint32, pomdp.seed)]
             rand_num = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed)
-#             println("randNumber: $rand_num")
-#             println("seed: $seed")
         else #Windows, etc
             rand_num = rand(0:pomdp.config.rand_max)
         end
@@ -359,10 +326,6 @@ function init_problem (pomdp::RockSample)
             pomdp.rock_set_start |= (1 << i)
         end
     end
-#    println("seed 2: $seed")
-#     println("pomdp.rockSetStart = $(pomdp.rock_set_start)")
-#     # initialize various structures
-#     fill!(pomdp.ub_action, 0)
 
     # Fill in cellToCoord and init rock_at_cell mappings
     fill!(pomdp.rock_at_cell, -1)

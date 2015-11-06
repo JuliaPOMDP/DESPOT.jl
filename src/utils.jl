@@ -35,7 +35,7 @@ function get_best_weuo(qnode::QNode,
                                                qnode.depth+1,
                                                config.eta,
                                                discount)
-#         println("obs: $obs, wt: $(node.weight), n_particles: $(length(node.particles))")
+
         if weighted_eu > weighted_eu_star
             weighted_eu_star = weighted_eu
             oStar = obs
@@ -104,7 +104,7 @@ function sample_particles!(sampled_particles::Vector,
 
     curr_particle = 0
     cum_sum = 0
-#    while num_sampled < N
+
     for i=1:N
         while cum_sum < r
             curr_particle += 1
@@ -115,13 +115,8 @@ function sample_particles!(sampled_particles::Vector,
             end
         end
 
-#         new_particle = Particle(pool[curr_particle].state, 1.0 / N)
-#         push!(sampled_particles, new_particle)
-
         sampled_particles[i] = Particle(pool[curr_particle].state, i-1, 1.0/N) #index particles starting with 0
-#        num_sampled += 1
         r += 1.0/N
     end
     return sampled_particles
 end
-

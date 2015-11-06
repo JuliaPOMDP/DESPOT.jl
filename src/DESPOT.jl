@@ -61,7 +61,6 @@ end
 
 function rand!(rng::DESPOTDefaultRNG)
     if OS_NAME == :Linux
-#        seed = Cuint[rng.seed]
         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc
         srand(seed)
@@ -73,7 +72,6 @@ end
 include("config.jl")
 
 include("randomStreams.jl")
-#include("world.jl")
 include("qnode.jl")
 include("vnode.jl")
 include("utils.jl")
@@ -123,60 +121,11 @@ function action(policy::DESPOTPolicy, belief::DESPOTBelief)
     return a
 end
 
-# function execute_action(pomdp::DESPOTPomdp, action::DESPOTAction)
-#     step(pomdp.world, action, pomdp.config)
-# end
-
-# Advances the current state of the world
-# function execute_action(rng::AbstractRNG, pomdp::POMDP, state, action::Int64)
-# 
-#     #TODO: replace through RNG, etc
-#     if OS_NAME == :Linux
-#         seed = Cuint[pomdp.world.seed]
-#         randomNumber = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) / pomdp.config.randMax
-#     else #Windows, etc
-#         srand(pomdp.world.seed)
-#         random_number = rand()
-#     end
-#     
-#     next_state, reward, next_observation = step(pomdp, pomdp.world.state, random_number, action)
-#     #pomdp.world.state = nextState
-#     println("Action = $action")
-#     println("State = $nextState"); display_state(pomdp.problem, next_state)
-#     print  ("Observation = "); display_obs(pomdp.problem, obs)
-#     println("Reward = $reward")
-#     push!(pomdp.world.rewards, reward)
-#     return reward, next_state, next_observation
-# end
-
-# function belief!(pomdp::POMDP, current_belief::DESPOTBelief, action::Any, obs::Any, )
-#   belief.particles = run_belief_update(pomdp.bu,
-#                                        pomdp.problem,
-#                                        belief.particles,
-#                                        action,
-#                                        obs,
-#                                        pomdp.config)                           
-#   add(pomdp.history, action, obs)
-# #  newRoot(solver, problem, particles, config)
-# end
-    
-# TYPES
-
 function solve(solver::DESPOTSolver, pomdp::POMDP)
     policy = DESPOTPolicy (solver, pomdp)
     init_solver(solver, pomdp)
     return policy
 end
-
-# function is_finished(solver::DESPOTSolver, pomdp::POMDP)
-# #  println(solver)
-#   for p in solver.root.particles
-#     if !isterminal(pomdp, p.state)
-#       return false
-#     end
-#   end
-#   return true
-# end
 
 #TODO: fix this
 # function undiscounted_return(pomdp::POMDP)

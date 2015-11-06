@@ -14,7 +14,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     seed = convert(Uint32, 42)
     n_particles = 500 # number of particles to use in the solver and the belief updater
                     # default: 500
-    rand_max = 2147483647
+    rand_max = 2147483647 # 2^31-1
     
     # construct a belief updater and specify some of the optional keyword parameters
     bu = DESPOTBeliefUpdater(pomdp::POMDP,
@@ -23,11 +23,8 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
                              n_particles = n_particles)
                              
     current_belief = create_belief(bu)
-#    println("main 1: n_particles: $(length(current_belief.particles))")
     updated_belief = create_belief(bu)
-#    println("main 2: n_particles: $(length(updated_belief.particles))")
     initial_belief(pomdp, current_belief)
-#    println("main 3: n_particles: $(length(current_belief.particles))")
     
     custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
@@ -81,18 +78,12 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         next_state = POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
         POMDPs.observation(pomdp, state, action, next_state, observation_distribution)
         observation_distribution.debug = 1 #TODO: remove -debug
-        println("main loop: debug = $(observation_distribution.debug)")
         obs = POMDPs.rand!(rng, obs, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
         state = next_state
-# #         println("current belief of length $(length(current_belief.particles)) before: $(current_belief.particles[400:405])")
         POMDPs.update(bu, current_belief, action, obs, updated_belief)
-#         println("current belief: $(current_belief.particles[1:5])")
-#         println("updated belief: $(updated_belief.particles[1:5])")
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
-#         println("main 4: n_particles: $(length(current_belief.particles))")
-        #println("current belief of length $(length(current_belief.particles)) after: $(current_belief.particles[400:405])")
         println("Action = $action")
         println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced
         print  ("Observation = "); show_obs(pomdp, obs) #TODO: change once abstract types are introduced
@@ -101,7 +92,16 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     end
     run_time = toq() # stop the clock
     
+    # Compute discounted reward
+    discounted_reward = 0
+    multiplier = 1
+    for r in rewards
+        discounted_reward += multiplier * r
+        multiplier *= pomdp.discount
+    end
+    
     @printf("Number of steps = %d\n", sim_step)
-    @printf("Discounted return = %.2f\n", sum(rewards))
+    @printf("Undiscounted return = %.2f\n", sum(rewards))
+    @printf("Discounted return = %.2f\n", discounted_reward)
     @printf("Runtime = %.2f sec\n", run_time)
 end
