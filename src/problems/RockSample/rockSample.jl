@@ -338,9 +338,7 @@ function init_problem (pomdp::RockSample)
         pomdp.rock_at_cell[pomdp.rocks[i+1]+1] = i # rock_at_cell and rocks are arrays
     end
 
-    # T and R - ALL INDICES BELOW ARE OFFSET BY +1 (1-based array indexing)
-    #   problem.T = Array(Int64, problem.n_states, problem.n_actions)
-    #   problem.R = Array(Float64, problem.n_states, problem.n_actions)
+    # T and R - ALL INDICES BELOW ARE OFFSET BY +1 (for 1-based array indexing)
     
     for cell in 0 : pomdp.n_cells-1
         for rock_set = 0:(1 << pomdp.n_rocks)-1
@@ -422,8 +420,6 @@ function init_problem (pomdp::RockSample)
     end
 
     # precompute observation effectiveness table
-    #problem.observation_effectiveness = Array(Float64, problem.n_cells, problem.n_cells)
-    
     for i in 0 : pomdp.n_cells-1
         for j in 0 : pomdp.n_cells-1
         agent = pomdp.cell_to_coords[i+1]
@@ -448,25 +444,6 @@ function make_state(pomdp::RockSample, cell::Int64, rock_set::Int64)
     return convert(Int64, (cell << pomdp.n_rocks) + rock_set)
 end
 
-# # for use with the solver - stochastic version
-# function step(pomdp::RockSample, s::Int64, rand_num::Float64, action::Int64)
-#     reward = pomdp.R[s+1, action+1]
-#     next_state = pomdp.T[s+1, action+1]
-#     if (action < 5)
-#         obs = isterminal(pomdp, next_state) ? pomdp.TERMINAL_OBS : pomdp.NONE_OBS
-#     else
-#         rockCell = pomdp.rocks[action - 4] # would be [action-5] with 0-based indexing
-#         agentCell = cell_of(pomdp,s)
-#         eff = pomdp.observation_effectiveness[agentCell+1,rockCell+1]
-#         if (rand_num <= eff) == rock_status(action - 5, s)
-#             obs = pomdp.GOOD_OBS
-#         else
-#             obs = pomdp.BAD_OBS
-#         end
-#     end
-#     return next_state, reward, obs
-# end
-
 function reward(pomdp::RockSample,
                 state::RockSampleState,
                 action::RockSampleAction)
@@ -483,7 +460,6 @@ function transition(pomdp::RockSample,
     distribution.state = state
     distribution.action = action
 
-#    return distribution
     return nothing
 end
 
@@ -498,7 +474,6 @@ function observation(pomdp::RockSample,
     distribution.action = action
     distribution.next_state = next_state
 
-#    return distribution
     return nothing
 end
 
@@ -508,7 +483,6 @@ function rand!(rng::AbstractRNG,
                distribution::RockSampleTransitionDistribution)
     
     sample = distribution.pomdp.T[distribution.state+1, distribution.action+1]
-#    println("s=$(distribution.state), a=$(distribution.action), s'=$sample")
     return sample
 end
 
@@ -516,12 +490,8 @@ function rand!(rng::AbstractRNG,
                sample::RockSampleObservation,
                distribution::RockSampleObservationDistribution)
     
-    rand_num = rand!(rng) #TODO: remove -debug
-#        println("debug: $(distribution.debug)")
-    if distribution.debug == 1 #TODO: remove -debug
-            println("debug: $(distribution.debug)")
-            println ("obs rand_num: $rand_num")
-    end
+    # generate a new random number regardless of whether it's used below or not
+    rand_num = rand!(rng)
     
     if (distribution.action < 5)
         sample = isterminal(distribution.pomdp, distribution.next_state) ?
@@ -531,10 +501,7 @@ function rand!(rng::AbstractRNG,
         agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
-
-        
-        if (rand_num <= eff) == rock_status(distribution.action - 5, distribution.state)  #TODO: remove -debug       
-        #if (rand!(rng) <= eff) == rock_status(distribution.action - 5, distribution.next_state)
+        if (rand_num <= eff) == rock_status(distribution.action - 5, distribution.state)   
             sample = distribution.pomdp.GOOD_OBS
         else
             sample = distribution.pomdp.BAD_OBS
@@ -542,16 +509,6 @@ function rand!(rng::AbstractRNG,
     end
     
     return sample
-end
-
-# deterministic version
-function step(pomdp::RockSample,
-              state::RockSampleState,
-              action::RockSampleAction)
-
-    reward = pomdp.R[state+1, action+1]
-    newState = pomdp.T[state+1, action+1]
-    return newState, reward
 end
 
 function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation, debug::Int64)
@@ -581,13 +538,7 @@ function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObs
   agentCell = cell_of(distribution.pomdp, distribution.next_state)
 
   eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
-#   if debug > 0
-#       println("rock status: $(rock_status(rock, distribution.next_state))")
-#       println("obs: $obs")
-#   end
   
-  
-#   if (obs == rock_status(rock, distribution.next_state))
   rstatus = rock_status(rock, distribution.next_state)
   if ((obs == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
      ((obs == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
@@ -596,43 +547,6 @@ function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObs
     return 1. - eff
   end
 end
-
-# function obs_probability(pomdp::RockSample,
-#                          obs::RockSampleObservation,
-#                          state::RockSampleState,
-#                          action::RockSampleAction)
-#   # Terminal state should match terminal obs
-#   if isterminal(pomdp, state)
-#       if obs == pomdp.TERMINAL_OBS
-#           return 1.
-#       else
-#           return 0.
-#       end
-#   end
-# 
-#   if (action < 5)
-#       if obs == pomdp.NONE_OBS
-#           return 1.
-#       else
-#           return 0.
-#       end
-#   end
-# 
-#   if ((obs != pomdp.GOOD_OBS) && (obs != pomdp.BAD_OBS))
-#     return 0.
-#   end
-# 
-#   rock = action - 5
-#   rockCell = pomdp.rocks[rock+1]
-#   agentCell = cell_of(pomdp, state)
-# 
-#   eff = pomdp.observation_effectiveness[agentCell+1, rockCell+1]
-#   if (obs == rock_status(rock, state))
-#     return eff
-#   else
-#     return 1. - eff
-#   end
-# end
 
 # TODO: this should work, but does not for some reason
 #function isTerminal(s)
@@ -757,5 +671,3 @@ function sample_particles(pool::Vector,
     end
     return sampled_particles
 end
-
-#export RockSample

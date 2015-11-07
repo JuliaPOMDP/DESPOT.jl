@@ -34,11 +34,6 @@ function init_lower_bound(lb::RockSampleParticleLB,
     # nothing to do for now
 end
 
-# function lower_bound(lb::RockSampleParticleLB,
-#                      pomdp::RockSample,
-#                      particles::Vector,
-#                      tiny::Float64 = 1e-6,
-#                      search_depth::Int64 = 90)
 function lower_bound(lb::RockSampleParticleLB,
                      pomdp::RockSample,
                      #particles::Vector{Particle}, #TODO: figure out why this does not work
@@ -46,9 +41,7 @@ function lower_bound(lb::RockSampleParticleLB,
                      ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
 
-#    println("$(particles)")
     state_seen = Dict{Int64,Int64}() #TODO: move to the structure
-#     println("$(particles[1:5])"); #exit()
     
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
@@ -109,25 +102,29 @@ function lower_bound(lb::RockSampleParticleLB,
     most_likely_state = make_state(pomdp, cell_of(pomdp, particles[1].state), most_likely_rock_set)
     s = most_likely_state
 
-    #println("most_likely_state: $most_likely_state"); exit()
     # Sequence of actions taken in the optimal policy
     optimal_policy = Array(Int,0)
     ret = 0.
     reward = 0.
     prev_cell_coord = [0,0] # initial value - should cause error if not properly assigned
+    next_state = create_state(pomdp)
+    r::Float64 = 0.0
+    trans_distribution = create_transition_distribution(pomdp)
+    rng = DESPOTRandomNumber(0) # dummy RNG
     
-    #println("ub_actions: $(ub_actions[1:10])")
     while true
-        act = ub_actions[s+1]
-        #println("pomdp.ub_action[s+1]: $(pomdp.ub_action[s+1])")
-        s_test, reward = step(pomdp, s, act) # deterministic version
+        a = ub_actions[s+1]
+        trans_distribution.state = s
+        trans_distribution.action = a
+        s_test = rand!(rng, next_state, trans_distribution)
+        
         if isterminal(pomdp, s_test)
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][2]
             ret = 10.
             break
         end
-        push!(optimal_policy, act)
+        push!(optimal_policy, a)
         if length(optimal_policy) == config.search_depth
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s_test)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s_test)+1][2]
@@ -138,7 +135,6 @@ function lower_bound(lb::RockSampleParticleLB,
     end
     
     best_action = (length(optimal_policy) == 0) ? 3 : optimal_policy[1]
-    #println("best_action: $best_action"); exit()
 
     # Execute the sequence backwards to allow using the DP trick mentioned
     # earlier.
