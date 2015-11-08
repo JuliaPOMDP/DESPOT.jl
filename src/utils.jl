@@ -1,4 +1,4 @@
-using Types
+#using Types
 
 function excess_uncertainty(l::Float64,
                             u::Float64,
@@ -115,7 +115,7 @@ function sample_particles!(sampled_particles::Vector,
             end
         end
 
-        sampled_particles[i] = Particle(pool[curr_particle].state, i-1, 1.0/N) #index particles starting with 0
+        sampled_particles[i] = DESPOTParticle(pool[curr_particle].state, i-1, 1.0/N) #index particles starting with 0
         r += 1.0/N
     end
     return sampled_particles

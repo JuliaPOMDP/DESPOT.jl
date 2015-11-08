@@ -17,7 +17,7 @@
 
 
 type QNode
-  obs_to_particles::Dict{Int64, Vector{Particle}}
+  obs_to_particles::Dict{Int64, Vector{DESPOTParticle}}
   depth::Int64
   action::Int64
   first_step_reward::Float64
@@ -32,7 +32,7 @@ type QNode
       function QNode( pomdp::POMDP,
                       lb::DESPOTLowerBound,
                       ub::DESPOTUpperBound,
-                      obs_to_particles::Dict{Int64, Vector{Particle}},
+                      obs_to_particles::Dict{Int64, Vector{DESPOTParticle}},
                       depth::Int64,
                       action::Int64,
                       first_step_reward::Float64,

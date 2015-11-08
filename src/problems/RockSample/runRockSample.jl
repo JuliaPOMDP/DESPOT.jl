@@ -1,6 +1,6 @@
 using POMDPs
 using DESPOT
-using Types
+# using Types
 
 include("rockSample.jl")
 include("rockSampleParticleLB.jl")
@@ -10,11 +10,23 @@ include("../../beliefUpdate/beliefUpdateParticle.jl")
 
 function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
 
-    pomdp       = RockSample(grid_size, num_rocks)
-    seed = convert(Uint32, 42)
     n_particles = 500 # number of particles to use in the solver and the belief updater
-                    # default: 500
-    rand_max = 2147483647 # 2^31-1
+                      # default: 500
+    discount = 0.95
+    rand_max = 2^31-1 # 2147483647
+        
+    # generate unique random seeds (optional, if not supplied, default values will be used)
+    seed  ::Uint32   = convert(Uint32, 42) # the main random seed that's used to set the other seeds
+    w_seed::Uint32   = seed $  n_particles      # world seed, used in the overall simulation
+    b_seed::Uint32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
+    m_seed::Uint32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
+
+    pomdp    = RockSample(grid_size,
+                          num_rocks,
+                          rand_max = rand_max,      # optional, default: 2^31-1
+                          belief_seed = b_seed,     # optional, default: 479
+                          model_seed  = m_seed,     # optional, default: 476
+                          discount    = discount)   # optional, default: 0.95
     
     # construct a belief updater and specify some of the optional keyword parameters
     bu = DESPOTBeliefUpdater(pomdp::POMDP,
@@ -40,7 +52,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     state       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
     next_state  = POMDPs.create_state(pomdp)
     obs         = POMDPs.create_observation(pomdp)
-    rewards     = Array(Float64,0)
+    rewards     = Array(Float64, 0)
     transition_distribution  = POMDPs.create_transition_distribution(pomdp)
     observation_distribution = POMDPs.create_observation_distribution(pomdp)
 
@@ -61,9 +73,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     solver.config.tiny = 1e-6
     solver.config.debug = 0
                               
-    # This call uses predefined seed and rand_max values for consistency
-    rng = DESPOTDefaultRNG(convert(Uint32, DESPOT.get_world_seed(solver.random_streams)),
-                           solver.config.rand_max, 1) #TODO: think whether to keep debug here
+    rng = DESPOTDefaultRNG(w_seed, rand_max) # used to advance the state of the simulation (world) 
     policy = POMDPs.solve(solver, pomdp)
         
     sim_step = 0

@@ -2,7 +2,6 @@ module DESPOT
 
 using Distributions
 using POMDPs
-using Types
 
 import POMDPs:
         solve,
@@ -20,26 +19,17 @@ type DESPOTRandomNumber <: AbstractRNG
     number::Float64
 end
 
-#TODO: figure out how to do this properly!
-type DESPOTBelief{T} <: Belief
-    particles::Vector{Particle{T}} # Array(Particle{T},0)
-    history::History # History()    
-#     function DESPOTBelief()
-#         this = new()
-#         this.particles = Array(Particle{T},0)
-#         this.history = History()
-#         return this
-#     end
+type DESPOTParticle{T}
+  state::T
+  id::Int64
+  weight::Float64
 end
 
-#DESPOTBelief{T}() = DESPOTBelief()
-
-# function DESPOTBelief{T}()
-#     this = new()
-#     this.particles = Array(Particle{T},0)
-#     this.history = History()
-#     return this
-# end
+#TODO: figure out how to do this properly!
+type DESPOTBelief{T} <: Belief
+    particles::Vector{DESPOTParticle{T}}
+    history::History 
+end
 
 function rand!(rng::DESPOTRandomNumber)
     return rng.number
@@ -70,7 +60,6 @@ function rand!(rng::DESPOTDefaultRNG)
 end
 
 include("config.jl")
-
 include("randomStreams.jl")
 include("qnode.jl")
 include("vnode.jl")
@@ -86,8 +75,8 @@ function create_policy(solver::DESPOTSolver, pomdp::POMDP)
     return DESPOTPolicy(solver, pomdp)
 end
 
-# FUNCTION INTERFACES
-
+# UPPER and LOWER BOUND FUNCTION INTERFACES
+#TODO: try specializing types for DESPOTParticle
 lower_bound(lb::DESPOTLowerBound,
             pomdp::POMDP,
             particles::Vector, 
@@ -127,43 +116,29 @@ function solve(solver::DESPOTSolver, pomdp::POMDP)
     return policy
 end
 
-#TODO: fix this
-# function undiscounted_return(pomdp::POMDP)
-#     return sum(pomdp.world.rewards)
-# end
-# 
-# #TODO: fix this
-# function discounted_return(pomdp::POMDP)
-#     result = 0
-#     multiplier = 1
-# 
-#     for r in pomdp.world.rewards
-#         result += multiplier * r
-#         multiplier *= pomdp.config.discount
-#     end
-#     return result
-# end
-
 export
+    ################## DESPOT TYPES ##################
     DESPOTSolver,
     DESPOTUpperBound,
     DESPOTLowerBound,
+    DESPOTParticle,
     DESPOTBelief,
     DESPOTBeliefUpdate,
     DESPOTConfig,
     DESPOTDefaultRNG,
     DESPOTRandomNumber,
-    ##################
+    ######## HISTORY-RELATED TYPES AND METHODS ######
     History, #TODO: need to handle history-related stuff better, place somewhere else
     add,
     remove_last,
     history_size,
     truncate,
-    ##################
+    ############# STANDARD POMDP METHODS ############
     solve,
     action,
     start_state,
     create_policy,
+    ########## UPPER AND LOWER BOUND METHODS #########
     lower_bound,
     upper_bound,
     init_lower_bound,

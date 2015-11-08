@@ -2,10 +2,7 @@
 type History{TA,TO}
   actions::Array{TA,1}
   observations::Array{TO,1}
-  History()     =  new(
-                    Array(TA,0),
-                    Array(TO,0)
-                    )
+  History() =  new(Array(TA,0),Array(TO,0))
 end
 
 #TODO: Change to POMDPs.jl abstract data types

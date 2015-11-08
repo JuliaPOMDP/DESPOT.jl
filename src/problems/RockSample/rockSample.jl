@@ -11,9 +11,10 @@ import POMDPs:
        initial_belief,
        isterminal,
        rand!
-       
-import Base:
-       print
+
+import POMDPToolbox:
+       Particle,
+       ParticleBelief
 
 typealias RockSampleState       Int64
 typealias RockSampleAction      Int64
@@ -62,7 +63,10 @@ type RockSample <: POMDPs.POMDP
     #problem parameters
     grid_size::Int64
     n_rocks::Int64
-    seed::Uint32 # random seed to construct arbitrary size scenarios
+    rand_max::Int64
+    model_seed ::Uint32 # random seed to construct arbitrary size scenarios
+    belief_seed::Uint32 # random seed used in initial belief construction,
+                        # if needed
     
     #problem properties
     n_cells::Int64
@@ -93,14 +97,18 @@ type RockSample <: POMDPs.POMDP
     # the const value for 'seed' is meant to provide compatibility with the C++ version of DESPOT
     function RockSample(grid_size::Int64 = 4,
                         n_rocks::Int64 = 4;
-                        seed::Uint32 = convert(Uint32, 476), #TODO: ugly, fix this
+                        rand_max::Int64 = 2^31-1,
+                        belief_seed::Uint32 = convert(Uint32, 479),
+                        model_seed::Uint32  = convert(Uint32, 476),
                         discount::Float64 = 0.95)
                 
           this = new()
           # problem parameters
           this.grid_size = grid_size
-          this.n_rocks = n_rocks   
-          this.seed = seed
+          this.n_rocks = n_rocks
+          this.rand_max = rand_max
+          this.belief_seed = belief_seed
+          this.model_seed  = model_seed
           this.discount = discount
            
           # problem properties
@@ -161,24 +169,37 @@ function initial_belief(pomdp::RockSample, belief::DESPOT.DESPOTBelief{RockSampl
     return belief
 end
 
+# default belief represented through generic particles
 function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{Particle{RockSampleState}})    
     
-    n_particles = length(particles)
     pool = Array(Particle{RockSampleState},0)   
     
     p = 1.0/(1 << pomdp.n_rocks)
     for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
-        push!(pool, Particle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), k, p))
+        push!(pool, Particle{RockSampleState}(make_state(pomdp, k), k, p))
+    end
+
+    shuffle!(particles)
+    return nothing
+end
+
+# belief supplied in the format of a specific POMDP solver, DESPOT (https://github.com/sisl/DESPOT.jl)
+function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{DESPOTParticle{RockSampleState}})    
+    
+    n_particles = length(particles)
+    pool = Array(DESPOTParticle{RockSampleState},0)   
+    
+    p = 1.0/(1 << pomdp.n_rocks)
+    for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
+        push!(pool, DESPOTParticle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), k, p))
     end
     
-    #TODO: this should not really be here, but can't think of a better place until belief is fixed
-    #shuffle!(belief.particles) #TODO: Uncomment!!!
-
-   sample_particles!(particles,
-                     pool,
-                     n_particles,
-                     convert(Uint32, 42 $ (n_particles+1)), #TODO: fix this
-                     2147483647) #TODO: fix this
+    #shuffle!(particles) #TODO: Uncomment!!!
+    DESPOT.sample_particles!(particles,
+                             pool,
+                             n_particles,
+                             pomdp.belief_seed,
+                             pomdp.rand_max)
     return nothing
 end
 
@@ -280,7 +301,7 @@ function init_general(pomdp::RockSample, seed::Array{Uint32,1})
         if OS_NAME == :Linux
             cell = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) % pomdp.n_cells
         else
-            cell = rand(0:pomdp.config.rand_max) % pomdp.n_cells 
+            cell = rand(0:pomdp.rand_max) % pomdp.n_cells 
         end
         
         if findfirst(pomdp.rocks, cell) == 0
@@ -294,7 +315,7 @@ end
 function init_problem (pomdp::RockSample)
 
     pomdp.rocks = Array(Int64, pomdp.n_rocks)
-    seed = Cuint[convert(Uint32, pomdp.seed)]
+    seed = Cuint[convert(Uint32, pomdp.model_seed)]
     
     if pomdp.grid_size == 4 && pomdp.n_rocks == 4
         init_4_4(pomdp)
@@ -305,7 +326,7 @@ function init_problem (pomdp::RockSample)
     elseif pomdp.grid_size == 15 && pomdp.n_rocks == 15
         init_15_15(pomdp)
     else
-        init_general(pomdp, seed)
+        init_general(pomdp, model_seed)
     end
   
     # Compute rock set start
@@ -319,7 +340,7 @@ function init_problem (pomdp::RockSample)
         if OS_NAME == :Linux
             rand_num = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed)
         else #Windows, etc
-            rand_num = rand(0:pomdp.config.rand_max)
+            rand_num = rand(0:pomdp.rand_max)
         end
 
         if (rand_num & 1) == 1
@@ -603,6 +624,7 @@ function show_state(pomdp::RockSample, s::RockSampleState)
   end # i in 1:grid_size
 end
 
+# TODO: redo through rand!()
 function random_state(pomdp::RockSample, seed::Uint32)
     cseed = Cuint[seed]
     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
@@ -624,50 +646,50 @@ function show_obs(pomdp::RockSample, obs::RockSampleObservation)
     end
 end
 
-#TODO: hack! Only needed until belief is fixed
-function sample_particles(pool::Vector,
-                          N::Int64,
-                          seed::Uint32,
-                          rand_max::Int64)
-
-    sampled_particles = Array(Particle, 0)
-
-    # Ensure particle weights sum to exactly 1
-    sum_without_last =  0;
-    
-    for i in 1:length(pool)-1
-        sum_without_last += pool[i].weight
-    end
-    
-    end_weight = 1 - sum_without_last
-
-    # Divide the cumulative frequency into N equally-spaced parts
-    num_sampled = 0
-    
-    if OS_NAME == :Linux
-        cseed = Cuint[seed]
-        r = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), cseed)/rand_max/N
-    else #Windows, etc
-        srand(seed)
-        r = rand()/N
-    end
-
-    curr_particle = 0
-    cum_sum = 0
-    while num_sampled < N
-        while cum_sum < r
-            curr_particle += 1
-            if curr_particle == length(pool)
-                cum_sum += end_weight
-            else
-                cum_sum += pool[curr_particle].weight
-            end
-        end
-
-        new_particle = Particle(pool[curr_particle].state, 1.0 / N)
-        push!(sampled_particles, new_particle)
-        num_sampled += 1
-        r += 1.0 / N
-    end
-    return sampled_particles
-end
+# #TODO: hack! Only needed until belief is fixed
+# function sample_particles(pool::Vector,
+#                           N::Int64,
+#                           seed::Uint32,
+#                           rand_max::Int64)
+# 
+#     sampled_particles = Array(Particle, 0)
+# 
+#     # Ensure particle weights sum to exactly 1
+#     sum_without_last =  0;
+#     
+#     for i in 1:length(pool)-1
+#         sum_without_last += pool[i].weight
+#     end
+#     
+#     end_weight = 1 - sum_without_last
+# 
+#     # Divide the cumulative frequency into N equally-spaced parts
+#     num_sampled = 0
+#     
+#     if OS_NAME == :Linux
+#         cseed = Cuint[seed]
+#         r = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), cseed)/rand_max/N
+#     else #Windows, etc
+#         srand(seed)
+#         r = rand()/N
+#     end
+# 
+#     curr_particle = 0
+#     cum_sum = 0
+#     while num_sampled < N
+#         while cum_sum < r
+#             curr_particle += 1
+#             if curr_particle == length(pool)
+#                 cum_sum += end_weight
+#             else
+#                 cum_sum += pool[curr_particle].weight
+#             end
+#         end
+# 
+#         new_particle = Particle(pool[curr_particle].state, 1.0 / N)
+#         push!(sampled_particles, new_particle)
+#         num_sampled += 1
+#         r += 1.0 / N
+#     end
+#     return sampled_particles
+# end

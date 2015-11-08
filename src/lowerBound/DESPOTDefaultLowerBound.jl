@@ -13,7 +13,7 @@ end
 
 function lower_bound(lb::DESPOTDefaultLowerBound,
                      pomdp::POMDP,
-                     particles::Vector{Particle},
+                     particles::Vector{DESPOTParticle},
                      config::DESPOTConfig)
     error("Function lower_bound for $(typeof(lb)) has not been implemented yet")
 end

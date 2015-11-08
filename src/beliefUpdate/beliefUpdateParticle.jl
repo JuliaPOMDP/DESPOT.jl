@@ -21,7 +21,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
     n_particles::Int64
     next_state::Any
     observation::Any
-    new_particle::Particle
+    new_particle::DESPOTParticle
     n_sampled::Int64
     obs_probability::Float64
     
@@ -50,7 +50,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
         # init preallocated variables
         this.next_state = POMDPs.create_state(pomdp)
         this.observation = POMDPs.create_observation(pomdp)
-        this.new_particle = Particle{typeof(this.next_state)}(this.next_state, 1, 1) #placeholder
+        this.new_particle = DESPOTParticle{typeof(this.next_state)}(this.next_state, 1, 1) #placeholder
         this.n_sampled = 0
         this.obs_probability = -1.0
         return this
@@ -59,7 +59,7 @@ end
 
 # Special create_belief version for DESPOTBeliefUpdater
 function create_belief(bu::DESPOTBeliefUpdater)
-    particles = Array(Particle{bu.state_type}, bu.n_particles) 
+    particles = Array(DESPOTParticle{bu.state_type}, bu.n_particles) 
     history = History{bu.state_type, bu.action_type}() #TODO: change to parametric
     belief = DESPOTBelief{bu.state_type}(particles, history)
     return belief
@@ -111,7 +111,7 @@ function update(bu::DESPOTBeliefUpdater,
         bu.obs_probability = pdf(bu.observation_distribution, obs)
         
         if bu.obs_probability > 0.0
-            bu.new_particle = Particle(bu.next_state, p.id, p.weight * bu.obs_probability)
+            bu.new_particle = DESPOTParticle(bu.next_state, p.id, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)
         end
     end
@@ -128,7 +128,7 @@ function update(bu::DESPOTBeliefUpdater,
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
             if bu.obs_probability > 0.
                 bu.n_sampled += 1
-                bu.new_particle = Particle(s, bu.obs_probability)
+                bu.new_particle = DESPOTParticle(s, bu.obs_probability)
                 push!(updated_belief.particles, bu.new_particle)
             end
         end
@@ -159,7 +159,7 @@ function update(bu::DESPOTBeliefUpdater,
     num_eff_particles = 1./num_eff_particles
     if (num_eff_particles < bu.n_particles * bu.eff_particle_fraction) ||
         (length(updated_belief.particles) < bu.n_particles)
-        resampled_set = Array(Particle{bu.state_type}, bu.n_particles)
+        resampled_set = Array(DESPOTParticle{bu.state_type}, bu.n_particles)
         sample_particles!(resampled_set, 
                           updated_belief.particles,
                           bu.n_particles,

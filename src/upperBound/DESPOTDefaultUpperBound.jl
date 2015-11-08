@@ -10,6 +10,6 @@ end
 
 function lower_bound(lb::DESPOTDefaultUpperBound,
                      pomdp::POMDP,
-                     particles::Vector{Particle})
+                     particles::Vector{DESPOTParticle})
     error("Function lower_bound for $(typeof(lb)) has not been implemented yet")
 end

@@ -209,7 +209,7 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
     for action in 0:pomdp.n_actions-1
 
         #TODO: make generic
-        obs_to_particles = Dict{Int64,Vector{Particle}}()
+        obs_to_particles = Dict{Int64,Vector{DESPOTParticle}}()
 
         for p in node.particles
             #TODO: use pre-allocated variables
@@ -224,10 +224,10 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
             end
 
             if !haskey(obs_to_particles,obs)
-                obs_to_particles[obs] = Particle[]
+                obs_to_particles[obs] = DESPOTParticle[]
             end
 
-            push!(obs_to_particles[obs], Particle(next_state, p.id, p.weight))
+            push!(obs_to_particles[obs], DESPOTParticle(next_state, p.id, p.weight))
             first_step_reward += reward * p.weight
         end
         

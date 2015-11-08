@@ -4,7 +4,7 @@
 # AND-node for each action, and some bookkeeping information.
 
 type VNode
-  particles::Array{Particle,1}
+  particles::Array{DESPOTParticle,1}
   lb::Float64
   ub::Float64
   depth::Int64
