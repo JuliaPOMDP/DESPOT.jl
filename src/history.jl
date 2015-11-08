@@ -1,24 +1,14 @@
-# Encapsulates a history of actions and observations.
-# type History
-#   actions::Array{Int64,1}
-#   observations::Array{Int64,1}
-#   History()     =  new(
-#                     Array(Int64,0),
-#                     Array(Int64,0)
-#                     )
-# end
 
-#TODO: change to parametric
-type History
-  actions::Array{Any,1}
-  observations::Array{Any,1}
+type History{TA,TO}
+  actions::Array{TA,1}
+  observations::Array{TO,1}
   History()     =  new(
-                    Array(Any,0),
-                    Array(Any,0)
+                    Array(TA,0),
+                    Array(TO,0)
                     )
 end
 
-#function add(history::History, action::Int64, obs::Int64)
+#TODO: Change to POMDPs.jl abstract data types
 function add(history::History, action::Any, obs::Any)
     push!(history.actions, action)
     push!(history.observations, obs)

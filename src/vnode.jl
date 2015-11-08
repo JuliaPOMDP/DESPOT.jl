@@ -74,7 +74,6 @@ function get_lb_action(node::VNode, config::DESPOTConfig, discount::Float64)
 end
 
 #TODO: fix pruning
-
 function prune(node::VNode, total_pruned::Int64, config::DESPOTConfig)
   # Cost if the node were pruned
   cost = (config.discount^node.depth) * node.weight * node.default_value

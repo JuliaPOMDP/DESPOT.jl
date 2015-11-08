@@ -511,7 +511,7 @@ function rand!(rng::AbstractRNG,
     return sample
 end
 
-function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation, debug::Int64)
+function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation)
   # Terminal state should match terminal obs
   if isterminal(distribution.pomdp, distribution.next_state)
       if obs == distribution.pomdp.TERMINAL_OBS

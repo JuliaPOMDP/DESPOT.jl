@@ -8,6 +8,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
     transition_distribution::AbstractDistribution
     observation_distribution::AbstractDistribution
     state_type::DataType
+    action_type::DataType
     observation_type::DataType
     seed::Uint32
     rand_max::Int64
@@ -39,6 +40,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
         this.transition_distribution  = POMDPs.create_transition_distribution(pomdp)
         this.observation_distribution = POMDPs.create_observation_distribution(pomdp)
         this.state_type = typeof(POMDPs.create_state(pomdp))
+        this.action_type = typeof(POMDPs.create_action(pomdp))
         this.observation_type = typeof(POMDPs.create_observation(pomdp))
         this.rand_max = rand_max
         this.particle_weight_threshold = particle_weight_threshold
@@ -57,10 +59,9 @@ end
 
 # Special create_belief version for DESPOTBeliefUpdater
 function create_belief(bu::DESPOTBeliefUpdater)
-    particles = Array(Particle{bu.state_type},bu.n_particles) 
-    history = History() #TODO: change to parametric
+    particles = Array(Particle{bu.state_type}, bu.n_particles) 
+    history = History{bu.state_type, bu.action_type}() #TODO: change to parametric
     belief = DESPOTBelief{bu.state_type}(particles, history)
-    #return DESPOTBelief{RockSampleState}()
     return belief
 end
 
@@ -89,7 +90,6 @@ function update(bu::DESPOTBeliefUpdater,
                 obs::Any,
                 updated_belief::DESPOTBelief = create_belief(pomdp))
                 
-#     println("num current particles 1: $(length(current_belief.particles))")
     if bu.n_particles != length(current_belief.particles)
         err("belief size mismatch: belief updater - $(bu.n_particles) particles, belief - $(length(current_belief.particles))")  
     end
@@ -98,70 +98,25 @@ function update(bu::DESPOTBeliefUpdater,
     #reset RNG
     bu.rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
 
-#     #TODO: is this needed here?
-#     if OS_NAME == :Linux
-#         seed = Cuint[bu.belief_update_seed]
-#     else #Windows, etc
-#         srand(bu.belief_update_seed)
-#     end
-    
-    
-    
-#     println("num current particles 2: $(length(current_belief.particles))")
-    #println("in update, current: $(current_belief.particles[10:15])")
-# # #     # Step forward all particles
-#     i=1
-    debug = 0 #TODO: remove
-#     low = 1
-#     high = 5
-     
-#     println("random seed: $(bu.belief_update_seed)")
     for p in current_belief.particles
         rand_num = rand!(bu.rng) #TODO: preallocate for speed
         rng = DESPOTRandomNumber(rand_num)
         
         POMDPs.transition(bu.pomdp, p.state, action, bu.transition_distribution)
         bu.next_state = POMDPs.rand!(rng, bu.next_state, bu.transition_distribution) # update state to next state
-#         if (p.state == bu.next_state)
-#             println("States equal: $(p.state) and $(bu.next_state)")
-#         end
 
-
-         #get observation distribution for (a,s') tuple
-         POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
-#         bu.observation = POMDPs.rand!(rng, bu.observation, bu.observation_distribution)
+        #get observation distribution for (s,a,s') tuple
+        POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
         
-#         if (i <= high) && (i >= low)
-#             debug = 1
-#         else
-#             debug = 0
-#         end
-        
-        bu.obs_probability = pdf(bu.observation_distribution, obs, debug)
-        
-#         if (i <= high) && (i >= low)
-#             println("random number [$i]: $rand_num")
-#             println("obs[$i]=$(obs), prob = $(bu.obs_probability)")
-#         end
-#         i=i+1
-        
-#         #TODO: remove
-#         if (abs(bu.obs_probability - 0.02)>1.0e-6)
-#             println(bu.obs_probability)
-#         end
+        bu.obs_probability = pdf(bu.observation_distribution, obs)
         
         if bu.obs_probability > 0.0
-#            bu.new_particle = Particle(bu.next_state, p.weight * bu.obs_probability)
             bu.new_particle = Particle(bu.next_state, p.id, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)
         end
     end
     
-#    println("bu: $(updated_belief.particles)")
-#    println("before: $(updated_belief.particles[495:500])")
     normalize!(updated_belief.particles)
-#    println("after: $(updated_belief.particles)")
-    #println("bu norm.: $(updated_belief.particles[10:15])")
 
     if length(updated_belief.particles) == 0
         # No resulting state is consistent with the given observation, so create

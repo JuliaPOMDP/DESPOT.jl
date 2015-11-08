@@ -1,17 +1,12 @@
-
-# This class encapsulates the streams of random numbers used in state
+# This type encapsulates the streams of random numbers used in state
 # transitions during simulations. It also provides random-number seeds
 # for different components of the system.
-
 
 type RandomStreams
     num_streams::Int64
     len_streams::Int64
     streams::Array{Float64,2}     # each particle is associated with a single stream of numbers
     seed::Uint32
-#     world_seed::Uint32
-#     belief_update_seed::Uint32
-#     model_seed::Uint32
 
   # default constructor
   function RandomStreams(num_streams::Int64,
@@ -23,9 +18,6 @@ type RandomStreams
           this.len_streams = len_streams
           this.streams = Array(Float64, num_streams, len_streams)
           this.seed = seed
-#           this.world_seed = seed $ num_streams
-#           this.belief_update_seed = seed $ (num_streams + 1)
-#           this.model_seed = seed $ (num_streams + 2)
           
           return this
     end
