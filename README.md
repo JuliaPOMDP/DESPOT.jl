@@ -27,10 +27,10 @@ Pkg.clone("https://github.com/sisl/DESPOT.jl.git")
 
 The following example illustrates instantiation of a DESPOT solver
 ```julia
-    solver      = DESPOTSolver(pomdp,		 	# reference to the problem model
-                               current_belief, 	# reference to the current belief structure
-                               lb = custom_lb, 	# reference to the optional custom lower bound
-                               ub = custom_ub) 	# reference to the optional custom upper bound
+solver = DESPOTSolver(pomdp,			# reference to the problem model
+					  current_belief, 	# reference to the current belief structure
+					  lb = custom_lb, 	# reference to the optional custom lower bound
+					  ub = custom_ub) 	# reference to the optional custom upper bound
 ```
 
 Information on how to construct custom upper and lower bound estimators is provided in section Customization.
@@ -99,12 +99,12 @@ my_ub = MyUpperBound(pomdp)
 ```
 Then pass it to the DESPOT solver as a keyword argument:
 ```julia
-    solver      = DESPOTSolver(pomdp,		   	# reference to the problem model
-                               current_belief, 	# reference to the current belief structure
-                               ub = my_ub) 		# reference to the optional custom upper bound
+solver = DESPOTSolver(pomdp, 			# reference to the problem model
+                      current_belief, 	# reference to the current belief structure
+                      ub = my_ub) 		# reference to the optional custom upper bound
 ```
 
-### Lower Bound ###
+### Lower bound estimation ###
 
 An example problem-specific lower bound type (*RockSampleParticleLB*) and the associated methods are provided for the RockSample problem
 (*/src/problems/RockSample/rockSampleParticleLB.jl*). The algorithm for this lower bound estimator is based on dynamic programming.
@@ -132,10 +132,10 @@ my_lb = MyLowerBound(pomdp)
 ```
 Then pass it to the DESPOT solver as a keyword argument:
 ```julia
-    solver      = DESPOTSolver(pomdp,		   	# reference to the problem model
-                               current_belief, 	# reference to the current belief structure
-                               ub = my_ub, 		# reference to the optional custom upper bound
-                               lb = my_lb) 		# reference to the optional custom lower bound
+solver = DESPOTSolver(pomdp,		   	# reference to the problem model
+                      current_belief, 	# reference to the current belief structure
+                      ub = my_ub, 		# reference to the optional custom upper bound
+                      lb = my_lb) 		# reference to the optional custom lower bound
 ```
 
 ## Running DESPOT on test problems ##
@@ -165,4 +165,5 @@ Runtime = 6.30 sec
 
 ## Bugs ##
 
-Please feel free to file bug reports and I will try to address them as soon as I am able. Feature requests will be considered, but only as time allows.
+Please feel free to file bug reports and I will try to address them as soon as I am able.
+ Feature requests will be considered as well, but only as time allows.
