@@ -15,7 +15,7 @@ type DESPOTConfig
   eta::Float64
   # Number of moves to simulate
   sim_len::Int64
-  # Whether the initial upper bound is approximate or true. If approximate,
+  # Whether the initial upper bound is approximate or not. If approximate,
   # the solver allows initial lower bound > initial upper bound at a node.
   approximate_ubound::Bool
 #   particle_weight_threshold::Float64

@@ -66,7 +66,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     solver.config.search_depth = 90 #default: 90
     solver.config.time_per_move = 1 # sec, default: 1, unlimited: -1
     solver.config.pruning_constant = 0
-    solver.config.eta = 0.95
+    solver.config.eta = 0.95 # default: 0.95
     solver.config.sim_len = -1 # default: -1
     solver.config.max_trials = -1 # default: -1
     solver.config.approximate_ubound = false
@@ -110,6 +110,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         multiplier *= pomdp.discount
     end
     
+    println("\n********** EXECUTION SUMMARY **********")    
     @printf("Number of steps = %d\n", sim_step)
     @printf("Undiscounted return = %.2f\n", sum(rewards))
     @printf("Discounted return = %.2f\n", discounted_reward)

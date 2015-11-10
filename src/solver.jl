@@ -57,11 +57,6 @@ type DESPOTSolver <: POMDPs.Solver
         this.config.rand_max = rand_max
         this.config.debug = debug
         
-        # Instantiate random streams
-        this.random_streams = RandomStreams(this.config.n_particles,
-                                           this.config.search_depth,
-                                           this.config.main_seed)
-        
         this.root_default_action = -1 # root_default_action
         
         this.rng = DESPOTRandomNumber(-1)
@@ -77,6 +72,11 @@ end
 
 function init_solver(solver::DESPOTSolver, pomdp::POMDP)
 
+    # Instantiate random streams
+    solver.random_streams = RandomStreams(solver.config.n_particles,
+                                          solver.config.search_depth,
+                                          solver.config.main_seed)
+                                           
     fill_random_streams(solver.random_streams, solver.config.rand_max)
     init_upper_bound(solver.ub, pomdp, solver.config)
     init_lower_bound(solver.lb, pomdp, solver.config)
