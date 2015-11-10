@@ -1,6 +1,7 @@
 # README #
 
-This repository contains a Julia language implementation of DESPOT POMDP algorithm, The original (C++) version was developed at National University of Singapore and can be found here:
+This repository contains a Julia language implementation of DESPOT POMDP algorithm, designed to work with the [POMDPs.jl](https://github.com/sisl/POMDPs.jl) API.
+The original (C++) version of DESPOT was developed at National University of Singapore and can be found here:
 
 http://bigbird.comp.nus.edu.sg/pmwiki/farm/appl/index.php?n=Main.DownloadDespot
 
@@ -10,102 +11,154 @@ http://www.comp.nus.edu.sg/~yenan/pub/somani2013despot.pdf
 
 The code has been tested with Julia v0.3.6.
 
+## Installation ##
+
+```julia
+Pkg.clone("https://github.com/sisl/DESPOT.jl.git")
+```
+
 ## Dependencies ##
 
+* POMDPs
+* POMDPToolbox
 * Distributions
 
-## Running DESPOT on test problems ##
+## Instantiating a DESPOT solver ##
 
-### Rock Sample ###
-RockSample is the only problem currently available. To run once, use main([grid size],[number of rocks]). To run in the batch mode main([grid size],[number of rocks], [number of repetitions]).
+The following example illustrates instantiation of a DESPOT solver
 
-### Example output for RockSample ###
+    solver      = DESPOTSolver(pomdp,		 	# reference to the problem model
+                               current_belief, 	# reference to the current belief structure
+                               lb = custom_lb, 	# reference to the optional custom lower bound
+                               ub = custom_ub) 	# reference to the optional custom upper bound
 
-Upon successful execution, you should see the following output:
+Information on how to construct custom upper and lower bound estimators is provided in section Customization.
+Additional solver parameters (listed below) can either also be passed as keyword arguments during the solver construction
+ or set at a later point (but before a call to *POMDPs.solve* is made) by accessing *solver.config.[parameter name].
 
-**Single run of main(4,4)**:
+|Parameter					|Type		|Default Value	|Description												|
+|---------------------------|-----------|--------------:|-----------------------------------------------------------|
+|search_depth				|Int64		|90				|Maximum depth of the search tree							|
+|main_seed					|Uint32		|42				|The main random seed used to derive other seeds			|
+|time_per_move				|Float64	|1				|CPU time allowed per move (in sec), -1 for unlimited		|
+|n_particles				|Int64		|500			|Number of particles used for belief representation			|
+|pruning_constant			|Float64	|0.0			|Regularization parameter									|
+|eta						|Float64	|0.95			|eta*width(root) is the target uncertainty to end a trial	|
+|sim_len					|Int64		|-1				|Number of moves to simulate, -1 for unlimited				|
+|approximate_ubound			|Bool		|false			|If true, solver can allow initial lower bound > upper bound|
+|tiny						|Float64	|1e-6			|Smallest significant difference between a pair of numbers	|
+|rand_max					|Int64		|2^32-1			|Largest possible random number								|
+|debug						|Uint8		|0				|Level of debug output (0-5), 0 - no output, 5 - most output|
 
-Number of steps = 15
 
-Discounted return = 26.21
+## Instantiating the default belief updater ##
+A default particle-filtering belief update type, DESPOTBeliefUpdater, is provided in the package. 
 
-Undiscounted return = 40.00
+|Parameter					|Type		|Default Value	|Description												|
+|---------------------------|-----------|--------------:|-----------------------------------------------------------|
+|seed						|Uint32		|42				|Random seed used in belief updates							|
+|n_particles				|Int64		|500			|Number of particles used for belief representation			|
+|particle_weight_threshold	|Float64	|1e-20			|Smallest viable particle weight							|
+|eff_particle_fraction		|Float64	|0.05			|Min. fraction of effective particles to avoid resampling	| 
 
-Average number of trials per move = 120.27
+Note that the solver and the belief updater values for *n_particles* should be the same (execution will be stopped
+if they are different). It is also recommended to use the same *rand_max* value.
 
-Runtime = 5.90 sec
+Custom belief updaters can be used as well, as long as they are based on the DESPOTBelief particle belief type (see *src/DESPOT.jl*).
+ Please see POMDPs.jl documentation for information on defining and using belief updaters.
+ 
+## Solver customization ##
 
-**Batch run main(4,4,5)**:
+DESPOT.jl can be customized with user-provided upper and lower bound functions (which can also be problem-specific).
 
-================= Batch Averages =================
+### Upper bound estimation ###
 
-Number of steps = 15
+The default type of upper bound provided is a non-stochastic estimate based on value iteration (see src/upperBound/upperBoundNonStochastic.jl).
+ To add a custom upper bound algorithm, define a custom type as a subtype of DESPOTUpperBound, e.g.:
 
-Discounted return = 26.21
+```julia
+type MyUpperBound <: DESPOTUpperBound
+```
+then define functions to initialize and compute the upper bound with the following signatures:
 
-Undiscounted return = 40.00
+```julia
+function upper_bound(::MyUpperBound, 			# upper bound variable
+					 ::POMDP,					# problem model
+					 ::Vector{DESPOTParticle}, 	# belief of interest represented via particles
+					 ::DESPOTConfig)			# solver configuration parameters
 
-Average number of trials per move = 118.16
+function init_upper_bound(::MyUpperBound,
+						  ::POMDP,
+						  ::DESPOTConfig)
+```
 
-Runtime = 6.28 sec
+Instantiate an object of type MyUpperBound, e.g.:
+```julia
+my_ub = MyUpperBound(pomdp)
+```
+Then pass it to the DESPOT solver as a keyword argument:
 
-## Code ##
-
-### Core code ###
-
-- despot.jl - the entry point for running DESPOT. Contains initialization and configuration code, as well as main() methods for execution. Currently the default (and only) problem is RockSample, but other problems will be added in the future. This file should be considered a template for your application code - consider making a copy of it and modifying it for your own needs.
-
-- solver.jl - the core DESPOT algorithm
-
-- config.jl - data type defining algorithm parameters, including discount factor, search depth, time per move, etc. The actual values of these parameters are set in despot.jl. The purpose of each parameter is described in config.jl.
-
-- randomStreams.jl - data type and methods for managing streams of random numbers (needed by DESPOT for creating scenario sets)
-
-- types.jl - other data types needed by DESPOT (e.g. Particle and StateProbability)
-
-- utils.jl - utility methods needed by the solver (mostly for quantifying uncertainty)
-
-- vnode.jl - VNode data type and methods for representing belief nodes
-
-- qnode.jl - QNode data type and methods for representing action nodes
-
-- history.jl - data type and methods for storing rollout history
-
-- world.jl - data type and methods for managing the state of problem
-
-### Upper Bound ###
-
-The directory contains code for computing the initial upper bound estimate. Currently the only type of upper bound provided is a non-stochastic estimate based on value iteration.
-
-To add custom upper bound code, define a custom type as a subtype of UpperBound, e.g.:
-
-*MyUpperBound <: UpperBound*
-
-and add the file with your upper bound code to the upperBound directory. The interface to your upper bound methods will be implementation-specific.
+    solver      = DESPOTSolver(pomdp,		   	# reference to the problem model
+                               current_belief, 	# reference to the current belief structure
+                               ub = my_ub) 		# reference to the optional custom upper bound
 
 ### Lower Bound ###
 
-This is a placeholder directory for generalized lower bound estimation code. In the current implementation of RockSample problem-specific lower bound methods are used. 
+An example problem-specific lower bound type (RockSampleParticleLB) and the associated methods are provided for the RockSample problem
+(/src/problems/RockSample/rockSampleParticleLB.jl). The algorithm for this lower bound estimator is based on dynamic programming.
+ Similarly to upper bounds, to add a custom upper bound algorithm, define a custom type as a subtype of DESPOTLowerBound, e.g.:
 
-### Belief Update ###
+```julia
+type MyLowerBound <: DESPOTLowerBound
+```
+then define functions to initialize and compute the upper bound with the following signatures:
 
-This directory contains code for performing belief updates. Currently only a particle-filtering belief update method is provided, however custom methods can be added.
+```julia
+function upper_bound(::MyLowerBound, 			# upper bound variable
+					 ::POMDP,					# problem model
+					 ::Vector{DESPOTParticle}, 	# belief of interest represented via particles
+					 ::DESPOTConfig)			# solver configuration parameters
 
-### Problems ###
+function init_upper_bound(::MyLowerBound,
+						  ::POMDP,
+						  ::DESPOTConfig)
+```
 
-This directory contains test problems. As mentioned above, only RockSample is provided at the moment. Additional problems can be added by creating a custom type and 
+Instantiate an object of type MyLowerBound, e.g.:
+```julia
+my_lb = MyLowerBound(pomdp)
+```
+Then pass it to the DESPOT solver as a keyword argument:
 
-*MyProblem <: Problem*
+    solver      = DESPOTSolver(pomdp,		   	# reference to the problem model
+                               current_belief, 	# reference to the current belief structure
+                               ub = my_ub, 		# reference to the optional custom upper bound
+                               lb = my_lb) 		# reference to the optional custom lower bound
 
-the following methods need to be implemented:
+## Running DESPOT on test problems ##
 
-*nextState::Int64, reward::Float64, observation::Int64 = step(problem::MyProblem, state::Int64, randNum::Float64, action::Int64)*
+DESPOT.jl should be compatible with test problems in [POMDPModels.jl](https://github.com/sisl/POMDPModels.jl).
+So far, however, it has been tested only with the included [RockSample](https://github.com/sisl/DESPOT.jl/tree/master/src/problems/RockSample).
+ 
+### Rock Sample ###
+To run a RockSample problem in REPL, for example, do the following:
 
-The above is a standard POMDP transition function, with only randNum being a DESPOT-specific addition (please see the 2013 DESPOT paper listed above for details)
+```julia
+include("runRockSample.jl")
+main([grid size],[number of rocks])
+```
 
-*ans::Bool = isTerminal(problem::MyProblem, s::Int64)*
+Running main() without arguments will execute a simple RockSample example with 4 rocks on a grid size of 4.
 
-returns true if the state is terminal and false otherwise. Optional functions for printing state, observations, etc can be implemented as well. Please see RockSample code for examples. 
+### Example output for RockSample ###
+
+Upon successful execution, you should see output of the following form:
+
+********** EXECUTION SUMMARY **********  
+Number of steps = 11  
+Undiscounted return = 20.00  
+Discounted return = 12.62  
+Runtime = 6.30 sec  
 
 ## Bugs ##
 
