@@ -26,15 +26,16 @@ Pkg.clone("https://github.com/sisl/DESPOT.jl.git")
 ## Instantiating a DESPOT solver ##
 
 The following example illustrates instantiation of a DESPOT solver
-
+```julia
     solver      = DESPOTSolver(pomdp,		 	# reference to the problem model
                                current_belief, 	# reference to the current belief structure
                                lb = custom_lb, 	# reference to the optional custom lower bound
                                ub = custom_ub) 	# reference to the optional custom upper bound
+```
 
 Information on how to construct custom upper and lower bound estimators is provided in section Customization.
 Additional solver parameters (listed below) can either also be passed as keyword arguments during the solver construction
- or set at a later point (but before a call to *POMDPs.solve* is made) by accessing *solver.config.[parameter name].
+ or set at a later point (but before a call to *POMDPs.solve* is made) by accessing *solver.config.[parameter name]*.
 
 |Parameter					|Type		|Default Value	|Description												|
 |---------------------------|-----------|--------------:|-----------------------------------------------------------|
@@ -64,17 +65,17 @@ A default particle-filtering belief update type, DESPOTBeliefUpdater, is provide
 Note that the solver and the belief updater values for *n_particles* should be the same (execution will be stopped
 if they are different). It is also recommended to use the same *rand_max* value.
 
-Custom belief updaters can be used as well, as long as they are based on the DESPOTBelief particle belief type (see *src/DESPOT.jl*).
- Please see POMDPs.jl documentation for information on defining and using belief updaters.
+Custom belief updaters can be used as well, as long as they are based on the *DESPOTBelief* particle belief type (see *src/DESPOT.jl*).
+ Please see [POMDPs.jl](https://github.com/sisl/POMDPs.jl) documentation for information on defining and using belief updaters.
  
 ## Solver customization ##
 
-DESPOT.jl can be customized with user-provided upper and lower bound functions (which can also be problem-specific).
+A DESPOT solver can be customized with user-provided upper and lower bound functions (which can also be problem-specific).
 
 ### Upper bound estimation ###
 
-The default type of upper bound provided is a non-stochastic estimate based on value iteration (see src/upperBound/upperBoundNonStochastic.jl).
- To add a custom upper bound algorithm, define a custom type as a subtype of DESPOTUpperBound, e.g.:
+The default type of upper bound provided is a non-stochastic estimate based on value iteration (see *src/upperBound/upperBoundNonStochastic.jl*).
+ To add a custom upper bound algorithm, define a custom type as a subtype of *DESPOTUpperBound*, e.g.:
 
 ```julia
 type MyUpperBound <: DESPOTUpperBound
@@ -92,21 +93,22 @@ function init_upper_bound(::MyUpperBound,
 						  ::DESPOTConfig)
 ```
 
-Instantiate an object of type MyUpperBound, e.g.:
+Instantiate an object of type *MyUpperBound*, e.g.:
 ```julia
 my_ub = MyUpperBound(pomdp)
 ```
 Then pass it to the DESPOT solver as a keyword argument:
-
+```julia
     solver      = DESPOTSolver(pomdp,		   	# reference to the problem model
                                current_belief, 	# reference to the current belief structure
                                ub = my_ub) 		# reference to the optional custom upper bound
+```
 
 ### Lower Bound ###
 
-An example problem-specific lower bound type (RockSampleParticleLB) and the associated methods are provided for the RockSample problem
-(/src/problems/RockSample/rockSampleParticleLB.jl). The algorithm for this lower bound estimator is based on dynamic programming.
- Similarly to upper bounds, to add a custom upper bound algorithm, define a custom type as a subtype of DESPOTLowerBound, e.g.:
+An example problem-specific lower bound type (*RockSampleParticleLB*) and the associated methods are provided for the RockSample problem
+(*/src/problems/RockSample/rockSampleParticleLB.jl*). The algorithm for this lower bound estimator is based on dynamic programming.
+ Similarly to upper bounds, to add a custom upper bound algorithm, define a custom type as a subtype of *DESPOTLowerBound*, e.g.:
 
 ```julia
 type MyLowerBound <: DESPOTLowerBound
@@ -124,16 +126,17 @@ function init_upper_bound(::MyLowerBound,
 						  ::DESPOTConfig)
 ```
 
-Instantiate an object of type MyLowerBound, e.g.:
+Instantiate an object of type *MyLowerBound*, e.g.:
 ```julia
 my_lb = MyLowerBound(pomdp)
 ```
 Then pass it to the DESPOT solver as a keyword argument:
-
+```julia
     solver      = DESPOTSolver(pomdp,		   	# reference to the problem model
                                current_belief, 	# reference to the current belief structure
                                ub = my_ub, 		# reference to the optional custom upper bound
                                lb = my_lb) 		# reference to the optional custom lower bound
+```
 
 ## Running DESPOT on test problems ##
 
