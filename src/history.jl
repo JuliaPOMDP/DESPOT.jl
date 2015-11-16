@@ -5,8 +5,7 @@ type History{TA,TO}
   History() =  new(Array(TA,0),Array(TO,0))
 end
 
-#TODO: Change to POMDPs.jl abstract data types
-function add(history::History, action::Any, obs::Any)
+function add(history::History, action::POMDPs.Action, obs::POMDPs.Observation)
     push!(history.actions, action)
     push!(history.observations, obs)
 end

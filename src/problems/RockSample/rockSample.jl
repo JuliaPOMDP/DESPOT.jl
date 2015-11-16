@@ -16,10 +16,22 @@ import POMDPToolbox:
        Particle,
        ParticleBelief
 
-typealias RockSampleState       Int64
-typealias RockSampleAction      Int64
-typealias RockSampleObservation Int64
-typealias RockSampleReward      Float64
+type RockSampleState <: POMDPs.State
+    value::Int64
+end
+
+type RockSampleAction <: POMDPs.Action
+    value::Int64
+end
+
+type RockSampleObservation <: POMDPs.Observation
+    value::Int64
+end
+
+# typealias RockSampleState       Int64
+# typealias RockSampleAction      Int64
+# typealias RockSampleObservation Int64
+#typealias RockSampleReward      Float64
 
 type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution
     pomdp::POMDP
@@ -84,7 +96,7 @@ type RockSample <: POMDPs.POMDP
     observation_effectiveness::Array{Float64,2}
     rocks::Array{Int64,1}
     T::Array{RockSampleState,2}
-    R::Array{RockSampleReward,2}
+    R::Array{POMDPs.Reward,2}
     actions::Array{Int64,1} # needed for large problems
     
     #observation aliases
@@ -125,7 +137,7 @@ type RockSample <: POMDPs.POMDP
           this.cell_to_coords = Array(Vector{Int64}, this.n_cells)
           this.observation_effectiveness = Array(Float64, this.n_cells, this.n_cells)
           this.rocks = Array(Int64, this.n_rocks)                       # locations              
-          this.T = Array(Int64, this.n_states, this.n_actions)
+          this.T = Array(RockSampleState, this.n_states, this.n_actions)
           this.R = Array(Float64, this.n_states, this.n_actions)
           this.actions = [1:n_rocks + 5] # default ordering
           this.BAD_OBS      = 0
@@ -363,80 +375,80 @@ function init_problem (pomdp::RockSample)
     
     for cell in 0 : pomdp.n_cells-1
         for rock_set = 0:(1 << pomdp.n_rocks)-1
-        s = make_state(pomdp, cell, rock_set)
+        s_value = make_state_value(pomdp, cell, rock_set)
         
             #initialize transition and rewards with default values
-            for a in 0:pomdp.n_actions-1
-                pomdp.T[s+1,a+1] = s
-                pomdp.R[s+1,a+1] = 0.
+            for a_value in 0:pomdp.n_actions-1
+                pomdp.T[s_value+1,a_value+1] = s_value
+                pomdp.R[s_value+1,a_value+1] = 0.
             end
             
             row, col = pomdp.cell_to_coords[cell+1]
             # North
             if row == 0
-                pomdp.T[s+1,1] = s
-                pomdp.R[s+1,1] = -100.
+                pomdp.T[s_value+1,1] = s_value
+                pomdp.R[s_value+1,1] = -100.
             else
-                pomdp.T[s+1,1] = make_state(pomdp, cell_num(pomdp,row-1,col),rock_set)
-                pomdp.R[s+1,1] = 0
+                pomdp.T[s_value+1,1] = make_state(pomdp, cell_num(pomdp,row-1,col),rock_set)
+                pomdp.R[s_value+1,1] = 0
             end
 
             # South
             if row == pomdp.grid_size-1
-                pomdp.T[s+1,2] = s
-                pomdp.R[s+1,2] = -100.
+                pomdp.T[s_value+1,2] = s.value
+                pomdp.R[s_value+1,2] = -100.
             else
-                pomdp.T[s+1,2] = make_state(pomdp, cell_num(pomdp,row+1,col), rock_set)
-                pomdp.R[s+1,2] = 0.
+                pomdp.T[s_value+1,2] = make_state(pomdp, cell_num(pomdp,row+1,col), rock_set)
+                pomdp.R[s_value+1,2] = 0.
             end
 
             # East
             if col == pomdp.grid_size-1
-                pomdp.T[s+1,3] = make_state(pomdp, pomdp.n_cells, rock_set)
-                pomdp.R[s+1,3] = 10.
+                pomdp.T[s_value+1,3] = make_state(pomdp, pomdp.n_cells, rock_set)
+                pomdp.R[s_value+1,3] = 10.
             else
-                pomdp.T[s+1,3] = make_state(pomdp, cell_num(pomdp,row,col+1), rock_set)
-                pomdp.R[s+1,3] = 0.
+                pomdp.T[s_value+1,3] = make_state(pomdp, cell_num(pomdp,row,col+1), rock_set)
+                pomdp.R[s_value+1,3] = 0.
             end
 
             # West
             if col == 0
-                pomdp.T[s+1,4] = s
-                pomdp.R[s+1,4] = -100.
+                pomdp.T[s_value+1, 4] = s.value
+                pomdp.R[s_value+1, 4] = -100.
             else
-                pomdp.T[s+1,4] = make_state(pomdp, cell_num(pomdp,row,col-1), rock_set)
-                pomdp.R[s+1,4] = 0.
+                pomdp.T[s_value+1, 4] = make_state(pomdp, cell_num(pomdp,row,col-1), rock_set)
+                pomdp.R[s_value+1, 4] = 0.
             end
 
             # Sample
             rock = pomdp.rock_at_cell[cell+1] # array
             if rock != -1
                 if rock_status(rock, rock_set)
-                    pomdp.T[s+1,5] = make_state(pomdp, cell, sample_rock_set(rock, rock_set));
-                    pomdp.R[s+1,5] = +10.;
+                    pomdp.T[s_value+1, 5] = make_state(pomdp, cell, sample_rock_set(rock, rock_set));
+                    pomdp.R[s_value+1, 5] = +10.;
                 else
-                    pomdp.T[s+1,5] = s
-                    pomdp.R[s+1,5] = -10.
+                    pomdp.T[s_value+1, 5] = s_value
+                    pomdp.R[s_value+1, 5] = -10.
                 end
             else
-                pomdp.T[s+1,5] = s
-                pomdp.R[s+1,5] = -100.
+                pomdp.T[s_value+1, 5] = s_value
+                pomdp.R[s_value+1, 5] = -100.
             end
 
             # Check
-            for a in 5:pomdp.n_actions-1
-                pomdp.T[s+1,a+1] = s
-                pomdp.R[s+1,a+1] = 0.
+            for a_value in 5:pomdp.n_actions-1
+                pomdp.T[s_value+1, a_value+1] = s_value
+                pomdp.R[s_value+1, a_value+1] = 0.
             end
         end
     end
 
     # Terminal states
     for k = 0:(1 << pomdp.n_rocks)-1
-        s = make_state(pomdp, pomdp.n_cells, k);
-        for a in 0:pomdp.n_actions-1
-        pomdp.T[s+1,a+1] = s
-        pomdp.R[s+1,a+1] = 0.
+        s_value = make_state_value(pomdp, pomdp.n_cells, k);
+        for a_value in 0:pomdp.n_actions-1
+            pomdp.T[s_value+1, a_value+1] = s_value
+            pomdp.R[s_value+1, a_value+1] = 0.
         end
     end
 
@@ -452,7 +464,7 @@ function init_problem (pomdp::RockSample)
     end
 end
 
-# True for good rock, false for bad rock, x can be a rock set or state
+# True for good rock, false for bad rock, x can be a rock set or state value
 function rock_status(rock::Int64, x::Int64)
     return (((x >>> rock) & 1) == 1 ? true : false)
 end
@@ -461,15 +473,15 @@ function cell_num(pomdp::RockSample, row::Int64, col::Int64)
     return row * pomdp.grid_size + col
 end
 
-function make_state(pomdp::RockSample, cell::Int64, rock_set::Int64)
+function make_state_value(pomdp::RockSample, cell::Int64, rock_set::Int64)
     return convert(Int64, (cell << pomdp.n_rocks) + rock_set)
 end
 
 function reward(pomdp::RockSample,
-                state::RockSampleState,
-                action::RockSampleAction)
+                s::RockSampleState,
+                a::RockSampleAction)
 
-    return pomdp.R[state+1, action+1]
+    return pomdp.R[s.value+1, a.value+1]
 end
 
 function transition(pomdp::RockSample,
@@ -477,6 +489,8 @@ function transition(pomdp::RockSample,
                     action::RockSampleAction,
                     distribution::RockSampleTransitionDistribution =
                                 create_transition_distribution(pomdp))
+                                
+    #TODO: check if works correctly, if not, do a deepcopy
     distribution.pomdp = pomdp
     distribution.state = state
     distribution.action = action
@@ -490,6 +504,8 @@ function observation(pomdp::RockSample,
                      next_state::RockSampleState,
                      distribution::RockSampleObservationDistribution =
                                 create_observation_distribution(pomdp))
+                                
+    #TODO: check if works correctly, if not, do a deepcopy
     distribution.pomdp = pomdp
     distribution.state = next_state    
     distribution.action = action
@@ -503,8 +519,9 @@ function rand!(rng::AbstractRNG,
                sample::RockSampleState,
                distribution::RockSampleTransitionDistribution)
     
-    sample = distribution.pomdp.T[distribution.state+1, distribution.action+1]
-    return sample
+    sample.value = distribution.pomdp.T[distribution.state.value+1, distribution.action.value+1]
+#    return sample
+    return nothing
 end
 
 function rand!(rng::AbstractRNG,
@@ -514,55 +531,56 @@ function rand!(rng::AbstractRNG,
     # generate a new random number regardless of whether it's used below or not
     rand_num = rand!(rng)
     
-    if (distribution.action < 5)
+    if (distribution.action.value < 5)
         sample = isterminal(distribution.pomdp, distribution.next_state) ?
                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
     else
-        rock_cell = distribution.pomdp.rocks[distribution.action - 4] # would be [action-5] with 0-based indexing
+        rock_cell = distribution.pomdp.rocks[distribution.action.value - 4] # would be [action-5] with 0-based indexing
         agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
-        if (rand_num <= eff) == rock_status(distribution.action - 5, distribution.state)   
-            sample = distribution.pomdp.GOOD_OBS
+        if (rand_num <= eff) == rock_status(distribution.action.value - 5, distribution.state)   
+            sample.value = distribution.pomdp.GOOD_OBS
         else
-            sample = distribution.pomdp.BAD_OBS
+            sample.value = distribution.pomdp.BAD_OBS
         end
     end
     
-    return sample
+#    return sample
+    return nothing
 end
 
 function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation)
   # Terminal state should match terminal obs
   if isterminal(distribution.pomdp, distribution.next_state)
-      if obs == distribution.pomdp.TERMINAL_OBS
+      if obs.value == distribution.pomdp.TERMINAL_OBS
           return 1.
       else
           return 0.
       end
   end
 
-  if (distribution.action < 5)
-      if obs == distribution.pomdp.NONE_OBS
+  if (distribution.action.value < 5)
+      if obs.value == distribution.pomdp.NONE_OBS
           return 1.
       else
           return 0.
       end
   end
 
-  if ((obs != distribution.pomdp.GOOD_OBS) && (obs != distribution.pomdp.BAD_OBS))
+  if ((obs.value != distribution.pomdp.GOOD_OBS) && (obs.value != distribution.pomdp.BAD_OBS))
     return 0.
   end
 
-  rock = distribution.action - 5
+  rock = distribution.action.value - 5
   rockCell = distribution.pomdp.rocks[rock+1]
   agentCell = cell_of(distribution.pomdp, distribution.next_state)
 
   eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
   
   rstatus = rock_status(rock, distribution.next_state)
-  if ((obs == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
-     ((obs == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
+  if ((obs.value == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
+     ((obs.value == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
     return eff
   else
     return 1. - eff
@@ -575,7 +593,7 @@ end
 #end
 
 function isterminal(pomdp::RockSample, s::RockSampleState)
-  if cell_of(pomdp,s) == pomdp.n_cells
+  if cell_of(pomdp, s) == pomdp.n_cells
     return true
   else
     return false
@@ -584,7 +602,7 @@ end
 
 # Which cell the agent is in
 function cell_of(pomdp::RockSample, s::RockSampleState)
-  return s >>> pomdp.n_rocks
+  return s.value >>> pomdp.n_rocks
 end
 
 # The rock set after sampling a rock from it
@@ -594,7 +612,7 @@ end
 
 # The set of rocks in the state
 function rock_set_of(pomdp::RockSample, s::RockSampleState)
-    return s & ((1 << pomdp.n_rocks)-1)
+    return s.value & ((1 << pomdp.n_rocks)-1)
 end
 
 function show_state(pomdp::RockSample, s::RockSampleState)
@@ -625,71 +643,25 @@ function show_state(pomdp::RockSample, s::RockSampleState)
 end
 
 # TODO: redo through rand!()
-function random_state(pomdp::RockSample, seed::Uint32)
+function random_state!(pomdp::RockSample, seed::Uint32, s::RockSampleState)
     cseed = Cuint[seed]
     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
     random_number = ccall((:rand, "libc"), Int, (),)
-    return random_number % pomdp.n_states
+    s.value = random_number % pomdp.n_states
+    return nothing
+    #return random_number % pomdp.n_states
 end
 
 function show_obs(pomdp::RockSample, obs::RockSampleObservation)
-    if obs == pomdp.NONE_OBS
+    if obs.value == pomdp.NONE_OBS
         println("NONE")
-    elseif obs == pomdp.GOOD_OBS
+    elseif obs.value == pomdp.GOOD_OBS
         println("GOOD")
-    elseif obs == pomdp.BAD_OBS
+    elseif obs.value == pomdp.BAD_OBS
         println("BAD")
-    elseif obs == pomdp.TERMINAL_OBS
+    elseif obs.value == pomdp.TERMINAL_OBS
         println("TERMINAL")
     else
         println("UNKNOWN")
     end
 end
-
-# #TODO: hack! Only needed until belief is fixed
-# function sample_particles(pool::Vector,
-#                           N::Int64,
-#                           seed::Uint32,
-#                           rand_max::Int64)
-# 
-#     sampled_particles = Array(Particle, 0)
-# 
-#     # Ensure particle weights sum to exactly 1
-#     sum_without_last =  0;
-#     
-#     for i in 1:length(pool)-1
-#         sum_without_last += pool[i].weight
-#     end
-#     
-#     end_weight = 1 - sum_without_last
-# 
-#     # Divide the cumulative frequency into N equally-spaced parts
-#     num_sampled = 0
-#     
-#     if OS_NAME == :Linux
-#         cseed = Cuint[seed]
-#         r = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), cseed)/rand_max/N
-#     else #Windows, etc
-#         srand(seed)
-#         r = rand()/N
-#     end
-# 
-#     curr_particle = 0
-#     cum_sum = 0
-#     while num_sampled < N
-#         while cum_sum < r
-#             curr_particle += 1
-#             if curr_particle == length(pool)
-#                 cum_sum += end_weight
-#             else
-#                 cum_sum += pool[curr_particle].weight
-#             end
-#         end
-# 
-#         new_particle = Particle(pool[curr_particle].state, 1.0 / N)
-#         push!(sampled_particles, new_particle)
-#         num_sampled += 1
-#         r += 1.0 / N
-#     end
-#     return sampled_particles
-# end

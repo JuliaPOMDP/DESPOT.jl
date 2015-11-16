@@ -19,8 +19,8 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
     
     #pre-allocated variables (TODO: add the rest at some point)
     n_particles::Int64
-    next_state::Any
-    observation::Any
+    next_state::POMDPs.State
+    observation::POMDPs.Observation
     new_particle::DESPOTParticle
     n_sampled::Int64
     obs_probability::Float64
@@ -86,8 +86,8 @@ end
 
 function update(bu::DESPOTBeliefUpdater,
                 current_belief::DESPOTBelief,
-                action::Any,
-                obs::Any,
+                action::POMDPs.Action,
+                obs::POMDPs.Observation,
                 updated_belief::DESPOTBelief = create_belief(pomdp))
                 
     if bu.n_particles != length(current_belief.particles)

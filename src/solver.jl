@@ -12,9 +12,9 @@ type DESPOTSolver <: POMDPs.Solver
     transition_distribution::POMDPs.AbstractDistribution
     observation_distribution::POMDPs.AbstractDistribution
     rng::DESPOT.DESPOTRandomNumber
-    reward::Number
-    next_state::Any 
-    observation::Any
+    reward::POMDPs.Reward
+    next_state::POMDPs.State 
+    observation::POMDPs.Observation
 
   # default constructor
     function DESPOTSolver  (pomdp::POMDP,
@@ -254,7 +254,7 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
     return node
 end
 
-function step(solver::DESPOTSolver, pomdp::POMDP, state::Any, rand_num::Float64, action::Any)
+function step(solver::DESPOTSolver, pomdp::POMDP, state::POMDPs.State, rand_num::Float64, action::POMDPs.Action)
     
     solver.rng.number = rand_num
     POMDPs.transition(pomdp, state, action, solver.transition_distribution)

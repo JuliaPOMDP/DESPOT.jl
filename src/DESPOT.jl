@@ -99,7 +99,7 @@ init_upper_bound(ub::DESPOTUpperBound,
                     config::DESPOTConfig) =
     error("$(typeof(ub)) bound does not implement init_upper_bound")
     
-fringe_upper_bound(pomdp::POMDP, state::Any) = 
+fringe_upper_bound(pomdp::POMDP, state::POMDPs.State) = 
     error("$(typeof(pomdp)) does not implement fringe_upper_bound")
 
 # FUNCTIONS
