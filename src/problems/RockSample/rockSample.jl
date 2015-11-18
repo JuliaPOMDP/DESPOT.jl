@@ -16,60 +16,10 @@ import POMDPToolbox:
        Particle,
        ParticleBelief
 
-type RockSampleState <: POMDPs.State
-    value::Int64
-end
-
-type RockSampleAction <: POMDPs.Action
-    value::Int64
-end
-
-type RockSampleObservation <: POMDPs.Observation
-    value::Int64
-end
-
 # typealias RockSampleState       Int64
 # typealias RockSampleAction      Int64
 # typealias RockSampleObservation Int64
 #typealias RockSampleReward      Float64
-
-type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution
-    pomdp::POMDP
-    state::RockSampleState
-    action::RockSampleAction
-end
-
-function create_transition_distribution(pomdp::POMDP)
-    return RockSampleTransitionDistribution(pomdp, -1, -1)
-end
-
-type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
-    pomdp::POMDP
-    state::RockSampleState
-    action::RockSampleAction
-    next_state::RockSampleState
-    debug::Int64 #TODO: consider removing
-    
-    #TODO: consider removing, not really needed except for debugging
-    function RockSampleObservationDistribution(pomdp::POMDP,
-                                               state::RockSampleState,
-                                               action::RockSampleAction,
-                                               next_state::RockSampleState,
-                                               debug::Int64 = 0)
-        this = new()
-        this.pomdp = pomdp
-        this.state = state
-        this.action = action
-        this.next_state = next_state
-        this.debug = debug
-        
-        return this
-    end
-end
-
-function create_observation_distribution(pomdp::POMDP)
-    return RockSampleObservationDistribution(pomdp, -1, -1, -1)
-end
 
 type RockSample <: POMDPs.POMDP
     #problem parameters
@@ -150,6 +100,18 @@ type RockSample <: POMDPs.POMDP
      end
 end
 
+type RockSampleState <: POMDPs.State
+    value::Int64
+end
+
+type RockSampleAction <: POMDPs.Action
+    value::Int64
+end
+
+type RockSampleObservation <: POMDPs.Observation
+    value::Int64
+end
+
 # This function returns the start state, serving two purposes simultaneously
 function create_state(pomdp::RockSample)
    return make_state(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start);
@@ -166,6 +128,44 @@ end
 # Creates a default belief structure to store the problem's initial belief
 function create_belief(pomdp::RockSample)
     return ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
+end
+
+type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution
+    pomdp::RockSample
+    state::RockSampleState
+    action::RockSampleAction
+end
+
+function create_transition_distribution(pomdp::RockSample)
+    return RockSampleTransitionDistribution(pomdp, -1, -1)
+end
+
+type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
+    pomdp::RockSample
+    state::RockSampleState
+    action::RockSampleAction
+    next_state::RockSampleState
+    debug::Int64 #TODO: consider removing
+    
+    #TODO: consider removing, not really needed except for debugging
+    function RockSampleObservationDistribution(pomdp::RockSample,
+                                               state::RockSampleState,
+                                               action::RockSampleAction,
+                                               next_state::RockSampleState,
+                                               debug::Int64 = 0)
+        this = new()
+        this.pomdp = pomdp
+        this.state = state
+        this.action = action
+        this.next_state = next_state
+        this.debug = debug
+        
+        return this
+    end
+end
+
+function create_observation_distribution(pomdp::RockSample)
+    return RockSampleObservationDistribution(pomdp, -1, -1, -1)
 end
 
 function initial_belief(pomdp::RockSample,
@@ -514,13 +514,11 @@ function observation(pomdp::RockSample,
     return nothing
 end
 
-# TODO: see if there is a way to clean-up the interface and pass sample by reference
 function rand!(rng::AbstractRNG,
                sample::RockSampleState,
                distribution::RockSampleTransitionDistribution)
     
     sample.value = distribution.pomdp.T[distribution.state.value+1, distribution.action.value+1]
-#    return sample
     return nothing
 end
 
@@ -546,7 +544,6 @@ function rand!(rng::AbstractRNG,
         end
     end
     
-#    return sample
     return nothing
 end
 
