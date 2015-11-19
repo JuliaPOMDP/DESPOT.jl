@@ -16,11 +16,77 @@ import POMDPToolbox:
        Particle,
        ParticleBelief
 
-# typealias RockSampleState       Int64
-# typealias RockSampleAction      Int64
-# typealias RockSampleObservation Int64
-#typealias RockSampleReward      Float64
+##### RockSampleState type and iterator definition #####
+type RockSampleState <: POMDPs.State
+    index::Int64
+end
 
+type RockSampleStateIterator
+    max_index::Int64
+end
+
+function Base.start(::RockSampleStateIterator)
+    return RockSampleState(0)
+end
+
+# Can ignore the return indexs since the state is modified in place
+function Base.next(::RockSampleStateIterator, state::RockSampleState)
+    state.index +=1
+    return (state, state)
+end
+
+function Base.done(iter::RockSampleStateIterator, state::RockSampleState)
+    return state.index >= iter.max_index
+end
+
+##### RockSampleAction type and iterator definition #####
+type RockSampleAction <: POMDPs.Action
+    index::Int64
+end
+
+type RockSampleActionIterator
+    max_index::Int64
+end
+
+function Base.start(::RockSampleActionIterator)
+    return RockSampleAction(0)
+end
+
+# Can ignore the return values since the action is modified in place
+function Base.next(::RockSampleActionIterator, action::RockSampleAction)
+    action.index +=1
+    return (action, action)
+end
+
+function Base.done(iter::RockSampleActionIterator, action::RockSampleAction)
+    return action.index >= iter.max_index
+end
+
+##### RockSampleObservation type and iterator definition #####
+type RockSampleObservation <: POMDPs.Observation
+    index::Int64
+end
+
+type RockSampleObservationIterator
+    max_index::Int64
+end
+
+function Base.start(::RockSampleObservationIterator)
+    return RockSampleObservation(0)
+end
+
+# Can ignore the return values since the action is modified in place
+function Base.next(::RockSampleObservationIterator, observation::RockSampleObservation)
+    observation.index +=1
+    return (observation, observation)
+end
+
+function Base.done(iter::RockSampleObservationIterator, action::RockSampleObservation)
+    return observation.index >= iter.max_index
+end
+
+
+######## RockSample type definition ########
 type RockSample <: POMDPs.POMDP
     #problem parameters
     grid_size::Int64
@@ -100,29 +166,17 @@ type RockSample <: POMDPs.POMDP
      end
 end
 
-type RockSampleState <: POMDPs.State
-    value::Int64
-end
-
-type RockSampleAction <: POMDPs.Action
-    value::Int64
-end
-
-type RockSampleObservation <: POMDPs.Observation
-    value::Int64
-end
-
 # This function returns the start state, serving two purposes simultaneously
 function create_state(pomdp::RockSample)
-   return make_state(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start);
+   return RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
 end
 
 function create_action(pomdp::RockSample)
-    return -1
+    return RockSampleAction(-1)
 end
 
 function create_observation(pomdp::RockSample)
-    return -1
+    return RockSampleObservation(-1)
 end
 
 # Creates a default belief structure to store the problem's initial belief
@@ -137,7 +191,7 @@ type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution
 end
 
 function create_transition_distribution(pomdp::RockSample)
-    return RockSampleTransitionDistribution(pomdp, -1, -1)
+    return RockSampleTransitionDistribution(pomdp, RockSampleState(-1), RockSampleAction(-1))
 end
 
 type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
@@ -165,7 +219,7 @@ type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
 end
 
 function create_observation_distribution(pomdp::RockSample)
-    return RockSampleObservationDistribution(pomdp, -1, -1, -1)
+    return RockSampleObservationDistribution(pomdp, RockSampleState(-1), RockSampleAction(-1), RockSampleState(-1))
 end
 
 function initial_belief(pomdp::RockSample,
@@ -203,7 +257,8 @@ function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{DES
     
     p = 1.0/(1 << pomdp.n_rocks)
     for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
-        push!(pool, DESPOTParticle{RockSampleState}(make_state(pomdp, pomdp.robot_start_cell, k), k, p))
+        push!(pool,
+              DESPOTParticle{RockSampleState}(RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, k)), k, p))
     end
     
     #shuffle!(particles) #TODO: Uncomment!!!
@@ -375,80 +430,80 @@ function init_problem (pomdp::RockSample)
     
     for cell in 0 : pomdp.n_cells-1
         for rock_set = 0:(1 << pomdp.n_rocks)-1
-        s_value = make_state_value(pomdp, cell, rock_set)
+        s_index = make_state_index(pomdp, cell, rock_set)
         
             #initialize transition and rewards with default values
-            for a_value in 0:pomdp.n_actions-1
-                pomdp.T[s_value+1,a_value+1] = s_value
-                pomdp.R[s_value+1,a_value+1] = 0.
+            for a_index in 0:pomdp.n_actions-1
+                pomdp.T[s_index+1,a_index+1] = RockSampleState(s_index)
+                pomdp.R[s_index+1,a_index+1] = 0.
             end
             
             row, col = pomdp.cell_to_coords[cell+1]
             # North
             if row == 0
-                pomdp.T[s_value+1,1] = s_value
-                pomdp.R[s_value+1,1] = -100.
+                pomdp.T[s_index+1,1] = RockSampleState(s_index)
+                pomdp.R[s_index+1,1] = -100.
             else
-                pomdp.T[s_value+1,1] = make_state(pomdp, cell_num(pomdp,row-1,col),rock_set)
-                pomdp.R[s_value+1,1] = 0
+                pomdp.T[s_index+1,1] = RockSampleState(make_state_index(pomdp, cell_num(pomdp,row-1,col), rock_set))
+                pomdp.R[s_index+1,1] = 0
             end
 
             # South
             if row == pomdp.grid_size-1
-                pomdp.T[s_value+1,2] = s.value
-                pomdp.R[s_value+1,2] = -100.
+                pomdp.T[s_index+1,2] = RockSampleState(s_index)
+                pomdp.R[s_index+1,2] = -100.
             else
-                pomdp.T[s_value+1,2] = make_state(pomdp, cell_num(pomdp,row+1,col), rock_set)
-                pomdp.R[s_value+1,2] = 0.
+                pomdp.T[s_index+1,2] = RockSampleState(make_state_index(pomdp, cell_num(pomdp,row+1,col), rock_set))
+                pomdp.R[s_index+1,2] = 0.
             end
 
             # East
             if col == pomdp.grid_size-1
-                pomdp.T[s_value+1,3] = make_state(pomdp, pomdp.n_cells, rock_set)
-                pomdp.R[s_value+1,3] = 10.
+                pomdp.T[s_index+1,3] = RockSampleState(make_state_index(pomdp, pomdp.n_cells, rock_set))
+                pomdp.R[s_index+1,3] = 10.
             else
-                pomdp.T[s_value+1,3] = make_state(pomdp, cell_num(pomdp,row,col+1), rock_set)
-                pomdp.R[s_value+1,3] = 0.
+                pomdp.T[s_index+1,3] = RockSampleState(make_state_index(pomdp, cell_num(pomdp,row,col+1), rock_set))
+                pomdp.R[s_index+1,3] = 0.
             end
 
             # West
             if col == 0
-                pomdp.T[s_value+1, 4] = s.value
-                pomdp.R[s_value+1, 4] = -100.
+                pomdp.T[s_index+1, 4] = RockSampleState(s_index)
+                pomdp.R[s_index+1, 4] = -100.
             else
-                pomdp.T[s_value+1, 4] = make_state(pomdp, cell_num(pomdp,row,col-1), rock_set)
-                pomdp.R[s_value+1, 4] = 0.
+                pomdp.T[s_index+1, 4] = RockSampleState(make_state_index(pomdp, cell_num(pomdp,row,col-1), rock_set))
+                pomdp.R[s_index+1, 4] = 0.
             end
 
             # Sample
             rock = pomdp.rock_at_cell[cell+1] # array
             if rock != -1
                 if rock_status(rock, rock_set)
-                    pomdp.T[s_value+1, 5] = make_state(pomdp, cell, sample_rock_set(rock, rock_set));
-                    pomdp.R[s_value+1, 5] = +10.;
+                    pomdp.T[s_index+1, 5] = RockSampleState(make_state_index(pomdp, cell, sample_rock_set(rock, rock_set)))
+                    pomdp.R[s_index+1, 5] = +10.
                 else
-                    pomdp.T[s_value+1, 5] = s_value
-                    pomdp.R[s_value+1, 5] = -10.
+                    pomdp.T[s_index+1, 5] = RockSampleState(s_index)
+                    pomdp.R[s_index+1, 5] = -10.
                 end
             else
-                pomdp.T[s_value+1, 5] = s_value
-                pomdp.R[s_value+1, 5] = -100.
+                pomdp.T[s_index+1, 5] = RockSampleState(s_index)
+                pomdp.R[s_index+1, 5] = -100.
             end
 
             # Check
-            for a_value in 5:pomdp.n_actions-1
-                pomdp.T[s_value+1, a_value+1] = s_value
-                pomdp.R[s_value+1, a_value+1] = 0.
+            for a_index in 5:pomdp.n_actions-1
+                pomdp.T[s_index+1, a_index+1] = RockSampleState(s_index)
+                pomdp.R[s_index+1, a_index+1] = 0.
             end
         end
     end
 
     # Terminal states
     for k = 0:(1 << pomdp.n_rocks)-1
-        s_value = make_state_value(pomdp, pomdp.n_cells, k);
-        for a_value in 0:pomdp.n_actions-1
-            pomdp.T[s_value+1, a_value+1] = s_value
-            pomdp.R[s_value+1, a_value+1] = 0.
+        s_index = make_state_index(pomdp, pomdp.n_cells, k);
+        for a_index in 0:pomdp.n_actions-1
+            pomdp.T[s_index+1, a_index+1] = RockSampleState(s_index)
+            pomdp.R[s_index+1, a_index+1] = 0.
         end
     end
 
@@ -464,7 +519,7 @@ function init_problem (pomdp::RockSample)
     end
 end
 
-# True for good rock, false for bad rock, x can be a rock set or state value
+# True for good rock, false for bad rock, x can be a rock set or state index
 function rock_status(rock::Int64, x::Int64)
     return (((x >>> rock) & 1) == 1 ? true : false)
 end
@@ -473,7 +528,7 @@ function cell_num(pomdp::RockSample, row::Int64, col::Int64)
     return row * pomdp.grid_size + col
 end
 
-function make_state_value(pomdp::RockSample, cell::Int64, rock_set::Int64)
+function make_state_index(pomdp::RockSample, cell::Int64, rock_set::Int64)
     return convert(Int64, (cell << pomdp.n_rocks) + rock_set)
 end
 
@@ -481,7 +536,7 @@ function reward(pomdp::RockSample,
                 s::RockSampleState,
                 a::RockSampleAction)
 
-    return pomdp.R[s.value+1, a.value+1]
+    return pomdp.R[s.index+1, a.index+1]
 end
 
 function transition(pomdp::RockSample,
@@ -518,7 +573,7 @@ function rand!(rng::AbstractRNG,
                sample::RockSampleState,
                distribution::RockSampleTransitionDistribution)
     
-    sample.value = distribution.pomdp.T[distribution.state.value+1, distribution.action.value+1]
+    sample.index = distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1]
     return nothing
 end
 
@@ -529,18 +584,18 @@ function rand!(rng::AbstractRNG,
     # generate a new random number regardless of whether it's used below or not
     rand_num = rand!(rng)
     
-    if (distribution.action.value < 5)
+    if (distribution.action.index < 5)
         sample = isterminal(distribution.pomdp, distribution.next_state) ?
                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
     else
-        rock_cell = distribution.pomdp.rocks[distribution.action.value - 4] # would be [action-5] with 0-based indexing
+        rock_cell = distribution.pomdp.rocks[distribution.action.index - 4] # would be [action-5] with 0-based indexing
         agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
-        if (rand_num <= eff) == rock_status(distribution.action.value - 5, distribution.state)   
-            sample.value = distribution.pomdp.GOOD_OBS
+        if (rand_num <= eff) == rock_status(distribution.action.index - 5, distribution.state)   
+            sample.index = distribution.pomdp.GOOD_OBS
         else
-            sample.value = distribution.pomdp.BAD_OBS
+            sample.index = distribution.pomdp.BAD_OBS
         end
     end
     
@@ -550,34 +605,34 @@ end
 function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation)
   # Terminal state should match terminal obs
   if isterminal(distribution.pomdp, distribution.next_state)
-      if obs.value == distribution.pomdp.TERMINAL_OBS
+      if obs.index == distribution.pomdp.TERMINAL_OBS
           return 1.
       else
           return 0.
       end
   end
 
-  if (distribution.action.value < 5)
-      if obs.value == distribution.pomdp.NONE_OBS
+  if (distribution.action.index < 5)
+      if obs.index == distribution.pomdp.NONE_OBS
           return 1.
       else
           return 0.
       end
   end
 
-  if ((obs.value != distribution.pomdp.GOOD_OBS) && (obs.value != distribution.pomdp.BAD_OBS))
+  if ((obs.index != distribution.pomdp.GOOD_OBS) && (obs.index != distribution.pomdp.BAD_OBS))
     return 0.
   end
 
-  rock = distribution.action.value - 5
+  rock = distribution.action.index - 5
   rockCell = distribution.pomdp.rocks[rock+1]
   agentCell = cell_of(distribution.pomdp, distribution.next_state)
 
   eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
   
   rstatus = rock_status(rock, distribution.next_state)
-  if ((obs.value == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
-     ((obs.value == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
+  if ((obs.index == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
+     ((obs.index == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
     return eff
   else
     return 1. - eff
@@ -599,7 +654,7 @@ end
 
 # Which cell the agent is in
 function cell_of(pomdp::RockSample, s::RockSampleState)
-  return s.value >>> pomdp.n_rocks
+  return s.index >>> pomdp.n_rocks
 end
 
 # The rock set after sampling a rock from it
@@ -609,7 +664,7 @@ end
 
 # The set of rocks in the state
 function rock_set_of(pomdp::RockSample, s::RockSampleState)
-    return s.value & ((1 << pomdp.n_rocks)-1)
+    return s.index & ((1 << pomdp.n_rocks)-1)
 end
 
 function show_state(pomdp::RockSample, s::RockSampleState)
@@ -644,19 +699,19 @@ function random_state!(pomdp::RockSample, seed::Uint32, s::RockSampleState)
     cseed = Cuint[seed]
     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
     random_number = ccall((:rand, "libc"), Int, (),)
-    s.value = random_number % pomdp.n_states
+    s.index = random_number % pomdp.n_states
     return nothing
     #return random_number % pomdp.n_states
 end
 
 function show_obs(pomdp::RockSample, obs::RockSampleObservation)
-    if obs.value == pomdp.NONE_OBS
+    if obs.index == pomdp.NONE_OBS
         println("NONE")
-    elseif obs.value == pomdp.GOOD_OBS
+    elseif obs.index == pomdp.GOOD_OBS
         println("GOOD")
-    elseif obs.value == pomdp.BAD_OBS
+    elseif obs.index == pomdp.BAD_OBS
         println("BAD")
-    elseif obs.value == pomdp.TERMINAL_OBS
+    elseif obs.index == pomdp.TERMINAL_OBS
         println("TERMINAL")
     else
         println("UNKNOWN")
