@@ -22,6 +22,7 @@ type RockSampleState <: POMDPs.State
 end
 
 type RockSampleStateIterator
+    min_index::Int64
     max_index::Int64
 end
 
@@ -29,7 +30,7 @@ function Base.start(::RockSampleStateIterator)
     return RockSampleState(0)
 end
 
-# Can ignore the return indexs since the state is modified in place
+# Can ignore the return value since the state is modified in place
 function Base.next(::RockSampleStateIterator, state::RockSampleState)
     state.index +=1
     return (state, state)
@@ -45,6 +46,7 @@ type RockSampleAction <: POMDPs.Action
 end
 
 type RockSampleActionIterator
+    min_index::Int64
     max_index::Int64
 end
 
@@ -68,6 +70,7 @@ type RockSampleObservation <: POMDPs.Observation
 end
 
 type RockSampleObservationIterator
+    min_index::Int64
     max_index::Int64
 end
 
@@ -283,16 +286,28 @@ function n_observations(pomdp::RockSample)
     return pomdp.n_observations
 end
 
+# function states(pomdp::RockSample)
+#     return 0:pomdp.n_states-1 # 0-based indexing
+# end
+# 
+# function actions(pomdp::RockSample)
+#     return 0:pomdp.n_actions-1 # 0-based indexing
+# end
+# 
+# function observations(pomdp::RockSample)
+#     return 0:pomdp.n_observations-1 # 0-based indexing
+# end
+
 function states(pomdp::RockSample)
-    return 0:pomdp.n_states-1 # 0-based indexing
+    return RockSampleStateIterator(0, pomdp.n_states-1) # 0-based indexing
 end
 
 function actions(pomdp::RockSample)
-    return 0:pomdp.n_actions-1 # 0-based indexing
+    return RockSampleActionIterator(0, pomdp.n_actions-1) # 0-based indexing
 end
 
 function observations(pomdp::RockSample)
-    return 0:pomdp.n_observations-1 # 0-based indexing
+    return RockSampleActionIterator(0, pomdp.n_observations-1) # 0-based indexing
 end
 
 function discount(pomdp::RockSample)
@@ -573,7 +588,7 @@ function rand!(rng::AbstractRNG,
                sample::RockSampleState,
                distribution::RockSampleTransitionDistribution)
     
-    sample.index = distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1]
+    sample.index = distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index
     return nothing
 end
 

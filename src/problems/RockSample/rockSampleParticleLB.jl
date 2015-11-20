@@ -64,21 +64,21 @@ function lower_bound(lb::RockSampleParticleLB,
     # bottleneck.
 
     for p in particles
-        if lb.weight_sum_of_state[p.state+1] == -Inf #Array
-        lb.weight_sum_of_state[p.state+1] = p.weight
-        state_seen[seen_ptr] = p.state
+        if lb.weight_sum_of_state[p.state.index+1] == -Inf #Array
+        lb.weight_sum_of_state[p.state.index+1] = p.weight
+        state_seen[seen_ptr] = p.state.index
         seen_ptr += 1
         else
-        lb.weight_sum_of_state[p.state+1] += p.weight;
+        lb.weight_sum_of_state[p.state.index+1] += p.weight;
         end
     end
     
     weight_sum = 0
     for i in 0:seen_ptr-1
-        s = state_seen[i]
-        weight_sum += lb.weight_sum_of_state[s+1]
+        s_index = state_seen[i]
+        weight_sum += lb.weight_sum_of_state[s_index+1]
         for j in 0:pomdp.n_rocks-1
-        expected_sampling_value[j+1] += lb.weight_sum_of_state[s+1] * (rock_status(j, s) ? 10. : -10.)
+        expected_sampling_value[j+1] += lb.weight_sum_of_state[s_index+1] * (rock_status(j, s_index) ? 10. : -10.)
         end
     end
     
@@ -99,8 +99,8 @@ function lower_bound(lb::RockSampleParticleLB,
 
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
-    most_likely_state = make_state(pomdp, cell_of(pomdp, particles[1].state), most_likely_rock_set)
-    s = most_likely_state
+    most_likely_state_index = make_state_index(pomdp, cell_of(pomdp, particles[1].state), most_likely_rock_set)
+    s_index = most_likely_state_index
 
     # Sequence of actions taken in the optimal policy
     optimal_policy = Array(Int,0)
@@ -113,9 +113,9 @@ function lower_bound(lb::RockSampleParticleLB,
     rng = DESPOTRandomNumber(0) # dummy RNG
     
     while true
-        a = ub_actions[s+1]
-        trans_distribution.state = s
-        trans_distribution.action = a
+        a = ub_actions[s_index+1]
+        trans_distribution.state.index = s_index
+        trans_distribution.action.index = a_index
         s_test = rand!(rng, next_state, trans_distribution)
         
         if isterminal(pomdp, s_test)
