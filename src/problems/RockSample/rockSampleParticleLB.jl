@@ -52,7 +52,7 @@ function lower_bound(lb::RockSampleParticleLB,
     end
 
     # The expected value of sampling a rock, over all particles
-    expected_sampling_value = fill(0., pomdp.n_rocks)
+    expected_sampling_value = fill(0.0, pomdp.n_rocks)
     seen_ptr = 0
 
     # Compute the expected sampling value of each rock. Instead of factoring
@@ -93,32 +93,33 @@ function lower_bound(lb::RockSampleParticleLB,
             most_likely_rock_set |= (1 << i)
         end
         if abs(expected_sampling_value[i+1]) < config.tiny
-            expected_sampling_value[i+1] = 0.
+            expected_sampling_value[i+1] = 0.0
         end
     end
 
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
     most_likely_state_index = make_state_index(pomdp, cell_of(pomdp, particles[1].state), most_likely_rock_set)
-    s_index = most_likely_state_index
+    s_index = most_likely_state_index #TODO: is this necessary?
 
     # Sequence of actions taken in the optimal policy
-    optimal_policy = Array(Int,0)
-    ret = 0.
-    reward = 0.
+    optimal_policy = Array(RockSampleAction,0)
+    ret = 0.0
+    reward = 0.0
     prev_cell_coord = [0,0] # initial value - should cause error if not properly assigned
     next_state = create_state(pomdp)
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG
     
+#    println("ub_actions: $ub_actions")
     while true
         a = ub_actions[s_index+1]
         trans_distribution.state.index = s_index
-        trans_distribution.action.index = a_index
-        s_test = rand!(rng, next_state, trans_distribution)
+        trans_distribution.action.index = a.index
+        rand!(rng, next_state, trans_distribution)
         
-        if isterminal(pomdp, s_test)
+        if isterminal(pomdp, next_state)
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][2]
             ret = 10.
@@ -126,12 +127,12 @@ function lower_bound(lb::RockSampleParticleLB,
         end
         push!(optimal_policy, a)
         if length(optimal_policy) == config.search_depth
-            prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s_test)+1][1]
-            prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s_test)+1][2]
+            prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, next_state)+1][1]
+            prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, next_state)+1][2]
             ret = 0.
             break
         end
-        s = s_test
+        s = next_state
     end
     
     best_action = (length(optimal_policy) == 0) ? 3 : optimal_policy[1]
@@ -141,7 +142,7 @@ function lower_bound(lb::RockSampleParticleLB,
     for i = length(optimal_policy):-1:1
         act = optimal_policy[i]
         ret *= pomdp.discount
-        if act == 4
+        if act.index == 4
             rock = pomdp.rock_at_cell[cell_num(pomdp, prev_cell_coord[1], prev_cell_coord[2])+1]
             if rock != -1
                 ret = expected_sampling_value[rock+1] + ret # expected sampling value is an array
@@ -150,13 +151,13 @@ function lower_bound(lb::RockSampleParticleLB,
         end
 
         # Move in the opposite direction since we're going backwards
-        if act == 0
+        if act.index == 0
             prev_cell_coord[1] += 1
-        elseif act == 1
+        elseif act.index == 1
             prev_cell_coord[1] -= 1
-        elseif act == 2
+        elseif act.index == 2
             prev_cell_coord[2] -= 1
-        elseif act == 3
+        elseif act.index == 3
             prev_cell_coord[2] += 1
         else
             @assert(false)

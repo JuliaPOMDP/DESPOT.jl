@@ -5,7 +5,7 @@ type DESPOTSolver <: POMDPs.Solver
     ub::DESPOTUpperBound
     random_streams::RandomStreams
     root::VNode
-    root_default_action::Int64
+    root_default_action::POMDPs.Action
     node_count::Int64
     config::DESPOTConfig
     #preallocated for simulations
@@ -72,6 +72,7 @@ end
 
 function init_solver(solver::DESPOTSolver, pomdp::POMDP)
 
+#    println("IN INIT SOLVER")
     # Instantiate random streams
     solver.random_streams = RandomStreams(solver.config.n_particles,
                                           solver.config.search_depth,
@@ -79,6 +80,7 @@ function init_solver(solver::DESPOTSolver, pomdp::POMDP)
                                            
     fill_random_streams(solver.random_streams, solver.config.rand_max)
     init_upper_bound(solver.ub, pomdp, solver.config)
+#    println("ub in init_solver: $(solver.ub)")    
     init_lower_bound(solver.lb, pomdp, solver.config)
 
     return nothing
@@ -87,6 +89,8 @@ end
 #TODO: Figure out why particles::Vector{Particles} does not work
 function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
   
+#  println("solver.ub.upper_bound_act: $(solver.ub.upper_bound_act)")
+#  println("ub: $(solver.ub)")
   lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
                                                             pomdp,
                                                             particles,

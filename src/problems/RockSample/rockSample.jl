@@ -32,7 +32,7 @@ end
 
 # Can ignore the return value since the state is modified in place
 function Base.next(::RockSampleStateIterator, state::RockSampleState)
-    state.index +=1
+    state.index += 1
     return (state, state)
 end
 

@@ -25,7 +25,8 @@ end
 function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
                     pomdp::POMDP,
                     config::DESPOTConfig)
-                          
+    
+  #  println("IN INIT UPPER BOUND")
     current_level_ub_memo = Array(Float64, n_states(pomdp))
     next_level_ub_memo = Array(Float64, n_states(pomdp))
     
@@ -38,22 +39,25 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
 
 #    next_level_ub_memo = [fringe_upper_bound(pomdp, s) for s = 0:n_states(pomdp)-1]
     state_iter = states(pomdp)
+  #  println("state_iter: $state_iter")
     s = start(state_iter)
     
     while !done(state_iter,s)
         next_level_ub_memo[s.index+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
+        
         next(state_iter,s) #modifies s in place (despite absense of '!')
     end
     
     action_iter = actions(pomdp)
-    a = start(action_iter)
-    s = start(state_iter) #reset
-   
+
     for i in 1:config.search_depth # length of horizon
+        s = start(state_iter) #reset
         while !done(state_iter,s)
+            a = start(action_iter)
             while !done(action_iter,a)
-                trans_distribution.state = s
-                trans_distribution.action = a
+                trans_distribution.state = s #TODO: this might not be necessary - do by reference
+                trans_distribution.action = a #TODO: this might not be necessary - do by reference
+  #              println("s: $(trans_distribution.state.index), a: $(trans_distribution.action.index)")
                 rand!(rng, next_state, trans_distribution)
                 r = reward(pomdp, s, a)
                 possibly_improved_value = r + pomdp.discount * next_level_ub_memo[next_state.index+1]
@@ -61,7 +65,7 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
                     current_level_ub_memo[s.index+1] = possibly_improved_value
                     if i == config.search_depth
                         # Set best actions when last level is being computed
-                        ub.upper_bound_act[s.index+1].index = a.index #TODO: may need to replace with deepcopy
+                        ub.upper_bound_act[s.index+1] = deepcopy(a) #TODO: consider replacing with a custom copy for speed
                     end
                 end
                 next(action_iter,a) #modifies a in place (despite absense of '!')
