@@ -69,9 +69,9 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
                     end
                 end
                 next(action_iter,a) #modifies a in place (despite absense of '!')
-            end #while a
+            end # while a
             next(state_iter,s) #modifies s in place (despite absense of '!')
-        end #while s
+        end # while s
         
         # swap array references
         tmp = current_level_ub_memo
@@ -98,7 +98,7 @@ function DESPOT.upper_bound(ub::UpperBoundNonStochastic,
 
   for p in particles
     weight_sum += p.weight
-    total_cost += p.weight * ub.upper_bound_memo[p.state+1]
+    total_cost += p.weight * ub.upper_bound_memo[p.state.index+1]
   end
   return total_cost / weight_sum
 end

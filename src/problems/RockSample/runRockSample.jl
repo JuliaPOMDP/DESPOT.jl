@@ -41,13 +41,13 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
     
-    solver      = DESPOTSolver(pomdp,
-                               current_belief,
-                               # specify some of the optional keyword parameters
-                               lb = custom_lb, # use the custom lower bound
-                               ub = custom_ub, # use the custom lower bound
-                               main_seed = seed, # specify the main random seed
-                               n_particles = n_particles)
+    solver      = DESPOTSolver {RockSampleState, RockSampleAction} (pomdp,
+                                current_belief,
+                                # specify some of the optional keyword parameters
+                                lb = custom_lb, # use the custom lower bound
+                                ub = custom_ub, # use the custom lower bound
+                                main_seed = seed, # specify the main random seed
+                                n_particles = n_particles)
                                
     state       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
     next_state  = POMDPs.create_state(pomdp)

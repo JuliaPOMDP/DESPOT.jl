@@ -1,23 +1,23 @@
 
-type DESPOTSolver <: POMDPs.Solver
+type DESPOTSolver{StateType, ActionType, ObservationType} <: POMDPs.Solver
     belief::DESPOTBelief
     lb::DESPOTLowerBound
     ub::DESPOTUpperBound
     random_streams::RandomStreams
     root::VNode
-    root_default_action::POMDPs.Action
+    root_default_action::ActionType
     node_count::Int64
     config::DESPOTConfig
     #preallocated for simulations
     transition_distribution::POMDPs.AbstractDistribution
     observation_distribution::POMDPs.AbstractDistribution
     rng::DESPOT.DESPOTRandomNumber
-    reward::POMDPs.Reward
-    next_state::POMDPs.State 
-    observation::POMDPs.Observation
+    curr_reward::POMDPs.Reward
+    next_state::StateType
+    curr_obs::ObservationType
 
   # default constructor
-    function DESPOTSolver  (pomdp::POMDP,
+    function DESPOTSolver  {StateType, ActionType, ObservationType} (pomdp::POMDPs.POMDP,
                             belief::DESPOTBelief;
                             lb::DESPOTLowerBound = DESPOTDefaultLowerBound(),
                             ub::DESPOTUpperBound = DESPOTDefaultUpperBound(),
@@ -57,20 +57,20 @@ type DESPOTSolver <: POMDPs.Solver
         this.config.rand_max = rand_max
         this.config.debug = debug
         
-        this.root_default_action = -1 # root_default_action
+        this.root_default_action = create_action(pomdp) # root_default_action
         
         this.rng = DESPOTRandomNumber(-1)
         this.transition_distribution = create_transition_distribution(pomdp)
         this.observation_distribution = create_observation_distribution(pomdp)
         this.next_state = create_state(pomdp)
-        this.observation = create_observation(pomdp)
-        this.reward = 0.0
+        this.curr_obs = create_observation(pomdp)
+        this.curr_reward = 0.0
         
         return this
     end
 end
 
-function init_solver(solver::DESPOTSolver, pomdp::POMDP)
+function init_solver(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
 
 #    println("IN INIT SOLVER")
     # Instantiate random streams
@@ -138,7 +138,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
   if solver.config.pruning_constant != 0
     total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
     act = solver.root.prunedAction
-    return (act == -1 ? solver.root_default_action : act), currentTrials
+    return (act == -1 ? solver.root_default_action : act), currentTrials #TODO: fix actions
   elseif !solver.root.in_tree
       println("Root not in tree")
     return solver.root_default_action, n_trials
@@ -181,7 +181,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
 
     for a in 0:pomdp.n_actions-1
         ub = node.q_nodes[a].first_step_reward +
-              pomdp.discount * get_upper_bound(node.q_nodes[a]) # it's an array
+              pomdp.discount * get_upper_bound(node.q_nodes[a])
         if ub > node.ub
             node.ub = ub
             node.best_ub_action = a
@@ -205,34 +205,39 @@ end
 function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
   
     q_star::Float64 = -Inf
-    next_state::Int64 = -1
-    reward::Float64 = 0.0
-    obs::Int64 = -1
+#    next_state::POMDPs.State = create_state(pomdp)
+#    reward::Float64 = 0.0
+#    obs::POMDPs.Observation = create_observation(pomdp)
     first_step_reward::Float64 = 0.0
-        
-    for action in 0:pomdp.n_actions-1
+    action_iter = actions(pomdp)
+    
+    curr_action = start(action_iter)
+    while !done(action_iter, curr_action)
+#    for action in 0:pomdp.n_actions-1 #TODO: change to the iterator
 
         #TODO: make generic
         obs_to_particles = Dict{Int64,Vector{DESPOTParticle}}()
 
         for p in node.particles
-            #TODO: use pre-allocated variables
-            next_state, reward, obs = step(solver,
-                                           pomdp,
-                                           p.state,
-                                           solver.random_streams.streams[p.id+1,node.depth+1],
-                                           action)
+#            next_state, reward, obs = step(solver,
+            step   (solver,
+                    pomdp,
+                    p.state,
+                    solver.random_streams.streams[p.id+1,node.depth+1],
+                    curr_action)
             
-            if isterminal(pomdp, next_state) && (obs != pomdp.TERMINAL_OBS)
+            #TODO: this needs to be generalized if you want to keep it!
+            if isterminal(pomdp, solver.next_state) && (solver.curr_obs.index != pomdp.TERMINAL_OBS)
                 error("Terminal state in a particle mismatches observation")
             end
 
-            if !haskey(obs_to_particles,obs)
-                obs_to_particles[obs] = DESPOTParticle[]
+            if !haskey(obs_to_particles, solver.curr_obs.index)
+                obs_to_particles[solver.curr_obs.index] = DESPOTParticle[]
             end
 
-            push!(obs_to_particles[obs], DESPOTParticle(next_state, p.id, p.weight))
-            first_step_reward += reward * p.weight
+            #TODO: Important: need to decide how to id complex actions, observations, and possibly states
+            push!(obs_to_particles[solver.curr_obs.index], DESPOTParticle(solver.next_state, p.id, p.weight))
+            first_step_reward += solver.curr_reward * p.weight
         end
         
         first_step_reward /= node.weight
@@ -241,7 +246,7 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                           solver.ub,
                           obs_to_particles,
                           node.depth,
-                          action,
+                          curr_action,
                           first_step_reward,
                           solver.belief.history,
                           solver.config)
@@ -250,23 +255,25 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
         remaining_reward = get_upper_bound(new_qnode)
         if (first_step_reward + pomdp.discount*remaining_reward) > (q_star + solver.config.tiny)
             q_star = first_step_reward + pomdp.discount * remaining_reward
-            node.best_ub_action = action
+            node.best_ub_action = curr_action
         end
         
         first_step_reward = 0.0
-    end
+        next(action_iter, curr_action)
+    end # while a
     return node
 end
 
-function step(solver::DESPOTSolver, pomdp::POMDP, state::POMDPs.State, rand_num::Float64, action::POMDPs.Action)
+
+function step(solver::DESPOTSolver, pomdp::POMDPs.POMDP, state::POMDPs.State, rand_num::Float64, action::POMDPs.Action)
     
     solver.rng.number = rand_num
     POMDPs.transition(pomdp, state, action, solver.transition_distribution)
-    solver.next_state = POMDPs.rand!(solver.rng, solver.next_state, solver.transition_distribution)
+    POMDPs.rand!(solver.rng, solver.next_state, solver.transition_distribution)
     POMDPs.observation(pomdp, state, action, solver.next_state, solver.observation_distribution)
-    solver.observation = POMDPs.rand!(solver.rng, solver.observation, solver.observation_distribution)
-    solver.reward = POMDPs.reward(pomdp, state, action)
-    
-    return solver.next_state, solver.reward, solver.observation
+    POMDPs.rand!(solver.rng, solver.curr_obs, solver.observation_distribution)
+    solver.curr_reward = POMDPs.reward(pomdp, state, action)
+#    return solver.next_state, solver.reward, solver.observation
+    return nothing # fill in pre-allocated variables
 end
                                     

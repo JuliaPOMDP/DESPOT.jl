@@ -19,11 +19,11 @@
 type QNode
   obs_to_particles::Dict{Int64, Vector{DESPOTParticle}}
   depth::Int64
-  action::Int64
+  action::POMDPs.Action
   first_step_reward::Float64
   history::History
   weight_sum::Float64
-  obs_to_node::Dict
+  obs_to_node::Dict #TODO: can we be more precise here?
   n_visits::Int64                # Needed for large problems
   lb::DESPOTLowerBound
   ub::DESPOTUpperBound
@@ -34,7 +34,7 @@ type QNode
                       ub::DESPOTUpperBound,
                       obs_to_particles::Dict{Int64, Vector{DESPOTParticle}},
                       depth::Int64,
-                      action::Int64,
+                      action::POMDPs.Action,
                       first_step_reward::Float64,
                       history::History,
                       config::DESPOTConfig)
@@ -51,14 +51,14 @@ type QNode
             this.lb = lb
             this.ub = ub
             
-            for (obs, particles) in this.obs_to_particles
+            for (obs_index, particles) in this.obs_to_particles
                 obs_weight_sum = 0.0
                 for p in particles
                     obs_weight_sum += p.weight
                 end
                 this.weight_sum += obs_weight_sum
 
-                add(this.history, action, obs)
+                add(this.history, action, obs_index) # TODO: Clunky! Need a better way.
                 l::Float64, action::Int64 = DESPOT.lower_bound(lb,
                                                                pomdp,
                                                                particles,

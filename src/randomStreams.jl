@@ -6,12 +6,12 @@ type RandomStreams
     num_streams::Int64
     len_streams::Int64
     streams::Array{Float64,2}     # each particle is associated with a single stream of numbers
-    seed::Uint32
+    seed::UInt32
 
   # default constructor
   function RandomStreams(num_streams::Int64,
                 len_streams::Int64,
-                seed::Uint32)
+                seed::UInt32)
           this = new() 
           
           this.num_streams = num_streams
@@ -23,7 +23,7 @@ type RandomStreams
     end
 end
 
-function get_stream_seed(streams::RandomStreams, streamId::Uint32)
+function get_stream_seed(streams::RandomStreams, streamId::UInt32)
     return streams.seed $ streamId # bitwise XOR
 end
 
@@ -40,7 +40,7 @@ function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
     if OS_NAME == :Linux
         ccall((:srand, "libc"), Void, (Cuint,), 1)
         for i in 1:empty_streams.num_streams
-            seed = Cuint[get_stream_seed(empty_streams, convert(Uint32, i-1))]
+            seed = Cuint[get_stream_seed(empty_streams, convert(UInt32, i-1))]
             ccall( (:rand_r, "libc"), Int, (Ptr{Cuint},), seed)
             for j = 1:empty_streams.len_streams
                 empty_streams.streams[i,j] = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) / rand_max
@@ -48,7 +48,7 @@ function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
         end
     else #Windows, etc
         for i in 1:empty_streams.num_streams
-            seed  = get_stream_seed(empty_streams, convert(Uint32, i-1))
+            seed  = get_stream_seed(empty_streams, convert(UInt32, i-1))
             srand(seed)
             empty_streams.streams[i,:] = rand(convert(Int64, empty_streams.len_streams))
         end

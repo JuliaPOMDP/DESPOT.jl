@@ -1,22 +1,26 @@
 import POMDPs:
-       create_state,
-       create_action,
-       create_observation,
-       create_belief,
-       create_transition_distribution,
-       create_observation_distribution,
-       transition,
-       observation,
-       reward,
-       initial_belief,
-       isterminal,
-       rand!
+    states,
+    actions,
+    observations,
+    create_state,
+    create_action,
+    create_observation,
+    create_belief,
+    create_transition_distribution,
+    create_observation_distribution,
+    transition,
+    observation,
+    reward,
+    initial_belief,
+    isterminal,
+    rand!,
+    discount
 
 import POMDPToolbox:
-       Particle,
-       ParticleBelief
+    Particle,
+    ParticleBelief
 
-##### RockSampleState type and iterator definition #####
+##### RockSampleState type and the related functions #####
 type RockSampleState <: POMDPs.State
     index::Int64
 end
@@ -40,7 +44,14 @@ function Base.done(iter::RockSampleStateIterator, state::RockSampleState)
     return state.index >= iter.max_index
 end
 
-##### RockSampleAction type and iterator definition #####
+==(x::RockSampleState, y::RockSampleState) = (x.index == y.index)
+
+function Base.hash(x::RockSampleState, h::Int64 = 0)
+    return x.index
+end
+
+
+##### RockSampleAction type and the related functions #####
 type RockSampleAction <: POMDPs.Action
     index::Int64
 end
@@ -64,7 +75,13 @@ function Base.done(iter::RockSampleActionIterator, action::RockSampleAction)
     return action.index >= iter.max_index
 end
 
-##### RockSampleObservation type and iterator definition #####
+==(x::RockSampleAction, y::RockSampleAction) = (x.index == y.index)
+
+function Base.hash(x::RockSampleAction, h::Int64 = 0)
+    return x.index
+end
+
+##### RockSampleObservation type and the related functions #####
 type RockSampleObservation <: POMDPs.Observation
     index::Int64
 end
@@ -86,6 +103,12 @@ end
 
 function Base.done(iter::RockSampleObservationIterator, action::RockSampleObservation)
     return observation.index >= iter.max_index
+end
+
+==(x::RockSampleObservation, y::RockSampleObservation) = (x.index == y.index)
+
+function Base.hash(x::RockSampleObservation, h::Int64 = 0)
+    return x.index
 end
 
 

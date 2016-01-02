@@ -3,7 +3,7 @@
 # belief tree). It stores the set of particles associated with the node, an
 # AND-node for each action, and some bookkeeping information.
 
-type VNode
+type VNode{StateType, ActionType}
   particles::Array{DESPOTParticle,1}
   lb::Float64
   ub::Float64
@@ -22,7 +22,7 @@ type VNode
                                     # this indicator variable.
   n_tree_nodes::Int64               # Number of nodes with inTree == true in the subtree
                                     # rooted at this node
-  q_nodes::Dict{Int,QNode}          # Dict of children q-nodes
+  q_nodes::Dict{ActionType, QNode}  # Dict of children q-nodes
   n_visits::Int64                   # Needed for large domains
   n_actions_allowed::Int64          # current number of action branches allowed in the node, needed for large domains
   q_star::Float64                   # best current Q-value, needed for large domains
@@ -30,7 +30,7 @@ type VNode
   # default constructor
   function VNode( 
                #particles::Array{Particle,1},#TODO: Figure out why this does not work
-               particles::Vector,
+               particles::Vector{DESPOTParticle{StateType}},
                l_bound::Float64,
                u_bound::Float64,
                depth::Int64,
@@ -49,7 +49,7 @@ type VNode
             -1,               # best_ub_action
             in_tree,          # in_tree
             in_tree ? 1:0,    # n_tree_nodes
-            Dict{Int,QNode}(),# q_nodes
+            Dict{ActionType,QNode}(),# q_nodes
             0,                # n_visits
             0,                # n_actions_allowed
             -Inf,             # q_star

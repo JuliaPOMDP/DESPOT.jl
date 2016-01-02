@@ -19,15 +19,15 @@ type DESPOTRandomNumber <: AbstractRNG
     number::Float64
 end
 
-type DESPOTParticle{T}
-  state::T
+type DESPOTParticle{StateType}
+  state::StateType
   id::Int64
   weight::Float64
 end
 
 #TODO: figure out how to do this properly!
-type DESPOTBelief{T} <: Belief
-    particles::Vector{DESPOTParticle{T}}
+type DESPOTBelief{StateType} <: Belief
+    particles::Vector{DESPOTParticle{StateType}}
     history::History 
 end
 
@@ -36,11 +36,11 @@ function rand!(rng::DESPOTRandomNumber)
 end
 
 type DESPOTDefaultRNG <: AbstractRNG
-    seed::Array{Uint32,1}
+    seed::Array{UInt32,1}
     rand_max::Int64
     debug::Int64
       
-    function DESPOTDefaultRNG(seed::Uint32, rand_max::Int64, debug::Int64 = 0)
+    function DESPOTDefaultRNG(seed::UInt32, rand_max::Int64, debug::Int64 = 0)
         this = new()
         this.seed = Cuint[seed]
         this.rand_max = rand_max
@@ -105,13 +105,13 @@ fringe_upper_bound(pomdp::POMDP, state::POMDPs.State) =
 # FUNCTIONS
 
 function action(policy::DESPOTPolicy, belief::DESPOTBelief)
-    new_root (policy.solver, policy.pomdp, belief.particles)
+    new_root(policy.solver, policy.pomdp, belief.particles)
     a, n_trials = search(policy.solver, policy.pomdp) #TODO: return n_trials some other way
     return a
 end
 
 function solve(solver::DESPOTSolver, pomdp::POMDP)
-    policy = DESPOTPolicy (solver, pomdp)
+    policy = DESPOTPolicy(solver, pomdp)
     init_solver(solver, pomdp)
     return policy
 end
