@@ -4,15 +4,15 @@
 # AND-node for each action, and some bookkeeping information.
 
 type VNode{StateType, ActionType}
-  particles::Array{DESPOTParticle,1}
+  particles::Array{DESPOTParticle{StateType},1}
   lb::Float64
   ub::Float64
   depth::Int64
   default_value::Float64            # Value of the default policy (= lbound value
                                     # before any backups are performed)
-  pruned_action::Int64              # Best action at the node after pruning
+  pruned_action::ActionType         # Best action at the node after pruning
   weight::Float64                   # Sum of particle weights at this belief
-  best_ub_action::Int64             # Action that gives the highest upper bound
+  best_ub_action::ActionType        # Action that gives the highest upper bound
   in_tree::Bool                     # True if the node is visited by Solver::trial().
                                     # In order to determine if a node is a fringe node
                                     # of the belief tree, we need to expand it one level.
@@ -26,34 +26,34 @@ type VNode{StateType, ActionType}
   n_visits::Int64                   # Needed for large domains
   n_actions_allowed::Int64          # current number of action branches allowed in the node, needed for large domains
   q_star::Float64                   # best current Q-value, needed for large domains
+  
 
   # default constructor
-  function VNode( 
-               #particles::Array{Particle,1},#TODO: Figure out why this does not work
+  function VNode{StateType, ActionType}( 
                particles::Vector{DESPOTParticle{StateType}},
                l_bound::Float64,
                u_bound::Float64,
                depth::Int64,
+               default_action::ActionType,
                weight::Float64,
                in_tree::Bool,
                config::DESPOTConfig)
 
-        this = new(
-            particles,        # particles
-            l_bound,          # l_bound
-            u_bound,          # u_bound
-            depth,            # depth
-            l_bound,          # default_value
-            -1,               # pruned action
-            weight,           # weight
-            -1,               # best_ub_action
-            in_tree,          # in_tree
-            in_tree ? 1:0,    # n_tree_nodes
-            Dict{ActionType,QNode}(),# q_nodes
-            0,                # n_visits
-            0,                # n_actions_allowed
-            -Inf,             # q_star
-            )
+        this = new()
+        this.particles          = particles
+        this.lb                 = l_bound
+        this.ub                 = u_bound
+        this.depth              = depth
+        this.default_value      = l_bound
+        this.pruned_action      = default_action
+        this.weight             = weight
+        this.best_ub_action     = default_action
+        this.in_tree            = in_tree
+        this.n_tree_nodes       = in_tree ? 1:0
+        this.q_nodes            = Dict{ActionType,QNode}()
+        this.n_visits           = 0
+        this.n_actions_allowed  = 0
+        this.q_star             = -Inf
         
         validate_bounds(l_bound, u_bound, config)
         return this

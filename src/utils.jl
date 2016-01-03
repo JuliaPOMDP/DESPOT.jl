@@ -1,4 +1,3 @@
-#using Types
 
 function excess_uncertainty(l::Float64,
                             u::Float64,
@@ -79,7 +78,7 @@ end
 function sample_particles!(sampled_particles::Vector,
                            pool::Vector, #TODO: see if this can be tightened
                            N::Int64,
-                           seed::Uint32,
+                           seed::UInt32,
                            rand_max::Int64)
 
     # Ensure particle weights sum to exactly 1

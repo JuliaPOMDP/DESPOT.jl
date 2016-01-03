@@ -41,13 +41,14 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
     
-    solver      = DESPOTSolver {RockSampleState, RockSampleAction} (pomdp,
-                                current_belief,
-                                # specify some of the optional keyword parameters
-                                lb = custom_lb, # use the custom lower bound
-                                ub = custom_ub, # use the custom lower bound
-                                main_seed = seed, # specify the main random seed
-                                n_particles = n_particles)
+#    solver      = DESPOTSolver{RockSampleState, RockSampleAction}(pomdp,
+    solver      = DESPOTSolver(pomdp,
+                               current_belief,
+                               # specify some of the optional keyword parameters
+                               lb = custom_lb, # use the custom lower bound
+                               ub = custom_ub, # use the custom lower bound
+                               main_seed = seed, # specify the main random seed
+                               n_particles = n_particles)
                                
     state       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
     next_state  = POMDPs.create_state(pomdp)
@@ -96,7 +97,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
         println("Action = $action")
         println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced
-        print  ("Observation = "); show_obs(pomdp, obs) #TODO: change once abstract types are introduced
+        print(  "Observation = "); show_obs(pomdp, obs) #TODO: change once abstract types are introduced
         println("Reward = $r")
         sim_step += 1
     end

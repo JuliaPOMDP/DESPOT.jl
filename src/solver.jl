@@ -1,11 +1,14 @@
 
-type DESPOTSolver{StateType, ActionType, ObservationType} <: POMDPs.Solver
+# type DESPOTSolver{  StateType <: POMDPs.State,
+#                     ActionType <: POMDPs.Action,
+#                     ObservationType <: POMDPs.Observation} <: POMDPs.Solver
+type DESPOTSolver <: POMDPs.Solver
     belief::DESPOTBelief
     lb::DESPOTLowerBound
     ub::DESPOTUpperBound
     random_streams::RandomStreams
     root::VNode
-    root_default_action::ActionType
+    root_default_action::POMDPs.Action
     node_count::Int64
     config::DESPOTConfig
     #preallocated for simulations
@@ -13,16 +16,22 @@ type DESPOTSolver{StateType, ActionType, ObservationType} <: POMDPs.Solver
     observation_distribution::POMDPs.AbstractDistribution
     rng::DESPOT.DESPOTRandomNumber
     curr_reward::POMDPs.Reward
-    next_state::StateType
-    curr_obs::ObservationType
+#     next_state::StateType
+#     curr_obs::ObservationType
+    next_state::POMDPs.State
+    curr_obs::POMDPs.Observation
+    StateType::DataType
+    ActionType::DataType
+    ObservationType::DataType
 
   # default constructor
-    function DESPOTSolver  {StateType, ActionType, ObservationType} (pomdp::POMDPs.POMDP,
+#    function DESPOTSolver{StateType, ActionType, ObservationType}(pomdp::POMDPs.POMDP,
+    function DESPOTSolver(pomdp::POMDPs.POMDP,
                             belief::DESPOTBelief;
                             lb::DESPOTLowerBound = DESPOTDefaultLowerBound(),
                             ub::DESPOTUpperBound = DESPOTDefaultUpperBound(),
                             search_depth::Int64 = 90,
-                            main_seed::Uint32 = convert(Uint32, 42),
+                            main_seed::UInt32 = convert(UInt32, 42),
                             time_per_move::Float64 = 1.0,                 # sec
                             n_particles::Int64 = 500,
                             pruning_constant::Float64 = 0.0,
@@ -66,6 +75,10 @@ type DESPOTSolver{StateType, ActionType, ObservationType} <: POMDPs.Solver
         this.curr_obs = create_observation(pomdp)
         this.curr_reward = 0.0
         
+        this.StateType = typeof(this.next_state)
+        this.ActionType = typeof(this.root_default_action)        
+        this.ObservationType = typeof(this.curr_obs)
+        
         return this
     end
 end
@@ -87,7 +100,9 @@ function init_solver(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
 end
 
 #TODO: Figure out why particles::Vector{Particles} does not work
-function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
+function new_root{StateType}(solver::DESPOTSolver,
+                  pomdp::POMDP,
+                  particles::Vector{DESPOTParticle{StateType}})
   
 #  println("solver.ub.upper_bound_act: $(solver.ub.upper_bound_act)")
 #  println("ub: $(solver.ub)")
@@ -102,7 +117,15 @@ function new_root(solver::DESPOTSolver, pomdp::POMDP, particles::Vector)
                                 particles,
                                 solver.config)
                                 
-  solver.root = VNode(particles, lbound, ubound, 0, 1.0, false, solver.config)
+  solver.root = VNode{solver.StateType, solver.ActionType}(
+                    particles,
+                    lbound, 
+                    ubound,
+                    0,
+                    create_action(pomdp), #default(dummy) action
+                    1.0,
+                    false,
+                    solver.config)
 
   return nothing
 end
@@ -190,7 +213,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
 
     # Sanity check
     if (node.lb > node.ub + solver.config.tiny)
-        println ("depth = $(node.depth)")
+        println("depth = $(node.depth)")
         warn("Lower bound ($(node.lb)) is higher than upper bound ($(node.ub))")
     end
 
@@ -202,7 +225,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     return n_nodes_added
 end
 
-function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
+function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
   
     q_star::Float64 = -Inf
 #    next_state::POMDPs.State = create_state(pomdp)
@@ -220,7 +243,7 @@ function expand_one_step (solver::DESPOTSolver, pomdp::POMDP, node::VNode)
 
         for p in node.particles
 #            next_state, reward, obs = step(solver,
-            step   (solver,
+            step(   solver,
                     pomdp,
                     p.state,
                     solver.random_streams.streams[p.id+1,node.depth+1],

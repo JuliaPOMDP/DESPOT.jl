@@ -10,9 +10,9 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
     state_type::DataType
     action_type::DataType
     observation_type::DataType
-    seed::Uint32
+    seed::UInt32
     rand_max::Int64
-    belief_update_seed::Uint32
+    belief_update_seed::UInt32
     particle_weight_threshold::Float64
     eff_particle_fraction::Float64
     
@@ -27,7 +27,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
     
     #default constructor
     function DESPOTBeliefUpdater(pomdp::POMDP;
-                                 seed::Uint32 = convert(Uint32, 42),
+                                 seed::UInt32 = convert(UInt32, 42),
                                  rand_max::Int64 = 2147483647,
                                  n_particles = 500,
                                  particle_weight_threshold::Float64 = 1e-20,
@@ -124,7 +124,7 @@ function update(bu::DESPOTBeliefUpdater,
         warn("Particle filter empty. Bootstrapping with random states")
         bu.n_sampled = 0
         while bu.n_sampled < bu.n_particles
-            s = random_state(pomdp, convert(Uint32, bu.belief_update_seed))
+            s = random_state(pomdp, convert(UInt32, bu.belief_update_seed))
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
             if bu.obs_probability > 0.
                 bu.n_sampled += 1

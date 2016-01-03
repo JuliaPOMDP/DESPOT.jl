@@ -19,6 +19,10 @@ import POMDPs:
 import POMDPToolbox:
     Particle,
     ParticleBelief
+    
+import Base:
+    ==,
+    hash
 
 ##### RockSampleState type and the related functions #####
 type RockSampleState <: POMDPs.State
@@ -118,8 +122,8 @@ type RockSample <: POMDPs.POMDP
     grid_size::Int64
     n_rocks::Int64
     rand_max::Int64
-    model_seed ::Uint32 # random seed to construct arbitrary size scenarios
-    belief_seed::Uint32 # random seed used in initial belief construction,
+    model_seed ::UInt32 # random seed to construct arbitrary size scenarios
+    belief_seed::UInt32 # random seed used in initial belief construction,
                         # if needed
     
     #problem properties
@@ -152,8 +156,8 @@ type RockSample <: POMDPs.POMDP
     function RockSample(grid_size::Int64 = 4,
                         n_rocks::Int64 = 4;
                         rand_max::Int64 = 2^31-1,
-                        belief_seed::Uint32 = convert(Uint32, 479),
-                        model_seed::Uint32  = convert(Uint32, 476),
+                        belief_seed::UInt32 = convert(UInt32, 479),
+                        model_seed::UInt32  = convert(UInt32, 476),
                         discount::Float64 = 0.95)
                 
           this = new()
@@ -181,7 +185,7 @@ type RockSample <: POMDPs.POMDP
           this.rocks = Array(Int64, this.n_rocks)                       # locations              
           this.T = Array(RockSampleState, this.n_states, this.n_actions)
           this.R = Array(Float64, this.n_states, this.n_actions)
-          this.actions = [1:n_rocks + 5] # default ordering
+          this.actions = collect(1:n_rocks + 5) # default ordering
           this.BAD_OBS      = 0
           this.GOOD_OBS     = 1
           this.NONE_OBS     = 2
@@ -395,7 +399,7 @@ function start_state(pomdp::RockSample)
    return make_state(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start);
 end
 
-function init_general(pomdp::RockSample, seed::Array{Uint32,1})
+function init_general(pomdp::RockSample, seed::Array{UInt32,1})
   
     rockIndex::Int64 = 1 # rocks is an array
     if OS_NAME != :Linux
@@ -417,10 +421,10 @@ function init_general(pomdp::RockSample, seed::Array{Uint32,1})
     pomdp.robot_start_cell = cell_num(pomdp, iround(pomdp.grid_size/2), 0)
 end
 
-function init_problem (pomdp::RockSample)
+function init_problem(pomdp::RockSample)
 
     pomdp.rocks = Array(Int64, pomdp.n_rocks)
-    seed = Cuint[convert(Uint32, pomdp.model_seed)]
+    seed = Cuint[convert(UInt32, pomdp.model_seed)]
     
     if pomdp.grid_size == 4 && pomdp.n_rocks == 4
         init_4_4(pomdp)
@@ -457,7 +461,7 @@ function init_problem (pomdp::RockSample)
     fill!(pomdp.rock_at_cell, -1)
     
     for i in 0 : pomdp.n_cells-1
-        pomdp.cell_to_coords[i+1] = [itrunc(i/pomdp.grid_size), i % pomdp.grid_size]
+        pomdp.cell_to_coords[i+1] = [trunc(Integer, i/pomdp.grid_size), i % pomdp.grid_size]
     end
 
     for i in 0 : pomdp.n_rocks-1
@@ -733,7 +737,7 @@ function show_state(pomdp::RockSample, s::RockSampleState)
 end
 
 # TODO: redo through rand!()
-function random_state!(pomdp::RockSample, seed::Uint32, s::RockSampleState)
+function random_state!(pomdp::RockSample, seed::UInt32, s::RockSampleState)
     cseed = Cuint[seed]
     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
     random_number = ccall((:rand, "libc"), Int, (),)
