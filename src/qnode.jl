@@ -16,28 +16,29 @@
   # debug: Flag controlling debugging output.
 
 
-type QNode
-  obs_to_particles::Dict{Int64, Vector{DESPOTParticle}}
+type QNode{StateType, ActionType, ObservationType}
+  obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}}
   depth::Int64
   action::POMDPs.Action
   first_step_reward::Float64
   history::History
   weight_sum::Float64
-  obs_to_node::Dict #TODO: can we be more precise here?
+  obs_to_node::Dict #TODO: See if this can be specified better
   n_visits::Int64                # Needed for large problems
   lb::DESPOTLowerBound
   ub::DESPOTUpperBound
   
       # default constructor
-      function QNode( pomdp::POMDP,
-                      lb::DESPOTLowerBound,
-                      ub::DESPOTUpperBound,
-                      obs_to_particles::Dict{Int64, Vector{DESPOTParticle}},
-                      depth::Int64,
-                      action::POMDPs.Action,
-                      first_step_reward::Float64,
-                      history::History,
-                      config::DESPOTConfig)
+      function QNode{StateType, ActionType, ObservationType}(
+                    pomdp::POMDP,
+                    lb::DESPOTLowerBound,
+                    ub::DESPOTUpperBound,
+                    obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}},
+                    depth::Int64,
+                    action::ActionType,
+                    first_step_reward::Float64,
+                    history::History{ActionType, ObservationType},
+                    config::DESPOTConfig)
                       
             this = new()
             this.obs_to_particles = obs_to_particles
@@ -46,27 +47,36 @@ type QNode
             this.first_step_reward = first_step_reward
             this.history = history
             this.weight_sum = 0
-            this.obs_to_node = Dict{Int64,VNode}()
+            this.obs_to_node = Dict{ObservationType, VNode{StateType, ActionType}}()
             this.n_visits = 0
             this.lb = lb
             this.ub = ub
             
-            for (obs_index, particles) in this.obs_to_particles
+            for (obs, particles) in this.obs_to_particles
                 obs_weight_sum = 0.0
                 for p in particles
                     obs_weight_sum += p.weight
                 end
                 this.weight_sum += obs_weight_sum
 
-                add(this.history, action, obs_index) # TODO: Clunky! Need a better way.
-                l::Float64, action::Int64 = DESPOT.lower_bound(lb,
-                                                               pomdp,
-                                                               particles,
-                                                               ub.upper_bound_act,
-                                                               config)
+                add(this.history, action, obs)
+                l::Float64, action::ActionType = DESPOT.lower_bound(
+                                                    lb,
+                                                    pomdp,
+                                                    particles,
+                                                    ub.upper_bound_act,
+                                                    config)
                 u::Float64 = upper_bound(ub, pomdp, particles, config)
                 remove_last(this.history)
-                this.obs_to_node[obs] = VNode(particles, l, u, this.depth+1, obs_weight_sum, false, config) # TODO: check depth
+                this.obs_to_node[obs] = VNode{StateType, ActionType}(
+                                            particles,
+                                            l,
+                                            u,
+                                            this.depth+1,  # TODO: check depth
+                                            create_action(pomdp),
+                                            obs_weight_sum,
+                                            false,
+                                            config)
             end
             return this
         end

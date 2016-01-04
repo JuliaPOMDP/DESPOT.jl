@@ -60,7 +60,7 @@ end
 # Special create_belief version for DESPOTBeliefUpdater
 function create_belief(bu::DESPOTBeliefUpdater)
     particles = Array(DESPOTParticle{bu.state_type}, bu.n_particles) 
-    history = History{bu.state_type, bu.action_type}() #TODO: change to parametric
+    history = History{bu.action_type, bu.observation_type}()
     belief = DESPOTBelief{bu.state_type}(particles, history)
     return belief
 end

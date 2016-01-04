@@ -236,35 +236,33 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
     
     curr_action = start(action_iter)
     while !done(action_iter, curr_action)
-#    for action in 0:pomdp.n_actions-1 #TODO: change to the iterator
 
-        #TODO: make generic
-        obs_to_particles = Dict{Int64,Vector{DESPOTParticle}}()
+        obs_to_particles = Dict{solver.ObservationType, Vector{DESPOTParticle{solver.StateType}}}()
 
         for p in node.particles
-#            next_state, reward, obs = step(solver,
-            step(   solver,
-                    pomdp,
-                    p.state,
-                    solver.random_streams.streams[p.id+1,node.depth+1],
-                    curr_action)
+            step(   
+                solver,
+                pomdp,
+                p.state,
+                solver.random_streams.streams[p.id+1, node.depth+1],
+                curr_action)
             
             #TODO: this needs to be generalized if you want to keep it!
-            if isterminal(pomdp, solver.next_state) && (solver.curr_obs.index != pomdp.TERMINAL_OBS)
-                error("Terminal state in a particle mismatches observation")
+#             if isterminal(pomdp, solver.next_state) && (solver.curr_obs.index != pomdp.TERMINAL_OBS)
+#                 error("Terminal state in a particle mismatches observation")
+#             end
+
+            if !haskey(obs_to_particles, solver.curr_obs)
+                obs_to_particles[solver.curr_obs] = DESPOTParticle[]
             end
 
-            if !haskey(obs_to_particles, solver.curr_obs.index)
-                obs_to_particles[solver.curr_obs.index] = DESPOTParticle[]
-            end
-
-            #TODO: Important: need to decide how to id complex actions, observations, and possibly states
-            push!(obs_to_particles[solver.curr_obs.index], DESPOTParticle(solver.next_state, p.id, p.weight))
+            push!(obs_to_particles[solver.curr_obs], DESPOTParticle(solver.next_state, p.id, p.weight))
             first_step_reward += solver.curr_reward * p.weight
         end
         
         first_step_reward /= node.weight
-        new_qnode = QNode(pomdp,
+        new_qnode = QNode{solver.StateType, solver.ActionType, solver.ObservationType}(
+                          pomdp,
                           solver.lb,
                           solver.ub,
                           obs_to_particles,
@@ -273,7 +271,7 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                           first_step_reward,
                           solver.belief.history,
                           solver.config)
-        node.q_nodes[action] = new_qnode
+        node.q_nodes[curr_action] = new_qnode
 
         remaining_reward = get_upper_bound(new_qnode)
         if (first_step_reward + pomdp.discount*remaining_reward) > (q_star + solver.config.tiny)

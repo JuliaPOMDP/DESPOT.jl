@@ -34,7 +34,7 @@ type VNode{StateType, ActionType}
                l_bound::Float64,
                u_bound::Float64,
                depth::Int64,
-               default_action::ActionType,
+               default_action::ActionType, #TODO: maybe pass pomdp instead?
                weight::Float64,
                in_tree::Bool,
                config::DESPOTConfig)
@@ -61,7 +61,7 @@ type VNode{StateType, ActionType}
 end
 
 function get_lb_action(node::VNode, config::DESPOTConfig, discount::Float64)
-  a_star = -1
+  a_star = -1 #TODO: this needs to be fixed
   q_star = -Inf
   for (a,q_node) in node.q_nodes
     remaining_reward = get_lower_bound(q_node)

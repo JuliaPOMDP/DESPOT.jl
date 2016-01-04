@@ -630,11 +630,11 @@ function rand!(rng::AbstractRNG,
         sample = isterminal(distribution.pomdp, distribution.next_state) ?
                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
     else
-        rock_cell = distribution.pomdp.rocks[distribution.action.index - 4] # would be [action-5] with 0-based indexing
+        rock_cell = distribution.pomdp.rocks[hash(distribution.action) - 4] # would be [action-5] with 0-based indexing
         agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
-        if (rand_num <= eff) == rock_status(distribution.action.index - 5, distribution.state)   
+        if (rand_num <= eff) == rock_status(hash(distribution.action) - 5, hash(distribution.state))   
             sample.index = distribution.pomdp.GOOD_OBS
         else
             sample.index = distribution.pomdp.BAD_OBS

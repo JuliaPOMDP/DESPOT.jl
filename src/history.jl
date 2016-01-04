@@ -1,11 +1,23 @@
 
-type History{TA,TO}
-  actions::Array{TA,1}
-  observations::Array{TO,1}
-  History() =  new(Array(TA,0),Array(TO,0))
+type History{ActionType, ObservationType}
+    actions::Array{ActionType, 1}
+    observations::Array{ObservationType, 1}
+
+    History() = new(Array(ActionType, 0), Array(ObservationType, 0))
+#     function History()
+#         this = new()
+#         this.actions = Array(ActionType, 0)
+#         this.observations = Array(ObservationType, 0)
+#         this.ActionType = ActionType
+#         this.ObservationType = ObservationType
+#         return this
+#     end
 end
 
-function add(history::History, action::POMDPs.Action, obs::POMDPs.Observation)
+function add(history::History,
+            action::POMDPs.Action,
+            obs::POMDPs.Observation)
+    
     push!(history.actions, action)
     push!(history.observations, obs)
 end
