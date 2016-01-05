@@ -181,6 +181,10 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
 
     a_star = node.best_ub_action
     n_nodes_added = 0
+    println("keys: $(collect(keys(node.q_nodes)))")
+    println("haskey: $(haskey(node.q_nodes, a_star))")
+    println(hash(a_star))
+#     println(node.q_nodes[a_star])
     o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star], solver.root, solver.config, pomdp.discount) # it's an array!
     
     if weighted_eu_star > 0.
@@ -236,7 +240,7 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
     
     curr_action = start(action_iter)
     while !done(action_iter, curr_action)
-
+        println(curr_action)
         obs_to_particles = Dict{solver.ObservationType, Vector{DESPOTParticle{solver.StateType}}}()
 
         for p in node.particles
@@ -271,17 +275,20 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                           first_step_reward,
                           solver.belief.history,
                           solver.config)
-        node.q_nodes[curr_action] = new_qnode
+        node.q_nodes[deepcopy(curr_action)] = new_qnode #TODO: combine with above when done debugging
+                                                        #TODO: Also, see if this can be done faster
 
         remaining_reward = get_upper_bound(new_qnode)
         if (first_step_reward + pomdp.discount*remaining_reward) > (q_star + solver.config.tiny)
             q_star = first_step_reward + pomdp.discount * remaining_reward
-            node.best_ub_action = curr_action
+            node.best_ub_action = deepcopy(curr_action) #TODO: See if this can be done better
         end
         
         first_step_reward = 0.0
+        println("keys: $(collect(keys(node.q_nodes)))")
         next(action_iter, curr_action)
     end # while a
+    println("keys: $(collect(keys(node.q_nodes)))")
     return node
 end
 
