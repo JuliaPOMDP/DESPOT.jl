@@ -58,8 +58,8 @@ type QNode{StateType, ActionType, ObservationType}
                     obs_weight_sum += p.weight
                 end
                 this.weight_sum += obs_weight_sum
-
                 add(this.history, action, obs)
+                
                 l::Float64, action::ActionType = DESPOT.lower_bound(
                                                     lb,
                                                     pomdp,
@@ -68,7 +68,8 @@ type QNode{StateType, ActionType, ObservationType}
                                                     config)
                 u::Float64 = upper_bound(ub, pomdp, particles, config)
                 remove_last(this.history)
-                this.obs_to_node[obs] = VNode{StateType, ActionType}(
+                #TODO: See if this can be done without deepcopy
+                this.obs_to_node[deepcopy(obs)] = VNode{StateType, ActionType}(
                                             particles,
                                             l,
                                             u,

@@ -36,18 +36,17 @@ end
 
 function lower_bound(lb::RockSampleParticleLB,
                      pomdp::RockSample,
-                     #particles::Vector{Particle}, #TODO: figure out why this does not work
-                     particles::Vector,
+                     particles::Vector, #(DESPOTParticle{RockSampleState}) - TODO: fix this
                      ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
 
-    state_seen = Dict{Int64,Int64}() #TODO: move to the structure
+    state_seen = Dict{Int64,Int64}()
     
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
     if length(particles) > 0
         if isterminal(pomdp, particles[1].state)
-            return 0.0, -1 # lower bound value and best action
+            return 0.0, RockSampleAction(-1) # lower bound value and best action
         end
     end
 
@@ -64,12 +63,12 @@ function lower_bound(lb::RockSampleParticleLB,
     # bottleneck.
 
     for p in particles
-        if lb.weight_sum_of_state[p.state.index+1] == -Inf #Array
-        lb.weight_sum_of_state[p.state.index+1] = p.weight
-        state_seen[seen_ptr] = p.state.index
+        if lb.weight_sum_of_state[hash(p.state)+1] == -Inf #Array
+        lb.weight_sum_of_state[hash(p.state)+1] = p.weight
+        state_seen[seen_ptr] = hash(p.state)
         seen_ptr += 1
         else
-        lb.weight_sum_of_state[p.state.index+1] += p.weight;
+        lb.weight_sum_of_state[hash(p.state)+1] += p.weight;
         end
     end
     
@@ -112,7 +111,6 @@ function lower_bound(lb::RockSampleParticleLB,
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG
     
-#    println("ub_actions: $ub_actions")
     while true
         a = ub_actions[s_index+1]
         trans_distribution.state.index = s_index
@@ -135,7 +133,7 @@ function lower_bound(lb::RockSampleParticleLB,
         s = next_state
     end
     
-    best_action = (length(optimal_policy) == 0) ? 3 : optimal_policy[1]
+    best_action = (length(optimal_policy) == 0) ? RockSampleAction(3) : optimal_policy[1]
 
     # Execute the sequence backwards to allow using the DP trick mentioned
     # earlier.
