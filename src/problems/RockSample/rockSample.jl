@@ -45,7 +45,7 @@ function Base.next(::RockSampleStateIterator, state::RockSampleState)
 end
 
 function Base.done(iter::RockSampleStateIterator, state::RockSampleState)
-    return state.index >= iter.max_index
+    return state.index > iter.max_index
 end
 
 ==(x::RockSampleState, y::RockSampleState) = (x.index == y.index)
@@ -76,7 +76,7 @@ function Base.next(::RockSampleActionIterator, action::RockSampleAction)
 end
 
 function Base.done(iter::RockSampleActionIterator, action::RockSampleAction)
-    return action.index >= iter.max_index
+    return action.index > iter.max_index
 end
 
 ==(x::RockSampleAction, y::RockSampleAction) = (x.index == y.index)
@@ -106,7 +106,7 @@ function Base.next(::RockSampleObservationIterator, observation::RockSampleObser
 end
 
 function Base.done(iter::RockSampleObservationIterator, action::RockSampleObservation)
-    return observation.index >= iter.max_index
+    return observation.index > iter.max_index
 end
 
 ==(x::RockSampleObservation, y::RockSampleObservation) = (x.index == y.index)

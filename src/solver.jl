@@ -232,7 +232,7 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
     
     curr_action = start(action_iter)
     while !done(action_iter, curr_action)
-        println(curr_action)
+#        println(curr_action)
         obs_to_particles = Dict{solver.ObservationType, Vector{DESPOTParticle{solver.StateType}}}()
 
         for p in node.particles
@@ -276,10 +276,8 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
         end
         
         first_step_reward = 0.0
-#         println("keys: $(collect(keys(node.q_nodes)))")
         next(action_iter, curr_action)
     end # while a
-#     println("keys: $(collect(keys(node.q_nodes)))")
     return node
 end
 

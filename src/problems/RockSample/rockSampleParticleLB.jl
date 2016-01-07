@@ -102,7 +102,7 @@ function lower_bound(lb::RockSampleParticleLB,
     s_index = most_likely_state_index #TODO: is this necessary?
 
     # Sequence of actions taken in the optimal policy
-    optimal_policy = Array(RockSampleAction,0)
+    optimal_policy = Vector{RockSampleAction}()
     ret = 0.0
     reward = 0.0
     prev_cell_coord = [0,0] # initial value - should cause error if not properly assigned
@@ -110,6 +110,7 @@ function lower_bound(lb::RockSampleParticleLB,
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG
+#    println(ub_actions)
     
     while true
         a = ub_actions[s_index+1]
@@ -120,14 +121,14 @@ function lower_bound(lb::RockSampleParticleLB,
         if isterminal(pomdp, next_state)
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][2]
-            ret = 10.
+            ret = 10.0
             break
         end
         push!(optimal_policy, a)
         if length(optimal_policy) == config.search_depth
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, next_state)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, next_state)+1][2]
-            ret = 0.
+            ret = 0.0
             break
         end
         s = next_state
@@ -161,5 +162,6 @@ function lower_bound(lb::RockSampleParticleLB,
             @assert(false)
         end
     end
+    println("In LB@165: $ret, $best_action")
     return ret, best_action
 end
