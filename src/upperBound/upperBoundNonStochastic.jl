@@ -38,22 +38,15 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
     fill!(current_level_ub_memo, -Inf)
 
 #    next_level_ub_memo = [fringe_upper_bound(pomdp, s) for s = 0:n_states(pomdp)-1]
-    state_iter = states(pomdp)
-  #  println("state_iter: $state_iter")
-    s = start(state_iter)
     
-    while !done(state_iter,s)
+    for s in states(pomdp)
         next_level_ub_memo[s.index+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
-        next(state_iter,s) #modifies s in place (despite absense of '!')
     end
     
-    action_iter = actions(pomdp)
 
     for i in 1:config.search_depth # length of horizon
-        s = start(state_iter) #reset
-        while !done(state_iter,s)
-            a = start(action_iter)
-            while !done(action_iter,a)
+        for s in states(pomdp)
+            for a in actions(pomdp)
                 trans_distribution.state = s #TODO: this might not be necessary - do by reference
                 trans_distribution.action = a #TODO: this might not be necessary - do by reference
   #              println("s: $(trans_distribution.state.index), a: $(trans_distribution.action.index)")
@@ -67,10 +60,8 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
                         ub.upper_bound_act[s.index+1] = deepcopy(a) #TODO: consider replacing with a custom copy for speed
                     end
                 end
-                next(action_iter,a) #modifies a in place (despite absense of '!')
-            end # while a
-            next(state_iter,s) #modifies s in place (despite absense of '!')
-        end # while s
+            end # for a
+        end # for s
         
         # swap array references
         tmp = current_level_ub_memo

@@ -198,7 +198,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     # another action, we need to check all actions - unlike the lower bound.
     node.ub = -Inf
 
-    for a in 0:pomdp.n_actions-1
+    for a in actions(pomdp)
         ub = node.q_nodes[a].first_step_reward +
               pomdp.discount * get_upper_bound(node.q_nodes[a])
         if ub > node.ub
@@ -228,11 +228,8 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
 #    reward::Float64 = 0.0
 #    obs::POMDPs.Observation = create_observation(pomdp)
     first_step_reward::Float64 = 0.0
-    action_iter = actions(pomdp)
     
-    curr_action = start(action_iter)
-    while !done(action_iter, curr_action)
-#        println(curr_action)
+    for curr_action in actions(pomdp)
         obs_to_particles = Dict{solver.ObservationType, Vector{DESPOTParticle{solver.StateType}}}()
 
         for p in node.particles
@@ -276,8 +273,7 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
         end
         
         first_step_reward = 0.0
-        next(action_iter, curr_action)
-    end # while a
+    end # for a
     return node
 end
 

@@ -74,17 +74,14 @@ function lower_bound(lb::RockSampleParticleLB,
         end
     end
     
-#    println("state_seen: $state_seen")
-     println("seen_ptr: $seen_ptr")
-     weight_sum = 0
-#     for i in 0:(seen_ptr-1)
-#         println("state_seen[$i]=$(state_seen[i])")
-#         s_index = state_seen[i]
-#         weight_sum += lb.weight_sum_of_state[s_index+1]
-#         for j in 0:pomdp.n_rocks-1
-#             expected_sampling_value[j+1] += lb.weight_sum_of_state[s_index+1] * (rock_status(j, s_index) ? 10.0 : -10.0)
-#         end
-#     end
+    weight_sum = 0
+    for i in 0:(seen_ptr-1)
+        s_index = state_seen[i]
+        weight_sum += lb.weight_sum_of_state[s_index+1]
+        for j in 0:pomdp.n_rocks-1
+            expected_sampling_value[j+1] += lb.weight_sum_of_state[s_index+1] * (rock_status(j, s_index) ? 10.0 : -10.0)
+        end
+    end
     
     # Reset for next use
     fill!(lb.weight_sum_of_state, -Inf)
@@ -115,16 +112,13 @@ function lower_bound(lb::RockSampleParticleLB,
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG
-#    println(ub_actions)
     
     while true
         a = ub_actions[s.index+1]
         trans_distribution.state.index = s.index
         trans_distribution.action.index = a.index
         rand!(rng, next_s, trans_distribution)       
-#        println("s_index: $s_index, a.index: $(a.index), next_state: $next_state")
         if isterminal(pomdp, next_s)
-            println("s: $s, cell: $(cell_of(pomdp, s))")
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][2]
             ret = 10.0
@@ -137,7 +131,7 @@ function lower_bound(lb::RockSampleParticleLB,
             ret = 0.0
             break
         end
-        s = next_s
+        s.index = next_s.index
     end
     
     best_action = (length(optimal_policy) == 0) ? RockSampleAction(3) : optimal_policy[1]
@@ -167,6 +161,5 @@ function lower_bound(lb::RockSampleParticleLB,
             @assert(false)
         end
     end
-    println("In LB@165: $ret, $best_action")
     return ret, best_action
 end

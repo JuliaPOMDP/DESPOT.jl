@@ -86,10 +86,10 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         println("\n*************** STEP $(sim_step+1) ***************")
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
-        next_state = POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
+        POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
         POMDPs.observation(pomdp, state, action, next_state, observation_distribution)
         observation_distribution.debug = 1 #TODO: remove -debug
-        obs = POMDPs.rand!(rng, obs, observation_distribution)
+        POMDPs.rand!(rng, obs, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
         state = next_state

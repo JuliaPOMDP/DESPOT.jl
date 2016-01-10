@@ -40,8 +40,7 @@ end
 
 # Can ignore the return value since the state is modified in place
 function Base.next(::RockSampleStateIterator, state::RockSampleState)
-    state.index += 1
-    return (state, state)
+    return (state, RockSampleState(state.index+1))
 end
 
 function Base.done(iter::RockSampleStateIterator, state::RockSampleState)
@@ -71,8 +70,7 @@ end
 
 # Can ignore the return values since the action is modified in place
 function Base.next(::RockSampleActionIterator, action::RockSampleAction)
-    action.index +=1
-    return (action, action)
+    return (action, RockSampleAction(action.index+1))
 end
 
 function Base.done(iter::RockSampleActionIterator, action::RockSampleAction)
@@ -101,8 +99,7 @@ end
 
 # Can ignore the return values since the action is modified in place
 function Base.next(::RockSampleObservationIterator, observation::RockSampleObservation)
-    observation.index +=1
-    return (observation, observation)
+    return (observation, RockSampleObservation(observation.index+1))
 end
 
 function Base.done(iter::RockSampleObservationIterator, action::RockSampleObservation)
