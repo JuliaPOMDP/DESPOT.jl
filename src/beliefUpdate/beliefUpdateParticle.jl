@@ -103,7 +103,7 @@ function update(bu::DESPOTBeliefUpdater,
         rng = DESPOTRandomNumber(rand_num)
         
         POMDPs.transition(bu.pomdp, p.state, action, bu.transition_distribution)
-        bu.next_state = POMDPs.rand!(rng, bu.next_state, bu.transition_distribution) # update state to next state
+        POMDPs.rand!(rng, bu.next_state, bu.transition_distribution) # update state to next state
 
         #get observation distribution for (s,a,s') tuple
         POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
@@ -123,10 +123,11 @@ function update(bu::DESPOTBeliefUpdater,
         # states randomly until we have enough that are consistent.
         warn("Particle filter empty. Bootstrapping with random states")
         bu.n_sampled = 0
+        s = create_state(bu.pomdp) #TODO: this can be done better
         while bu.n_sampled < bu.n_particles
-            s = random_state(pomdp, convert(UInt32, bu.belief_update_seed))
+            random_state(pomdp, convert(UInt32, bu.belief_update_seed), s)
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
-            if bu.obs_probability > 0.
+            if bu.obs_probability > 0.0
                 bu.n_sampled += 1
                 bu.new_particle = DESPOTParticle(s, bu.obs_probability)
                 push!(updated_belief.particles, bu.new_particle)
