@@ -25,11 +25,13 @@ import Base:
     hash
 
 ##### RockSampleState type and the related functions #####
+abstract RockSampleStateSpace <: AbstractSpace
+
 type RockSampleState <: POMDPs.State
     index::Int64
 end
 
-type RockSampleStateIterator
+type RockSampleStateIterator <: RockSampleStateSpace
     min_index::Int64
     max_index::Int64
 end
@@ -641,6 +643,21 @@ function rand!(rng::AbstractRNG,
     return nothing
 end
 
+#Replaces random_state 
+#TODO: Check if we should be using rand or rand_r here
+function rand!(rng::AbstractRNG,
+               state::RockSampleState,
+               state_space::RockSampleStateIterator)
+    if OS_NAME == :Linux
+        random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
+    else #Windows, etc
+        srand(seed)
+        random_number = rand()
+    end
+    state.index = random_number % (state_space.max_index - state_space.min_index)
+    return nothing
+end
+
 function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObservation)
   # Terminal state should match terminal obs
   if isterminal(distribution.pomdp, distribution.next_state)
@@ -733,15 +750,14 @@ function show_state(pomdp::RockSample, s::RockSampleState)
   end # i in 1:grid_size
 end
 
-# TODO: redo through rand!()
-function random_state!(pomdp::RockSample, seed::UInt32, s::RockSampleState)
-    cseed = Cuint[seed]
-    ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
-    random_number = ccall((:rand, "libc"), Int, (),)
-    s.index = random_number % pomdp.n_states
-    return nothing
-    #return random_number % pomdp.n_states
-end
+# function random_state!(pomdp::RockSample, seed::UInt32, s::RockSampleState)
+#     cseed = Cuint[seed]
+#     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
+#     random_number = ccall((:rand, "libc"), Int, (),)
+#     s.index = random_number % pomdp.n_states
+#     return nothing
+#     #return random_number % pomdp.n_states
+# end
 
 function show_obs(pomdp::RockSample, obs::RockSampleObservation)
     if obs.index == pomdp.NONE_OBS

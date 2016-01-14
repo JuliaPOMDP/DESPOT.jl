@@ -123,9 +123,11 @@ function update(bu::DESPOTBeliefUpdater,
         # states randomly until we have enough that are consistent.
         warn("Particle filter empty. Bootstrapping with random states")
         bu.n_sampled = 0
-        s = create_state(bu.pomdp) #TODO: this can be done better
+        resample_rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
         while bu.n_sampled < bu.n_particles
-            random_state(pomdp, convert(UInt32, bu.belief_update_seed), s)
+#            random_state(pomdp, convert(UInt32, bu.belief_update_seed), s)
+            s = create_state(bu.pomdp) #TODO: this can be done better
+            rand!(resample_rng, s, states(bu.pomdp)) #generate a random state
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
             if bu.obs_probability > 0.0
                 bu.n_sampled += 1
