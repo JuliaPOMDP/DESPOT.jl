@@ -89,7 +89,9 @@ function update(bu::DESPOTBeliefUpdater,
                 action::POMDPs.Action,
                 obs::POMDPs.Observation,
                 updated_belief::DESPOTBelief = create_belief(pomdp))
-                
+    
+    random_number = Array{Float64}(1)
+            
     if bu.n_particles != length(current_belief.particles)
         err("belief size mismatch: belief updater - $(bu.n_particles) particles, belief - $(length(current_belief.particles))")  
     end
@@ -99,8 +101,8 @@ function update(bu::DESPOTBeliefUpdater,
     bu.rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
 
     for p in current_belief.particles
-        rand_num = rand!(bu.rng) #TODO: preallocate for speed
-        rng = DESPOTRandomNumber(rand_num)
+        rand!(bu.rng, random_number)
+        rng = DESPOTRandomNumber(random_number[1])
         
         POMDPs.transition(bu.pomdp, p.state, action, bu.transition_distribution)
         POMDPs.rand!(rng, bu.next_state, bu.transition_distribution) # update state to next state
@@ -124,11 +126,23 @@ function update(bu::DESPOTBeliefUpdater,
         warn("Particle filter empty. Bootstrapping with random states")
         bu.n_sampled = 0
         resample_rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
+        particle_number::Int64 = 0
         while bu.n_sampled < bu.n_particles
 #            random_state(pomdp, convert(UInt32, bu.belief_update_seed), s)
-            s = create_state(bu.pomdp) #TODO: this can be done better
-            rand!(resample_rng, s, states(bu.pomdp)) #generate a random state
+            #TODO: see if this can be done better
+            #Pick a random particle from the current belief state as the initial state
+            rand!(resample_rng, random_number)
+            particle_number = ceil(bu.n_particles * random_number[1])
+            
+            next_state = create_state(bu.pomdp) #TODO: this can be done better
+            rand!(resample_rng, next_state, states(bu.pomdp)) #generate a random state
+            POMDPs.observation(bu.pomdp,
+                               current_belief.particles[particle_number].state,
+                               action,
+                               next_state,
+                               bu.observation_distribution)
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
+            println("obs prob: $(bu.obs_probability)")
             if bu.obs_probability > 0.0
                 bu.n_sampled += 1
                 bu.new_particle = DESPOTParticle(s, bu.obs_probability)

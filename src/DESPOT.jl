@@ -31,8 +31,9 @@ type DESPOTBelief{StateType} <: Belief
     history::History 
 end
 
-function rand!(rng::DESPOTRandomNumber)
-    return rng.number
+function rand!(rng::DESPOTRandomNumber, random_number::Array{Float64})
+    random_number[1] = rng.number
+    return nothing
 end
 
 type DESPOTDefaultRNG <: AbstractRNG
@@ -49,14 +50,14 @@ type DESPOTDefaultRNG <: AbstractRNG
     end    
 end
 
-function rand!(rng::DESPOTDefaultRNG)
+function rand!(rng::DESPOTDefaultRNG, random_number::Array{Float64})
     if OS_NAME == :Linux
-        random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
+        random_number[1] = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc
         srand(seed)
-        random_number = rand()
+        random_number[1] = rand()
     end
-    return random_number
+    return nothing
 end
 
 include("config.jl")

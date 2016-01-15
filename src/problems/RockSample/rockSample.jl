@@ -623,7 +623,9 @@ function rand!(rng::AbstractRNG,
                distribution::RockSampleObservationDistribution)
     
     # generate a new random number regardless of whether it's used below or not
-    rand_num = rand!(rng)
+    
+    rand_num = Array{Float64}(1)
+    rand!(rng, rand_num)
     
     if (distribution.action.index < 5)
         sample = isterminal(distribution.pomdp, distribution.next_state) ?
@@ -633,7 +635,7 @@ function rand!(rng::AbstractRNG,
         agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
-        if (rand_num <= eff) == rock_status(hash(distribution.action) - 5, hash(distribution.state))   
+        if (rand_num[1] <= eff) == rock_status(hash(distribution.action) - 5, hash(distribution.state))   
             sample.index = distribution.pomdp.GOOD_OBS
         else
             sample.index = distribution.pomdp.BAD_OBS
@@ -642,6 +644,15 @@ function rand!(rng::AbstractRNG,
     
     return nothing
 end
+
+# function random_state!(pomdp::RockSample, seed::UInt32, s::RockSampleState)
+#     cseed = Cuint[seed]
+#     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
+#     random_number = ccall((:rand, "libc"), Int, (),)
+#     s.index = random_number % pomdp.n_states
+#     return nothing
+#     #return random_number % pomdp.n_states
+# end
 
 #Replaces random_state 
 #TODO: Check if we should be using rand or rand_r here
@@ -654,7 +665,10 @@ function rand!(rng::AbstractRNG,
         srand(seed)
         random_number = rand()
     end
-    state.index = random_number % (state_space.max_index - state_space.min_index)
+#    println(random_number)
+#    state.index = random_number % (state_space.max_index - state_space.min_index)
+    state.index = floor(random_number*(state_space.max_index-state_space.min_index))
+#    println(state)
     return nothing
 end
 
@@ -749,15 +763,6 @@ function show_state(pomdp::RockSample, s::RockSampleState)
     println("")
   end # i in 1:grid_size
 end
-
-# function random_state!(pomdp::RockSample, seed::UInt32, s::RockSampleState)
-#     cseed = Cuint[seed]
-#     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
-#     random_number = ccall((:rand, "libc"), Int, (),)
-#     s.index = random_number % pomdp.n_states
-#     return nothing
-#     #return random_number % pomdp.n_states
-# end
 
 function show_obs(pomdp::RockSample, obs::RockSampleObservation)
     if obs.index == pomdp.NONE_OBS
