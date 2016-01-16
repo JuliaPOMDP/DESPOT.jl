@@ -714,12 +714,20 @@ end
 #  return (cell_of(s) == n_cells)
 #end
 
+# function isterminal(pomdp::RockSample, s::RockSampleState)
+#   if cell_of(pomdp, s) == pomdp.n_cells
+#     return true
+#   else
+#     return false
+#   end
+# end
+
 function isterminal(pomdp::RockSample, s::RockSampleState)
-  if cell_of(pomdp, s) == pomdp.n_cells
-    return true
-  else
-    return false
-  end
+  return cell_of(pomdp, s) == pomdp.n_cells
+end
+
+function isterminal(pomdp::RockSample, obs::RockSampleObservation)
+  return obs.index == pomdp.OBS_TERMINAL
 end
 
 # Which cell the agent is in

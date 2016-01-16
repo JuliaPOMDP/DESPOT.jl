@@ -178,6 +178,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     a_star = node.best_ub_action
     n_nodes_added = 0
     o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star], solver.root, solver.config, pomdp.discount) # it's an array!
+    println("o_star: $o_star, weighted_eu_star: $weighted_eu_star")
     
     if weighted_eu_star > 0.
         add(solver.belief.history, a_star, o_star)
@@ -240,10 +241,9 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                 solver.random_streams.streams[p.id+1, node.depth+1],
                 curr_action)
             
-            #TODO: this needs to be generalized if you want to keep it!
-#             if isterminal(pomdp, solver.next_state) && (solver.curr_obs.index != pomdp.TERMINAL_OBS)
-#                 error("Terminal state in a particle mismatches observation")
-#             end
+            if isterminal(pomdp, solver.next_state) && !isterminal(pomdp, solver.curr_obs)
+                error("Terminal state in a particle mismatches observation")
+            end
 
             if !haskey(obs_to_particles, solver.curr_obs)
                 obs_to_particles[solver.curr_obs] = DESPOTParticle[]

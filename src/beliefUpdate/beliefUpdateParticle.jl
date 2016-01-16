@@ -142,7 +142,7 @@ function update(bu::DESPOTBeliefUpdater,
                                next_state,
                                bu.observation_distribution)
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
-            println("obs prob: $(bu.obs_probability)")
+#            println("s': $next_state, p($obs): $(bu.obs_probability)")
             if bu.obs_probability > 0.0
                 bu.n_sampled += 1
                 bu.new_particle = DESPOTParticle(s, bu.obs_probability)
