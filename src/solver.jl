@@ -178,9 +178,9 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     a_star = node.best_ub_action
     n_nodes_added = 0
     o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star], solver.root, solver.config, pomdp.discount) # it's an array!
-    println("o_star: $o_star, weighted_eu_star: $weighted_eu_star")
+#     println("o_star: $o_star, weighted_eu_star: $weighted_eu_star")
     
-    if weighted_eu_star > 0.
+    if weighted_eu_star > 0.0
         add(solver.belief.history, a_star, o_star)
         n_nodes_added = trial(solver,
                             pomdp,
@@ -246,14 +246,19 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
             end
 
             if !haskey(obs_to_particles, solver.curr_obs)
-                obs_to_particles[solver.curr_obs] = DESPOTParticle[]
+#                 println("a: $curr_action, haskey($(solver.curr_obs)): $(haskey(obs_to_particles, solver.curr_obs))")
+                obs_to_particles[deepcopy(solver.curr_obs)] = DESPOTParticle[] #TODO: can this be done better?
             end
 
-            push!(obs_to_particles[solver.curr_obs], DESPOTParticle(solver.next_state, p.id, p.weight))
+            push!(obs_to_particles[solver.curr_obs], DESPOTParticle(deepcopy(solver.next_state), p.id, p.weight)) #TODO: can this be done better?
             first_step_reward += solver.curr_reward * p.weight
         end
+#        println(obs_to_particles[RockSampleObservation(2)])
         
         first_step_reward /= node.weight
+#        println("first_step_reward: $first_step_reward")
+#        println("len(obs_to_particles[RockSampleObservation(2)): $(length(obs_to_particles[RockSampleObservation(2)]))")
+#         println("keys(obs_to_particles): $(keys(obs_to_particles))")
         new_qnode = QNode{solver.StateType, solver.ActionType, solver.ObservationType}(
                           pomdp,
                           solver.lb,
@@ -264,8 +269,10 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                           first_step_reward,
                           solver.belief.history,
                           solver.config)
+#        println(new_qnode); exit();
         node.q_nodes[deepcopy(curr_action)] = new_qnode #TODO: See if this can be done faster
         remaining_reward = get_upper_bound(new_qnode)
+#        println("remaining_reward: $remaining_reward")        
         
         if (first_step_reward + pomdp.discount*remaining_reward) > (q_star + solver.config.tiny)
             q_star = first_step_reward + pomdp.discount * remaining_reward
@@ -277,7 +284,7 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
     return node
 end
 
-
+# fill in pre-allocated variables
 function step(solver::DESPOTSolver, pomdp::POMDPs.POMDP, state::POMDPs.State, rand_num::Float64, action::POMDPs.Action)
     
     solver.rng.number = rand_num
@@ -286,7 +293,8 @@ function step(solver::DESPOTSolver, pomdp::POMDPs.POMDP, state::POMDPs.State, ra
     POMDPs.observation(pomdp, state, action, solver.next_state, solver.observation_distribution)
     POMDPs.rand!(solver.rng, solver.curr_obs, solver.observation_distribution)
     solver.curr_reward = POMDPs.reward(pomdp, state, action)
+#    println("s: $state, a: $action, s': $(solver.next_state), o: $(solver.curr_obs), r: $(solver.curr_reward), rand: $rand_num")
 #    return solver.next_state, solver.reward, solver.observation
-    return nothing # fill in pre-allocated variables
+    return nothing
 end
                                     

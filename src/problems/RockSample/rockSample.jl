@@ -628,7 +628,7 @@ function rand!(rng::AbstractRNG,
     rand!(rng, rand_num)
     
     if (distribution.action.index < 5)
-        sample = isterminal(distribution.pomdp, distribution.next_state) ?
+        sample.index = isterminal(distribution.pomdp, distribution.next_state) ?
                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
     else
         rock_cell = distribution.pomdp.rocks[hash(distribution.action) - 4] # would be [action-5] with 0-based indexing
@@ -700,7 +700,7 @@ function pdf(distribution::RockSampleObservationDistribution, obs::RockSampleObs
 
   eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
   
-  rstatus = rock_status(rock, distribution.next_state)
+  rstatus = rock_status(rock, distribution.next_state.index)
   if ((obs.index == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
      ((obs.index == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
     return eff
@@ -727,7 +727,7 @@ function isterminal(pomdp::RockSample, s::RockSampleState)
 end
 
 function isterminal(pomdp::RockSample, obs::RockSampleObservation)
-  return obs.index == pomdp.OBS_TERMINAL
+  return obs.index == pomdp.TERMINAL_OBS
 end
 
 # Which cell the agent is in
