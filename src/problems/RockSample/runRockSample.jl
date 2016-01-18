@@ -1,6 +1,6 @@
 using POMDPs
 using DESPOT
-# using Types
+using POMDPToolbox
 
 include("rockSample.jl")
 include("rockSampleParticleLB.jl")

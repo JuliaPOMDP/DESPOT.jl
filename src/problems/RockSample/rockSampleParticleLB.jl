@@ -63,13 +63,12 @@ function lower_bound(lb::RockSampleParticleLB,
     # bottleneck.
 
     for p in particles
-        if lb.weight_sum_of_state[hash(p.state)+1] == -Inf #Array
-            lb.weight_sum_of_state[hash(p.state)+1] = p.weight #TODO: change hash() to index()
-            state_seen[seen_ptr] = hash(p.state)
-#            push!(state_seen, hash(p.state))
+        if lb.weight_sum_of_state[p.state.index+1] == -Inf #Array
+            lb.weight_sum_of_state[p.state.index+1] = p.weight
+            state_seen[seen_ptr] = p.state.index
             seen_ptr += 1
         else
-            lb.weight_sum_of_state[hash(p.state)+1] += p.weight;
+            lb.weight_sum_of_state[p.state.index+1] += p.weight;
         end
     end
     
