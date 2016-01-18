@@ -113,7 +113,8 @@ function update(bu::DESPOTBeliefUpdater,
         bu.obs_probability = pdf(bu.observation_distribution, obs)
         
         if bu.obs_probability > 0.0
-            bu.new_particle = DESPOTParticle(bu.next_state, p.id, p.weight * bu.obs_probability)
+            #TODO: can we do without deepcopy?
+            bu.new_particle = DESPOTParticle(deepcopy(bu.next_state), p.id, p.weight * bu.obs_probability)
             push!(updated_belief.particles, bu.new_particle)
         end
     end
@@ -128,7 +129,6 @@ function update(bu::DESPOTBeliefUpdater,
         resample_rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
         particle_number::Int64 = 0
         while bu.n_sampled < bu.n_particles
-#            random_state(pomdp, convert(UInt32, bu.belief_update_seed), s)
             #TODO: see if this can be done better
             #Pick a random particle from the current belief state as the initial state
             rand!(resample_rng, random_number)
@@ -145,7 +145,7 @@ function update(bu::DESPOTBeliefUpdater,
 #            println("s': $next_state, p($obs): $(bu.obs_probability)")
             if bu.obs_probability > 0.0
                 bu.n_sampled += 1
-                bu.new_particle = DESPOTParticle(s, bu.obs_probability)
+                bu.new_particle = DESPOTParticle(next_state, bu.obs_probability)
                 push!(updated_belief.particles, bu.new_particle)
             end
         end

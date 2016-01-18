@@ -97,73 +97,76 @@ function init_solver(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
     return nothing
 end
 
-#TODO: Figure out why particles::Vector{Particles} does not work
 function new_root{StateType}(solver::DESPOTSolver,
                   pomdp::POMDP,
                   particles::Vector{DESPOTParticle{StateType}})
   
-  lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
-                                                            pomdp,
-                                                            particles,
-                                                            solver.ub.upper_bound_act,
-                                                            solver.config)
-                                                           
-  ubound::Float64 = upper_bound(solver.ub,
-                                pomdp,
-                                particles,
-                                solver.config)
-                                
-  solver.root = VNode{solver.StateType, solver.ActionType}(
-                    particles,
-                    lbound, 
-                    ubound,
-                    0,
-                    create_action(pomdp), #default(dummy) action
-                    1.0,
-                    false,
-                    solver.config)
+    lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
+                                                                pomdp,
+                                                                particles,
+                                                                solver.ub.upper_bound_act,
+                                                                solver.config)
+                                                            
+    ubound::Float64 = upper_bound(solver.ub,
+                                    pomdp,
+                                    particles,
+                                    solver.config)
+                                    
+#     println("new_root: lb: $lbound, ub: $ubound")
+#     println("solver: lb: $(solver.lb), ub: $(solver.ub)")
+#     println("new_root: particles: $(particles[1:10])")
+        
+    solver.root = VNode{solver.StateType, solver.ActionType}(
+                        particles,
+                        lbound, 
+                        ubound,
+                        0,
+                        create_action(pomdp), #default(dummy) action
+                        1.0,
+                        false,
+                        solver.config)
 
-  return nothing
+    return nothing
 end
 
 
 function search(solver::DESPOTSolver, pomdp::POMDP)
-  n_trials = 0
-  startTime = time()
-  stop_now = false
- 
-  @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
-  while ((excess_uncertainty(solver.root.lb,
-                             solver.root.ub,
-                             solver.root.lb,
-                             solver.root.ub,
-                             0,
-                             solver.config.eta,
-                             pomdp.discount) > 1e-6)
-                             && !stop_now)
-
-    trial(solver, pomdp, solver.root, n_trials)
-    n_trials += 1
+    n_trials = 0
+    startTime = time()
+    stop_now = false
     
-    if ((solver.config.max_trials > 0) && (n_trials >= solver.config.max_trials)) ||
-       ((solver.config.time_per_move > 0) && ((time() - startTime) >= solver.config.time_per_move))
-       stop_now = true
+    @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
+    while ((excess_uncertainty(solver.root.lb,
+                                solver.root.ub,
+                                solver.root.lb,
+                                solver.root.ub,
+                                0,
+                                solver.config.eta,
+                                pomdp.discount) > 1e-6)
+                                && !stop_now)
+
+        trial(solver, pomdp, solver.root, n_trials)
+        n_trials += 1
+        
+        if ((solver.config.max_trials > 0) && (n_trials >= solver.config.max_trials)) ||
+        ((solver.config.time_per_move > 0) && ((time() - startTime) >= solver.config.time_per_move))
+            stop_now = true
+        end
     end
-  end
 
-  @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
-  @printf("Number of trials: %d\n", n_trials)
+    @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
+    @printf("Number of trials: %d\n", n_trials)
 
-  if solver.config.pruning_constant != 0
-    total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
-    act = solver.root.prunedAction
-    return (act == -1 ? solver.root_default_action : act), currentTrials #TODO: fix actions
-  elseif !solver.root.in_tree
-      println("Root not in tree")
-    return solver.root_default_action, n_trials
-  else
-    return get_lb_action(solver.root, solver.config, pomdp.discount), n_trials
-  end
+    if solver.config.pruning_constant != 0
+        total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
+        act = solver.root.prunedAction
+        return (act == -1 ? solver.root_default_action : act), currentTrials #TODO: fix actions
+    elseif !solver.root.in_tree
+        println("Root not in tree")
+        return solver.root_default_action, n_trials
+    else
+        return get_lb_action(solver.root, solver.config, pomdp.discount), n_trials
+    end
 end
 
 function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)

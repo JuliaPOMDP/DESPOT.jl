@@ -68,7 +68,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     solver.config.time_per_move = -1 # sec, default: 1, unlimited: -1
     solver.config.pruning_constant = 0
     solver.config.eta = 0.95 # default: 0.95
-    solver.config.sim_len = 3 # default: -1
+    solver.config.sim_len = -1 # default: -1
     solver.config.max_trials = 100 # default: -1
     solver.config.approximate_ubound = false
     solver.config.tiny = 1e-6
@@ -92,7 +92,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         POMDPs.rand!(rng, obs, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
-        state = next_state
+        state = deepcopy(next_state) #TODO: see if this is necessary
         POMDPs.update(bu, current_belief, action, obs, updated_belief)
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
         println("Action = $action")

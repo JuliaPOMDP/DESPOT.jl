@@ -36,12 +36,11 @@ end
 
 function lower_bound(lb::RockSampleParticleLB,
                      pomdp::RockSample,
-                     particles::Vector, #(DESPOTParticle{RockSampleState}) - TODO: fix this
+                     particles::Vector{DESPOTParticle{RockSampleState}},
                      ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
 
     state_seen = Dict{Int64,Int64}()
-    #state_seen = Vector{Int64}()
     
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
