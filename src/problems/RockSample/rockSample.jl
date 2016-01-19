@@ -3,44 +3,43 @@ import Base:
     ==,
     hash
 
-##### RockSampleState type and the related functions #####
-abstract RockSampleStateSpace <: AbstractSpace
+##### state, action, and observation spaces and related functions #####
 
+## basic types
 type RockSampleState <: POMDPs.State
     index::Int64
 end
 
-type RockSampleStateIterator <: RockSampleStateSpace
+type RockSampleAction <: POMDPs.Action
+    index::Int64
+end
+
+type RockSampleObservation <: POMDPs.Observation
+    index::Int64
+end
+
+## spaces
+
+type RockSampleStateSpace <: AbstractSpace
     min_index::Int64
     max_index::Int64
 end
 
-function Base.start(::RockSampleStateIterator)
-    return RockSampleState(0)
+type RockSampleActionSpace <: AbstractSpace
+    min_index::Int64
+    max_index::Int64
 end
 
-# Can ignore the return value since the state is modified in place
-function Base.next(::RockSampleStateIterator, state::RockSampleState)
-    return (state, RockSampleState(state.index+1))
+type RockSampleObservationSpace <: AbstractSpace
+    min_index::Int64
+    max_index::Int64
 end
 
-function Base.done(iter::RockSampleStateIterator, state::RockSampleState)
-    return state.index > iter.max_index
-end
+## space iterator types
 
-==(x::RockSampleState, y::RockSampleState) = (x.index == y.index)
-
-function Base.hash(x::RockSampleState, h::Int64 = 0)
-    return x.index
-end
-
-function POMDPs.index(pomdp::POMDP, state::RockSampleState)
-    return state.index
-end
-
-##### RockSampleAction type and the related functions #####
-type RockSampleAction <: POMDPs.Action
-    index::Int64
+type RockSampleStateIterator
+    min_index::Int64
+    max_index::Int64
 end
 
 type RockSampleActionIterator
@@ -48,49 +47,79 @@ type RockSampleActionIterator
     max_index::Int64
 end
 
-function Base.start(::RockSampleActionIterator)
-    return RockSampleAction(0)
-end
-
-# Can ignore the return values since the action is modified in place
-function Base.next(::RockSampleActionIterator, action::RockSampleAction)
-    return (action, RockSampleAction(action.index+1))
-end
-
-function Base.done(iter::RockSampleActionIterator, action::RockSampleAction)
-    return action.index > iter.max_index
-end
-
-==(x::RockSampleAction, y::RockSampleAction) = (x.index == y.index)
-
-function Base.hash(x::RockSampleAction, h::Int64 = 0)
-    return x.index
-end
-
-##### RockSampleObservation type and the related functions #####
-type RockSampleObservation <: POMDPs.Observation
-    index::Int64
-end
-
 type RockSampleObservationIterator
     min_index::Int64
     max_index::Int64
+end
+
+# iterator enabling functions
+
+function Base.start(::RockSampleStateIterator)
+    return RockSampleState(0)
+end
+
+function Base.start(::RockSampleActionIterator)
+    return RockSampleAction(0)
 end
 
 function Base.start(::RockSampleObservationIterator)
     return RockSampleObservation(0)
 end
 
-# Can ignore the return values since the action is modified in place
+function Base.next(::RockSampleStateIterator, state::RockSampleState)
+    return (state, RockSampleState(state.index+1))
+end
+
+function Base.next(::RockSampleActionIterator, action::RockSampleAction)
+    return (action, RockSampleAction(action.index+1))
+end
+
 function Base.next(::RockSampleObservationIterator, observation::RockSampleObservation)
     return (observation, RockSampleObservation(observation.index+1))
+end
+
+function Base.done(iter::RockSampleStateIterator, state::RockSampleState)
+    return state.index > iter.max_index
+end
+
+function Base.done(iter::RockSampleActionIterator, action::RockSampleAction)
+    return action.index > iter.max_index
 end
 
 function Base.done(iter::RockSampleObservationIterator, action::RockSampleObservation)
     return observation.index > iter.max_index
 end
 
+## iterator creation functions
+function POMDPs.iterator(space::RockSampleStateSpace)
+    return RockSampleStateIterator(space.min_index, space.max_index)
+end
+
+function POMDPs.iterator(space::RockSampleActionSpace)
+    return RockSampleActionIterator(space.min_index, space.max_index)
+end
+
+function POMDPs.iterator(space::RockSampleStateSpace)
+    return RockSampleObservationIterator(space.min_index, space.max_index)
+end
+
+## index, association, and comparison functions/operators
+
+function POMDPs.index(pomdp::POMDP, state::RockSampleState)
+    return state.index
+end
+
+==(x::RockSampleState, y::RockSampleState) = (x.index == y.index)
+==(x::RockSampleAction, y::RockSampleAction) = (x.index == y.index)
 ==(x::RockSampleObservation, y::RockSampleObservation) = (x.index == y.index)
+
+function Base.hash(x::RockSampleState, h::Int64 = 0)
+    return x.index
+end
+
+function Base.hash(x::RockSampleAction, h::Int64 = 0)
+    return x.index
+end
 
 function Base.hash(x::RockSampleObservation, h::Int64 = 0)
     return x.index
@@ -177,32 +206,12 @@ type RockSample <: POMDPs.POMDP
      end
 end
 
-# This function returns the start state, serving two purposes simultaneously
-function POMDPs.create_state(pomdp::RockSample)
-   return RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
-end
-
-function POMDPs.create_action(pomdp::RockSample)
-    return RockSampleAction(-1)
-end
-
-function POMDPs.create_observation(pomdp::RockSample)
-    return RockSampleObservation(-1)
-end
-
-# Creates a default belief structure to store the problem's initial belief
-function POMDPs.create_belief(pomdp::RockSample)
-    return ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
-end
+## distribution types
 
 type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution
     pomdp::RockSample
     state::RockSampleState
     action::RockSampleAction
-end
-
-function POMDPs.create_transition_distribution(pomdp::RockSample)
-    return RockSampleTransitionDistribution(pomdp, RockSampleState(-1), RockSampleAction(-1))
 end
 
 type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
@@ -227,6 +236,30 @@ type RockSampleObservationDistribution <: POMDPs.AbstractDistribution
         
         return this
     end
+end
+
+## create_* functions
+
+# This function returns the start state, serving two purposes simultaneously
+function POMDPs.create_state(pomdp::RockSample)
+   return RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
+end
+
+function POMDPs.create_action(pomdp::RockSample)
+    return RockSampleAction(-1)
+end
+
+function POMDPs.create_observation(pomdp::RockSample)
+    return RockSampleObservation(-1)
+end
+
+# Creates a default belief structure to store the problem's initial belief
+function POMDPs.create_belief(pomdp::RockSample)
+    return ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
+end
+
+function POMDPs.create_transition_distribution(pomdp::RockSample)
+    return RockSampleTransitionDistribution(pomdp, RockSampleState(-1), RockSampleAction(-1))
 end
 
 function POMDPs.create_observation_distribution(pomdp::RockSample)
@@ -284,8 +317,8 @@ function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{DES
     return nothing
 end
 
-# accessor functions
- function POMDPs.n_states(pomdp::RockSample)
+## accessor functions
+function POMDPs.n_states(pomdp::RockSample)
     return pomdp.n_states
 end
 
@@ -298,20 +331,22 @@ function POMDPs.n_observations(pomdp::RockSample)
 end
 
 function POMDPs.states(pomdp::RockSample)
-    return RockSampleStateIterator(0, pomdp.n_states-1) # 0-based indexing
+    return RockSampleStateSpace(0, pomdp.n_states-1) # 0-based indexing
 end
 
 function POMDPs.actions(pomdp::RockSample)
-    return RockSampleActionIterator(0, pomdp.n_actions-1) # 0-based indexing
+    return RockSampleActionSpace(0, pomdp.n_actions-1) # 0-based indexing
 end
 
 function POMDPs.observations(pomdp::RockSample)
-    return RockSampleActionIterator(0, pomdp.n_observations-1) # 0-based indexing
+    return RockSampleActionSpace(0, pomdp.n_observations-1) # 0-based indexing
 end
 
 function POMDPs.discount(pomdp::RockSample)
     return pomdp.discount
 end
+
+## RockSample initialization
 
 function init_4_4(pomdp::RockSample)
   pomdp.rocks[1] = cell_num(pomdp,0,2) # rocks is an array
@@ -533,6 +568,9 @@ function init_problem(pomdp::RockSample)
     end
 end
 
+
+## utility functions
+
 # True for good rock, false for bad rock, x can be a rock set or state index
 function rock_status(rock::Int64, x::Int64)
     return (((x >>> rock) & 1) == 1 ? true : false)
@@ -623,16 +661,6 @@ function POMDPs.rand!(
     return nothing
 end
 
-# function random_state!(pomdp::RockSample, seed::UInt32, s::RockSampleState)
-#     cseed = Cuint[seed]
-#     ccall((:srand, "libc"), Void, (Ptr{Cuint},), cseed)
-#     random_number = ccall((:rand, "libc"), Int, (),)
-#     s.index = random_number % pomdp.n_states
-#     return nothing
-#     #return random_number % pomdp.n_states
-# end
-
-#Replaces random_state 
 #TODO: Check if we should be using rand or rand_r here
 function POMDPs.rand!(
                     rng::AbstractRNG,

@@ -26,7 +26,6 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
                     pomdp::POMDP,
                     config::DESPOTConfig)
     
-  #  println("IN INIT UPPER BOUND")
     current_level_ub_memo = Array(Float64, n_states(pomdp))
     next_level_ub_memo = Array(Float64, n_states(pomdp))
     
@@ -36,17 +35,18 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
     rng = DESPOTRandomNumber(0) # dummy RNG
     
     fill!(current_level_ub_memo, -Inf)
-
-#    next_level_ub_memo = [fringe_upper_bound(pomdp, s) for s = 0:n_states(pomdp)-1]
     
-    for s in states(pomdp)
-        next_level_ub_memo[s.index+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
+    println(states(pomdp))
+    println(iterator(states(pomdp)))
+    
+    for s in iterator(states(pomdp))
+        next_level_ub_memo[index(pomdp,s)+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
     end
     
 
     for i in 1:config.search_depth # length of horizon
-        for s in states(pomdp)
-            for a in actions(pomdp)
+        for s in iterator(states(pomdp))
+            for a in iterator(actions(pomdp))
                 trans_distribution.state = s #TODO: this might not be necessary - do by reference
                 trans_distribution.action = a #TODO: this might not be necessary - do by reference
   #              println("s: $(trans_distribution.state.index), a: $(trans_distribution.action.index)")
