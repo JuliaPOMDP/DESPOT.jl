@@ -14,7 +14,7 @@ The code has been tested with Julia v0.4.2.
 ## Installation ##
 
 ```julia
-Pkg.clone("https://github.com/sisl/DESPOT.jl.git")
+Pkg.clone("https://github.com/sisl/DESPOT.jl")
 ```
 
 ## Dependencies ##
