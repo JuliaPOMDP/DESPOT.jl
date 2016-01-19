@@ -15,7 +15,7 @@ abstract DESPOTUpperBound
 abstract DESPOTLowerBound
 abstract DESPOTBeliefUpdate
 
-type DESPOTRandomNumber <: AbstractRNG
+type DESPOTRandomNumber <: POMDPs.AbstractRNG
     number::Float64
 end
 
@@ -26,7 +26,7 @@ type DESPOTParticle{StateType}
 end
 
 #TODO: figure out how to do this properly!
-type DESPOTBelief{StateType} <: Belief
+type DESPOTBelief{StateType} <: POMDPs.Belief
     particles::Vector{DESPOTParticle{StateType}}
     history::History 
 end
@@ -36,7 +36,7 @@ function rand!(rng::DESPOTRandomNumber, random_number::Array{Float64})
     return nothing
 end
 
-type DESPOTDefaultRNG <: AbstractRNG
+type DESPOTDefaultRNG <: POMDPs.AbstractRNG
     seed::Array{UInt32,1}
     rand_max::Int64
     debug::Int64
@@ -54,7 +54,7 @@ function rand!(rng::DESPOTDefaultRNG, random_number::Array{Float64})
     if OS_NAME == :Linux
         random_number[1] = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc
-        srand(seed)
+        srand(rng.seed)
         random_number[1] = rand()
     end
     return nothing
@@ -67,19 +67,19 @@ include("vnode.jl")
 include("utils.jl")
 include("solver.jl")
 
-type DESPOTPolicy <: Policy
+type DESPOTPolicy <: POMDPs.Policy
     solver::DESPOTSolver
-    pomdp ::POMDP
+    pomdp ::POMDPs.POMDP
 end
 
-function create_policy(solver::DESPOTSolver, pomdp::POMDP)
+function create_policy(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
     return DESPOTPolicy(solver, pomdp)
 end
 
 # UPPER and LOWER BOUND FUNCTION INTERFACES
 #TODO: try specializing types for DESPOTParticle
 lower_bound(lb::DESPOTLowerBound,
-            pomdp::POMDP,
+            pomdp::POMDPs.POMDP,
             particles::Vector, 
             config::DESPOTConfig) = 
     error("no lower_bound method found for $(typeof(lb)) type")
@@ -91,12 +91,12 @@ upper_bound(ub::DESPOTUpperBound,
     error("no upper_bound method found for $(typeof(lb)) type")
     
 init_lower_bound(lb::DESPOTLowerBound,
-                    pomdp::POMDP,
+                    pomdp::POMDPs.POMDP,
                     config::DESPOTConfig) =
     error("$(typeof(lb)) bound does not implement init_lower_bound")                    
     
 init_upper_bound(ub::DESPOTUpperBound,
-                    pomdp::POMDP,
+                    pomdp::POMDPs.POMDP,
                     config::DESPOTConfig) =
     error("$(typeof(ub)) bound does not implement init_upper_bound")
     
@@ -111,7 +111,7 @@ function action(policy::DESPOTPolicy, belief::DESPOTBelief)
     return a
 end
 
-function solve(solver::DESPOTSolver, pomdp::POMDP)
+function solve(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
     policy = DESPOTPolicy(solver, pomdp)
     init_solver(solver, pomdp)
     return policy

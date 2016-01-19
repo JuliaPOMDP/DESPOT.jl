@@ -16,10 +16,10 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     rand_max = 2^31-1 # 2147483647
         
     # generate unique random seeds (optional, if not supplied, default values will be used)
-    seed  ::Uint32   = convert(Uint32, 42) # the main random seed that's used to set the other seeds
-    w_seed::Uint32   = seed $  n_particles      # world seed, used in the overall simulation
-    b_seed::Uint32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
-    m_seed::Uint32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
+    seed  ::UInt32   = convert(UInt32, 42) # the main random seed that's used to set the other seeds
+    w_seed::UInt32   = seed $  n_particles      # world seed, used in the overall simulation
+    b_seed::UInt32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
+    m_seed::UInt32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
 
     pomdp    = RockSample(grid_size,
                           num_rocks,
