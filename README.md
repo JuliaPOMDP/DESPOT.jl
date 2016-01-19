@@ -9,7 +9,7 @@ A detailed description of the algorithm can be found in this paper:
 
 http://www.comp.nus.edu.sg/~yenan/pub/somani2013despot.pdf
 
-The code has been tested with Julia v0.3.6.
+The code has been tested with Julia v0.4.2.
 
 ## Installation ##
 
@@ -23,6 +23,23 @@ Pkg.clone("https://github.com/sisl/DESPOT.jl.git")
 * POMDPToolbox
 * Distributions
 
+## Data types ##
+
+The following DESPOT-specific types are likely to be of interest to problem and application developers:
+
+|Type				|Supertype		|Comments						|
+|-------------------------------|-----------------------|-------------------------------------------------------|
+|DESPOTSolver			|POMDPs.Solver		|The main solver type 											|
+|DESPOTUpperBound		|Any			|An abstract type for defining types and functions for computing an upper bound			| 
+|DESPOTLowerBound		|Any			|An abstract type for defining types and functions for computing a lower bound			|
+|DESPOTPolicy			|POMDPs.Policy		|A custom policy type											|
+|DESPOTParticle			|Any			|A custom particle type used by the solver and the default belief updater				|
+|DESPOTBelief			|POMDPs.Belief		|A custom belief type containing both a particle-based belief and a solver history log		|
+|DESPOTConfig			|Any			|A set of DESPOT configuration parameters								|
+|DESPOTDefaultRNG		|POMDPs.AbstractRNG	|The default multi-platform RNG type that can be used to advance the state of the simulation 	| 
+
+When defining problem-specific POMDPs.State, POMDPs.Action, and POMDPs.Observation subtypes, the problem developer needs to make sure that *hash()* functions and *==* operators for these subtypes are defined as well, as they are required by the solver. Problem-specific state, action, and observation spaces must be defined as iterable types, either by using existing iterable containers (such as arrays) or by defining *start()*, *next()*, and *finish()* functions for them. For more on this subject, please see [POMDPs.jl documentation](https://github.com/sisl/POMDPs.jl) and Julia documentation on [iteration](http://docs.julialang.org/en/latest/stdlib/collections/#iteration).
+
 ## Instantiating a DESPOT solver ##
 
 The following example illustrates instantiation of a DESPOT solver
@@ -35,12 +52,12 @@ solver = DESPOTSolver(pomdp,			# reference to the problem model
 
 Information on how to construct custom upper and lower bound estimators is provided in section Customization.
 Additional solver parameters (listed below) can either also be passed as keyword arguments during the solver construction
- or set at a later point (but before a call to *POMDPs.solve* is made) by accessing *solver.config.[parameter name]*.
+ or set at a later point (but before a call to *POMDPs.solve* is made) by accessing *solver.config.[parameter]*.
 
 |Parameter					|Type		|Default Value	|Description												|
 |---------------------------|-----------|--------------:|-----------------------------------------------------------|
 |search_depth				|Int64		|90				|Maximum depth of the search tree							|
-|main_seed					|Uint32		|42				|The main random seed used to derive other seeds			|
+|main_seed					|UInt32		|42				|The main random seed used to derive other seeds			|
 |time_per_move				|Float64	|1				|CPU time allowed per move (in sec), -1 for unlimited		|
 |n_particles				|Int64		|500			|Number of particles used for belief representation			|
 |pruning_constant			|Float64	|0.0			|Regularization parameter									|
@@ -49,7 +66,7 @@ Additional solver parameters (listed below) can either also be passed as keyword
 |approximate_ubound			|Bool		|false			|If true, solver can allow initial lower bound > upper bound|
 |tiny						|Float64	|1e-6			|Smallest significant difference between a pair of numbers	|
 |rand_max					|Int64		|2^32-1			|Largest possible random number								|
-|debug						|Uint8		|0				|Level of debug output (0-5), 0 - no output, 5 - most output|
+|debug						|UInt8		|0				|Level of debug output (0-5), 0 - no output, 5 - most output|
 
 
 ## Instantiating the default belief updater ##
@@ -57,7 +74,7 @@ A default particle-filtering belief update type, DESPOTBeliefUpdater, is provide
 
 |Parameter					|Type		|Default Value	|Description												|
 |---------------------------|-----------|--------------:|-----------------------------------------------------------|
-|seed						|Uint32		|42				|Random seed used in belief updates							|
+|seed						|UInt32		|42				|Random seed used in belief updates							|
 |n_particles				|Int64		|500			|Number of particles used for belief representation			|
 |particle_weight_threshold	|Float64	|1e-20			|Smallest viable particle weight							|
 |eff_particle_fraction		|Float64	|0.05			|Min. fraction of effective particles to avoid resampling	| 
@@ -65,7 +82,7 @@ A default particle-filtering belief update type, DESPOTBeliefUpdater, is provide
 Note that the solver and the belief updater values for *n_particles* should be the same (execution will be stopped
 if they are different). It is also recommended to use the same *rand_max* value.
 
-Custom belief updaters can be used as well, as long as they are based on the *DESPOTBelief* particle belief type (see *src/DESPOT.jl*).
+Custom belief updaters can be used as well, as long as they are based on the *DESPOTBelief* particle belief type (see [DESPOT.jl](src/DESPOT.jl)).
  Please see [POMDPs.jl](https://github.com/sisl/POMDPs.jl) documentation for information on defining and using belief updaters.
  
 ## Solver customization ##
@@ -74,7 +91,7 @@ A DESPOT solver can be customized with user-provided upper and lower bound funct
 
 ### Upper bound estimation ###
 
-The default type of upper bound provided is a non-stochastic estimate based on value iteration (see *src/upperBound/upperBoundNonStochastic.jl*).
+The default type of upper bound provided is a non-stochastic estimate based on value iteration, defined in [upperBoundNonStochastic.jl](src/upperBound/upperBoundNonStochastic.jl).
  To add a custom upper bound algorithm, define a custom type as a subtype of *DESPOTUpperBound*, e.g.:
 
 ```julia
@@ -106,8 +123,7 @@ solver = DESPOTSolver(pomdp, 			# reference to the problem model
 
 ### Lower bound estimation ###
 
-An example problem-specific lower bound type (*RockSampleParticleLB*) and the associated methods are provided for the RockSample problem
-(*/src/problems/RockSample/rockSampleParticleLB.jl*). The algorithm for this lower bound estimator is based on dynamic programming.
+An example problem-specific lower bound type and the associated methods are provided for the RockSample problem in [rockSampleParticleLB.jl](/src/problems/RockSample/rockSampleParticleLB.jl). The algorithm for this lower bound estimator is based on dynamic programming.
  Similarly to upper bounds, to add a custom upper bound algorithm, define a custom type as a subtype of *DESPOTLowerBound*, e.g.:
 
 ```julia
@@ -141,7 +157,7 @@ solver = DESPOTSolver(pomdp,		   	# reference to the problem model
 ## Running DESPOT on test problems ##
 
 DESPOT.jl should be compatible with test problems in [POMDPModels.jl](https://github.com/sisl/POMDPModels.jl).
-So far, however, it has been tested only with the included [RockSample](https://github.com/sisl/DESPOT.jl/tree/master/src/problems/RockSample).
+So far, however, it has been tested only with the included [RockSample](src/problems/RockSample).
  
 ### Rock Sample ###
 To run a RockSample problem in REPL, for example, do the following:
