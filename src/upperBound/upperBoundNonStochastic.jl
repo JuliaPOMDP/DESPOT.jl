@@ -36,9 +36,6 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
     
     fill!(current_level_ub_memo, -Inf)
     
-    println(states(pomdp))
-    println(iterator(states(pomdp)))
-    
     for s in iterator(states(pomdp))
         next_level_ub_memo[index(pomdp,s)+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
     end

@@ -54,77 +54,41 @@ end
 
 # iterator enabling functions
 
-function Base.start(::RockSampleStateIterator)
-    return RockSampleState(0)
-end
+Base.start(::RockSampleStateIterator)       = RockSampleState(0)
+Base.start(::RockSampleActionIterator)      = RockSampleAction(0)
+Base.start(::RockSampleObservationIterator) = RockSampleObservation(0)
 
-function Base.start(::RockSampleActionIterator)
-    return RockSampleAction(0)
-end
+Base.next(::RockSampleStateIterator, state::RockSampleState)            = 
+    (state, RockSampleState(state.index+1))
+Base.next(::RockSampleActionIterator, action::RockSampleAction)         =
+    (action, RockSampleAction(action.index+1))
+Base.next(::RockSampleObservationIterator, obs::RockSampleObservation)  =
+    (obs, RockSampleObservation(obs.index+1))
 
-function Base.start(::RockSampleObservationIterator)
-    return RockSampleObservation(0)
-end
-
-function Base.next(::RockSampleStateIterator, state::RockSampleState)
-    return (state, RockSampleState(state.index+1))
-end
-
-function Base.next(::RockSampleActionIterator, action::RockSampleAction)
-    return (action, RockSampleAction(action.index+1))
-end
-
-function Base.next(::RockSampleObservationIterator, observation::RockSampleObservation)
-    return (observation, RockSampleObservation(observation.index+1))
-end
-
-function Base.done(iter::RockSampleStateIterator, state::RockSampleState)
-    return state.index > iter.max_index
-end
-
-function Base.done(iter::RockSampleActionIterator, action::RockSampleAction)
-    return action.index > iter.max_index
-end
-
-function Base.done(iter::RockSampleObservationIterator, action::RockSampleObservation)
-    return observation.index > iter.max_index
-end
+Base.done(iter::RockSampleStateIterator, state::RockSampleState)            =
+    (state.index > iter.max_index)
+Base.done(iter::RockSampleActionIterator, action::RockSampleAction)         =
+    (action.index > iter.max_index)
+Base.done(iter::RockSampleObservationIterator, obs::RockSampleObservation)  = 
+    (obs.index > iter.max_index)
 
 ## iterator creation functions
-function POMDPs.iterator(space::RockSampleStateSpace)
-    return RockSampleStateIterator(space.min_index, space.max_index)
-end
+POMDPs.iterator(space::RockSampleStateSpace)        =
+    RockSampleStateIterator(space.min_index, space.max_index)
+POMDPs.iterator(space::RockSampleActionSpace)       =
+    RockSampleActionIterator(space.min_index, space.max_index)
+POMDPs.iterator(space::RockSampleObservationSpace)  =
+    RockSampleObservationIterator(space.min_index, space.max_index)
 
-function POMDPs.iterator(space::RockSampleActionSpace)
-    return RockSampleActionIterator(space.min_index, space.max_index)
-end
-
-function POMDPs.iterator(space::RockSampleStateSpace)
-    return RockSampleObservationIterator(space.min_index, space.max_index)
-end
-
-## index, association, and comparison functions/operators
-
-function POMDPs.index(pomdp::POMDP, state::RockSampleState)
-    return state.index
-end
+POMDPs.index(pomdp::POMDP, state::RockSampleState)  = state.index
 
 ==(x::RockSampleState, y::RockSampleState) = (x.index == y.index)
 ==(x::RockSampleAction, y::RockSampleAction) = (x.index == y.index)
 ==(x::RockSampleObservation, y::RockSampleObservation) = (x.index == y.index)
 
-function Base.hash(x::RockSampleState, h::Int64 = 0)
-    return x.index
-end
-
-function Base.hash(x::RockSampleAction, h::Int64 = 0)
-    return x.index
-end
-
-function Base.hash(x::RockSampleObservation, h::Int64 = 0)
-    return x.index
-end
-
+Base.hash(x::RockSampleState,       h::Int64 = 0)   = x.index
+Base.hash(x::RockSampleAction,      h::Int64 = 0)   = x.index
+Base.hash(x::RockSampleObservation, h::Int64 = 0)   = x.index
 
 ######## RockSample type definition ########
 type RockSample <: POMDPs.POMDP
