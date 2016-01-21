@@ -8,7 +8,37 @@ include("rockSampleFringeUB.jl")
 include("../../upperBound/upperBoundNonStochastic.jl")
 include("../../beliefUpdate/beliefUpdateParticle.jl")
 
-function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
+
+function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4, num_reps = 1)
+
+    total_sim_steps                 = 0
+    total_discounted_return         = 0.
+    total_undiscounted_return       = 0.
+    total_run_time                  = 0.
+    
+    for i in 1:num_reps
+        @printf("\n\n\n\n================= Run %d =================\n", i)
+        sim_steps,
+        discounted_return,
+        undiscounted_return,
+        run_time = execute(grid_size, num_rocks)
+        
+        total_sim_steps               += sim_steps
+        total_discounted_return       += discounted_return
+        total_undiscounted_return     += undiscounted_return
+        total_run_time                += run_time
+    end
+    
+    if (num_reps > 1)
+        @printf("\n================= Batch Averages =================\n")
+        @printf("Number of steps = %d\n", total_sim_steps/num_reps)
+        @printf("Discounted return = %.2f\n", total_discounted_return/num_reps)
+        @printf("Undiscounted return = %.2f\n", total_undiscounted_return/num_reps)
+        @printf("Runtime = %.2f sec\n", total_run_time/num_reps)
+    end
+end
+
+function execute(grid_size::Int64 = 4, num_rocks::Int64 = 4)
 
     n_particles = 500 # number of particles to use in the solver and the belief updater
                       # default: 500
@@ -77,13 +107,13 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     rng = DESPOTDefaultRNG(w_seed, rand_max) # used to advance the state of the simulation (world) 
     policy = POMDPs.solve(solver, pomdp)
         
-    sim_step = 0
-    println("\nSTARTING STATE:$state")
+    sim_steps = 0
+    println("\nSTARTING STATE: $state")
     show_state(pomdp, state) #TODO: wrap RockSample in a module
     tic() # start the clock
     while !isterminal(pomdp, state) &&
         (solver.config.sim_len == -1 || sim_step < solver.config.sim_len)
-        println("\n*************** STEP $(sim_step+1) ***************")
+        println("\n*************** STEP $(sim_steps+1) ***************")
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
         POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
@@ -99,7 +129,7 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
         println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced
         print(  "Observation = "); show_obs(pomdp, obs) #TODO: change once abstract types are introduced
         println("Reward = $r")
-        sim_step += 1
+        sim_steps += 1
     end
     run_time = toq() # stop the clock
     
@@ -112,8 +142,10 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4)
     end
     
     println("\n********** EXECUTION SUMMARY **********")    
-    @printf("Number of steps = %d\n", sim_step)
+    @printf("Number of steps = %d\n", sim_steps)
     @printf("Undiscounted return = %.2f\n", sum(rewards))
     @printf("Discounted return = %.2f\n", discounted_reward)
     @printf("Runtime = %.2f sec\n", run_time)
+    
+    return sim_steps, sum(rewards), discounted_reward, run_time
 end

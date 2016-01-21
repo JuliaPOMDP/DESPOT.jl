@@ -124,7 +124,7 @@ end
 
 function search(solver::DESPOTSolver, pomdp::POMDP)
     n_trials = 0
-    startTime = time()
+    start_time = time()
     stop_now = false
     
     @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
@@ -141,7 +141,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
         n_trials += 1
         
         if ((solver.config.max_trials > 0) && (n_trials >= solver.config.max_trials)) ||
-        ((solver.config.time_per_move > 0) && ((time() - startTime) >= solver.config.time_per_move))
+        ((solver.config.time_per_move > 0) && ((time() - start_time) >= solver.config.time_per_move))
             stop_now = true
         end
     end
@@ -151,8 +151,8 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
 
     if solver.config.pruning_constant != 0
         total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
-        act = solver.root.prunedAction
-        return (act == -1 ? solver.root_default_action : act), currentTrials #TODO: fix actions
+        act = solver.root.pruned_action
+        return (act == -1 ? solver.root_default_action : act), n_trials #TODO: fix actions
     elseif !solver.root.in_tree
         println("Root not in tree")
         return solver.root_default_action, n_trials
