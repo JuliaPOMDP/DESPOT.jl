@@ -9,19 +9,63 @@ include("../../upperBound/upperBoundNonStochastic.jl")
 include("../../beliefUpdate/beliefUpdateParticle.jl")
 
 
-function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4, num_reps = 1)
+function main(;
+                grid_size::Int64            = 4,
+                num_rocks::Int64            = 4,
+                n_reps::Int64               = 1,
+                n_particles::Int64          = 500, # for both solver and belief updater
+                main_seed::Int64            = 42,
+                discount::Float64           = 0.95,
+                search_depth::Int64         = 90,
+                time_per_move::Int64        = 1,
+                pruning_constant::Int64     = 0,
+                eta::Float64                = 0.95,
+                sim_len::Int64              = -1,
+                max_trials::Int64           = -1,
+                approximate_ubound::Bool    = false,
+                debug::Int64                = 0
+                )
 
-    total_sim_steps                 = 0
-    total_discounted_return         = 0.
-    total_undiscounted_return       = 0.
-    total_run_time                  = 0.
+    total_sim_steps::Int64                  = 0
+    total_discounted_return::Float64        = 0.
+    total_undiscounted_return::Float64      = 0.
+    total_run_time::Float64                 = 0.
     
-    for i in 1:num_reps
+    # Optional parameters can be adjusted, as shown below.
+    # Performance tip: control use of computational resources either by 
+    # limiting time_per_move, by limiting the number of trials per move, or both.
+    # Setting either parameter to 0 or a negative number disables that limit.
+    
+    search_depth = 90 #default: 90
+    time_per_move = -1 # sec, default: 1, unlimited: -1
+    pruning_constant = 0
+    eta = 0.95 # default: 0.95
+    sim_len = -1 # default: -1
+    max_trials = 100 # default: -1
+    approximate_ubound = false
+    tiny = 1e-6
+    debug = 0
+    
+    for i in 1:n_reps
         @printf("\n\n\n\n================= Run %d =================\n", i)
         sim_steps,
         discounted_return,
         undiscounted_return,
-        run_time = execute(grid_size, num_rocks)
+        run_time = execute(
+                    grid_size = grid_size,
+                    num_rocks = num_rocks,
+                    n_particles = n_particles,
+                    main_seed = main_seed,
+                    discount = discount,
+                    search_depth = search_depth,
+                    time_per_move = time_per_move,
+                    pruning_constant = pruning_constant, 
+                    eta = eta,
+                    sim_len = sim_len,
+                    max_trials = max_trials,
+                    approximate_ubound = approximate_ubound,
+                    debug = debug
+                    )
         
         total_sim_steps               += sim_steps
         total_discounted_return       += discounted_return
@@ -29,24 +73,35 @@ function main(;grid_size::Int64 = 4, num_rocks::Int64 = 4, num_reps = 1)
         total_run_time                += run_time
     end
     
-    if (num_reps > 1)
+    if (n_reps > 1)
         @printf("\n================= Batch Averages =================\n")
-        @printf("Number of steps = %d\n", total_sim_steps/num_reps)
-        @printf("Discounted return = %.2f\n", total_discounted_return/num_reps)
-        @printf("Undiscounted return = %.2f\n", total_undiscounted_return/num_reps)
-        @printf("Runtime = %.2f sec\n", total_run_time/num_reps)
+        @printf("Number of steps = %d\n", total_sim_steps/n_reps)
+        @printf("Discounted return = %.2f\n", total_discounted_return/n_reps)
+        @printf("Undiscounted return = %.2f\n", total_undiscounted_return/n_reps)
+        @printf("Runtime = %.2f sec\n", total_run_time/n_reps)
     end
 end
 
-function execute(grid_size::Int64 = 4, num_rocks::Int64 = 4)
+function execute(;
+                grid_size::Int64            = 4,
+                num_rocks::Int64            = 4,
+                n_particles::Int64          = 500, # for both solver and belief updater
+                main_seed::Int64            = 42,
+                discount::Float64           = 0.95,
+                search_depth::Int64         = 90,
+                time_per_move::Int64        = 1,
+                pruning_constant::Int64     = 0,
+                eta::Float64                = 0.95,
+                sim_len::Int64              = -1,
+                max_trials::Int64           = -1,
+                approximate_ubound::Bool    = false,
+                debug::Int64                = 0
+                )
 
-    n_particles = 500 # number of particles to use in the solver and the belief updater
-                      # default: 500
-    discount = 0.95
-    rand_max = 2^31-1 # 2147483647
+    rand_max::Int64 = 2^31-1 # 2147483647
         
     # generate unique random seeds (optional, if not supplied, default values will be used)
-    seed  ::UInt32   = convert(UInt32, 42) # the main random seed that's used to set the other seeds
+    seed  ::UInt32   = convert(UInt32, main_seed)  # the main random seed that's used to set the other seeds
     w_seed::UInt32   = seed $  n_particles      # world seed, used in the overall simulation
     b_seed::UInt32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
     m_seed::UInt32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
@@ -71,7 +126,6 @@ function execute(grid_size::Int64 = 4, num_rocks::Int64 = 4)
     custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
     
-#    solver      = DESPOTSolver{RockSampleState, RockSampleAction}(pomdp,
     solver      = DESPOTSolver(pomdp,
                                current_belief,
                                # specify some of the optional keyword parameters
@@ -86,24 +140,7 @@ function execute(grid_size::Int64 = 4, num_rocks::Int64 = 4)
     rewards     = Array(Float64, 0)
     transition_distribution  = POMDPs.create_transition_distribution(pomdp)
     observation_distribution = POMDPs.create_observation_distribution(pomdp)
-
-    # The rest of DESPOT parameters can also be adjusted as shown below.
-    # They can also be specified in the DESPOTSolver constructor above, of course.
-    
-    # Performance tip: control use of computational resources either by 
-    # limiting time_per_move, by limiting the number of trials per move, or both.
-    # Setting either parameter to 0 or a negative number disables that limit.
-    
-    solver.config.search_depth = 90 #default: 90
-    solver.config.time_per_move = -1 # sec, default: 1, unlimited: -1
-    solver.config.pruning_constant = 0
-    solver.config.eta = 0.95 # default: 0.95
-    solver.config.sim_len = -1 # default: -1
-    solver.config.max_trials = 100 # default: -1
-    solver.config.approximate_ubound = false
-    solver.config.tiny = 1e-6
-    solver.config.debug = 0
-                              
+                                  
     rng = DESPOTDefaultRNG(w_seed, rand_max) # used to advance the state of the simulation (world) 
     policy = POMDPs.solve(solver, pomdp)
         
