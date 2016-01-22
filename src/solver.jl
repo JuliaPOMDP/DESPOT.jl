@@ -1,7 +1,7 @@
 
-# type DESPOTSolver{  StateType <: POMDPs.State,
-#                     ActionType <: POMDPs.Action,
-#                     ObservationType <: POMDPs.Observation} <: POMDPs.Solver
+# type DESPOTSolver{  state_type <: POMDPs.State,
+#                     action_type <: POMDPs.Action,
+#                     obs_type <: POMDPs.Observation} <: POMDPs.Solver
 type DESPOTSolver <: POMDPs.Solver
     belief::DESPOTBelief
     lb::DESPOTLowerBound
@@ -18,9 +18,9 @@ type DESPOTSolver <: POMDPs.Solver
     curr_reward::POMDPs.Reward
     next_state::POMDPs.State
     curr_obs::POMDPs.Observation
-    StateType::DataType
-    ActionType::DataType
-    ObservationType::DataType
+    state_type::DataType
+    action_type::DataType
+    obs_type::DataType
 
   # default constructor
     function DESPOTSolver(pomdp::POMDPs.POMDP,
@@ -71,9 +71,9 @@ type DESPOTSolver <: POMDPs.Solver
         this.curr_obs = create_observation(pomdp)
         this.curr_reward = 0.0
         
-        this.StateType = typeof(this.next_state)
-        this.ActionType = typeof(this.root_default_action)        
-        this.ObservationType = typeof(this.curr_obs)
+        this.state_type     = typeof(this.next_state)
+        this.action_type    = typeof(this.root_default_action)        
+        this.obs_type       = typeof(this.curr_obs)
         
         return this
     end
@@ -93,9 +93,9 @@ function init_solver(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
     return nothing
 end
 
-function new_root{StateType}(solver::DESPOTSolver,
+function new_root{state_type}(solver::DESPOTSolver,
                   pomdp::POMDP,
-                  particles::Vector{DESPOTParticle{StateType}})
+                  particles::Vector{DESPOTParticle{state_type}})
   
     lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
                                                                 pomdp,
@@ -108,7 +108,7 @@ function new_root{StateType}(solver::DESPOTSolver,
                                     particles,
                                     solver.config)
         
-    solver.root = VNode{solver.StateType, solver.ActionType}(
+    solver.root = VNode{solver.state_type, solver.action_type}(
                         particles,
                         lbound, 
                         ubound,
@@ -123,9 +123,9 @@ end
 
 
 function search(solver::DESPOTSolver, pomdp::POMDP)
-    n_trials = 0
-    start_time = time()
-    stop_now = false
+    n_trials::Int64 = 0
+    start_time::Float64 = time()
+    stop_now::Bool = false
     
     @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
     while ((excess_uncertainty(solver.root.lb,
@@ -159,9 +159,13 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
     else
         return get_lb_action(solver.root, solver.config, pomdp.discount), n_trials
     end
+    return nothing
 end
 
 function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
+
+    n_nodes_added::Int64 = 0
+    
     if (node.depth >= solver.config.search_depth) || isterminal(pomdp, node.particles[1].state)
       return 0 # nodes added
     end
@@ -170,9 +174,10 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
         expand_one_step(solver, pomdp, node)
     end
 
-    a_star = node.best_ub_action
-    n_nodes_added = 0
-    o_star, weighted_eu_star = get_best_weuo(node.q_nodes[a_star],
+    a_star::solver.action_type = node.best_ub_action
+
+    o_star::solver.obs_type, weighted_eu_star::Float64 =
+                               get_best_weuo(node.q_nodes[a_star],
                                              solver.root,
                                              solver.config,
                                              pomdp.discount) # it's an array!
@@ -223,9 +228,10 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
   
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
+    remaining_reward::Float64 = 0.0
     
     for curr_action in iterator(actions(pomdp))
-        obs_to_particles = Dict{solver.ObservationType, Vector{DESPOTParticle{solver.StateType}}}()
+        obs_to_particles = Dict{solver.obs_type, Vector{DESPOTParticle{solver.state_type}}}()
 
         for p in node.particles
             step(   
@@ -251,7 +257,7 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
         end
         
         first_step_reward /= node.weight
-        new_qnode = QNode{solver.StateType, solver.ActionType, solver.ObservationType}(
+        new_qnode = QNode{solver.state_type, solver.action_type, solver.obs_type}(
                           pomdp,
                           solver.lb,
                           solver.ub,
@@ -261,12 +267,12 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
                           first_step_reward,
                           solver.belief.history,
                           solver.config)
-        node.q_nodes[deepcopy(curr_action)] = new_qnode #TODO: See if this can be done faster
+        node.q_nodes[curr_action] = new_qnode
         remaining_reward = get_upper_bound(new_qnode)  
         
         if (first_step_reward + pomdp.discount*remaining_reward) > (q_star + solver.config.tiny)
             q_star = first_step_reward + pomdp.discount * remaining_reward
-            node.best_ub_action = deepcopy(curr_action) #TODO: See if this can be done better
+            node.best_ub_action = curr_action
         end
         
         first_step_reward = 0.0

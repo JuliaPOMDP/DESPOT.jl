@@ -39,8 +39,10 @@ function lower_bound(lb::RockSampleParticleLB,
                      particles::Vector{DESPOTParticle{RockSampleState}},
                      ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
-
-    state_seen = Dict{Int64,Int64}()
+    
+    weight_sum::Float64 = 0.0
+    state_seen::Dict{Int64,Int64} = Dict{Int64,Int64}()
+    s_index::Int64 = -1
     
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
@@ -51,8 +53,8 @@ function lower_bound(lb::RockSampleParticleLB,
     end
 
     # The expected value of sampling a rock, over all particles
-    expected_sampling_value = fill(0.0, pomdp.n_rocks)
-    seen_ptr = 0
+    expected_sampling_value::Array{Float64} = fill(0.0, pomdp.n_rocks)
+    seen_ptr::Int64 = 0
 
     # Compute the expected sampling value of each rock. Instead of factoring
     # the weight of each particle, we first record the weight of each state.
@@ -72,7 +74,6 @@ function lower_bound(lb::RockSampleParticleLB,
         end
     end
     
-    weight_sum = 0
     for i in 0:(seen_ptr-1)
         s_index = state_seen[i]
         weight_sum += lb.weight_sum_of_state[s_index+1]
@@ -103,10 +104,10 @@ function lower_bound(lb::RockSampleParticleLB,
 
     # Sequence of actions taken in the optimal policy
     optimal_policy = Vector{RockSampleAction}()
-    ret = 0.0
-    reward = 0.0
+    ret::Float64 = 0.0
+    reward::Float64 = 0.0
     prev_cell_coord = [0,0] # initial value - should cause error if not properly assigned
-    next_s = create_state(pomdp)
+    next_s::RockSampleState = create_state(pomdp)
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG

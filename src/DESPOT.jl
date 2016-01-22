@@ -120,6 +120,7 @@ end
 export
     ################## DESPOT TYPES ##################
     DESPOTSolver,
+    DESPOTPolicy,
     DESPOTUpperBound,
     DESPOTLowerBound,
     DESPOTParticle,

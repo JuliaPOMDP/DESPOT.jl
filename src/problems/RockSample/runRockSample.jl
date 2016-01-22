@@ -8,7 +8,6 @@ include("rockSampleFringeUB.jl")
 include("../../upperBound/upperBoundNonStochastic.jl")
 include("../../beliefUpdate/beliefUpdateParticle.jl")
 
-
 function main(;
                 grid_size::Int64            = 4,
                 num_rocks::Int64            = 4,
@@ -36,15 +35,15 @@ function main(;
     # limiting time_per_move, by limiting the number of trials per move, or both.
     # Setting either parameter to 0 or a negative number disables that limit.
     
-    search_depth = 90 #default: 90
-    time_per_move = -1 # sec, default: 1, unlimited: -1
-    pruning_constant = 0
-    eta = 0.95 # default: 0.95
-    sim_len = -1 # default: -1
-    max_trials = 100 # default: -1
-    approximate_ubound = false
-    tiny = 1e-6
-    debug = 0
+    search_depth::Int64 = 90 #default: 90
+    time_per_move::Int64 = -1 # sec, default: 1, unlimited: -1
+    pruning_constant::Int64 = 0
+    eta::Float64 = 0.95 # default: 0.95
+    sim_len::Int64 = -1 # default: -1
+    max_trials::Int64 = 100 # default: -1
+    approximate_ubound::Bool = false
+    tiny::Float64 = 1e-6
+    debug::Int64 = 0
     
     for i in 1:n_reps
         @printf("\n\n\n\n================= Run %d =================\n", i)
@@ -123,10 +122,10 @@ function execute(;
     updated_belief = create_belief(bu)
     initial_belief(pomdp, current_belief)
     
-    custom_lb   = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
-    custom_ub   = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
+    custom_lb::RockSampleParticleLB     = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
+    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
     
-    solver      = DESPOTSolver(pomdp,
+    solver::DESPOTSolver      = DESPOTSolver(pomdp,
                                current_belief,
                                # specify some of the optional keyword parameters
                                lb = custom_lb, # use the custom lower bound
@@ -134,17 +133,20 @@ function execute(;
                                main_seed = seed, # specify the main random seed
                                n_particles = n_particles)
                                
-    state       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
-    next_state  = POMDPs.create_state(pomdp)
-    obs         = POMDPs.create_observation(pomdp)
-    rewards     = Array(Float64, 0)
-    transition_distribution  = POMDPs.create_transition_distribution(pomdp)
-    observation_distribution = POMDPs.create_observation_distribution(pomdp)
+    state::RockSampleState       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
+    next_state::RockSampleState  = POMDPs.create_state(pomdp)
+    obs::RockSampleObservation   = POMDPs.create_observation(pomdp)
+    rewards::Array{Float64}      = Array(Float64, 0)
+    transition_distribution::RockSampleTransitionDistribution =
+            POMDPs.create_transition_distribution(pomdp)
+    observation_distribution::RockSampleObservationDistribution =
+            POMDPs.create_observation_distribution(pomdp)
                                   
-    rng = DESPOTDefaultRNG(w_seed, rand_max) # used to advance the state of the simulation (world) 
-    policy = POMDPs.solve(solver, pomdp)
+    rng::DESPOTDefaultRNG = DESPOTDefaultRNG(w_seed, rand_max) # used to advance the state of the simulation (world) 
+    policy::DESPOTPolicy = POMDPs.solve(solver, pomdp)
         
-    sim_steps = 0
+    sim_steps::Int64 = 0
+    r::Float64 = 0.0
     println("\nSTARTING STATE: $state")
     show_state(pomdp, state) #TODO: wrap RockSample in a module
     tic() # start the clock
@@ -168,11 +170,11 @@ function execute(;
         println("Reward = $r")
         sim_steps += 1
     end
-    run_time = toq() # stop the clock
+    run_time::Float64 = toq() # stop the clock
     
     # Compute discounted reward
-    discounted_reward = 0
-    multiplier = 1
+    discounted_reward::Float64 = 0.0
+    multiplier::Float64 = 1.0
     for r in rewards
         discounted_reward += multiplier * r
         multiplier *= pomdp.discount

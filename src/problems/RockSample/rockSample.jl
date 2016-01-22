@@ -569,7 +569,7 @@ function POMDPs.rand!(
                     distribution::RockSampleObservationDistribution)
     
     # generate a new random number regardless of whether it's used below or not
-    rand_num = Array{Float64}(1)
+    rand_num::Array{Float64} = Array{Float64}(1)
     rand!(rng, rand_num)
     
     if (distribution.action.index < 5)
@@ -629,13 +629,13 @@ function POMDPs.pdf(distribution::RockSampleObservationDistribution,
     return 0.
   end
 
-  rock = distribution.action.index - 5
-  rockCell = distribution.pomdp.rocks[rock+1]
-  agentCell = cell_of(distribution.pomdp, distribution.next_state)
+  rock::Int64       = distribution.action.index - 5
+  rockCell::Int64   = distribution.pomdp.rocks[rock+1]
+  agentCell::Int64  = cell_of(distribution.pomdp, distribution.next_state)
 
-  eff = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
+  eff::Float64 = distribution.pomdp.observation_effectiveness[agentCell+1, rockCell+1]
   
-  rstatus = rock_status(rock, distribution.next_state.index)
+  rstatus::Bool = rock_status(rock, distribution.next_state.index)
   if ((obs.index == distribution.pomdp.GOOD_OBS) && (rstatus == true)) ||
      ((obs.index == distribution.pomdp.BAD_OBS) && (rstatus == false)) 
     return eff
@@ -645,9 +645,9 @@ function POMDPs.pdf(distribution::RockSampleObservationDistribution,
 end
 
 POMDPs.isterminal(pomdp::RockSample, s::RockSampleState)            = 
-    (cell_of(pomdp, s) == pomdp.n_cells)
+    cell_of(pomdp, s) == pomdp.n_cells
 POMDPs.isterminal(pomdp::RockSample, obs::RockSampleObservation)    =
-    (obs.index == pomdp.TERMINAL_OBS)
+    obs.index == pomdp.TERMINAL_OBS
 
 # Which cell the agent is in
 cell_of(pomdp::RockSample, s::RockSampleState) = (s.index >>> pomdp.n_rocks)
