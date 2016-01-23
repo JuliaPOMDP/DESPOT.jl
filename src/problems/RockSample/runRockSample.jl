@@ -123,7 +123,7 @@ function execute(;
     initial_belief(pomdp, current_belief)
     
     custom_lb::RockSampleParticleLB     = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
-    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic(pomdp) # custom upper bound to use with DESPOT solver
+    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleAction}(pomdp, create_action(pomdp)) # custom upper bound to use with DESPOT solver
     
     solver::DESPOTSolver      = DESPOTSolver(pomdp,
                                current_belief,

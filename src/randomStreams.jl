@@ -23,17 +23,14 @@ type RandomStreams
     end
 end
 
-function get_stream_seed(streams::RandomStreams, streamId::UInt32)
-    return streams.seed $ streamId # bitwise XOR
-end
+get_stream_seed(streams::RandomStreams, streamId::UInt32) =
+    streams.seed $ streamId # bitwise XOR
 
-function get_world_seed(streams::RandomStreams)
-  return streams.seed $ streams.num_streams
-end
+get_world_seed(streams::RandomStreams) =
+    streams.seed $ streams.num_streams
 
-function get_model_seed(streams::RandomStreams)
-  return streams.seed $ (streams.num_streams + 2)
-end
+get_model_seed(streams::RandomStreams) =
+    streams.seed $ (streams.num_streams + 2)
 
 function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
     # Populate random streams
@@ -48,7 +45,7 @@ function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
         end
     else #Windows, etc
         for i in 1:empty_streams.num_streams
-            seed  = get_stream_seed(empty_streams, convert(UInt32, i-1))
+            seed = get_stream_seed(empty_streams, convert(UInt32, i-1))
             srand(seed)
             empty_streams.streams[i,:] = rand(convert(Int64, empty_streams.len_streams))
         end

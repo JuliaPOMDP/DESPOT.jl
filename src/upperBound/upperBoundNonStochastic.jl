@@ -3,18 +3,19 @@
 #     upper_bound,
 #     init_upper_bound
 
-type UpperBoundNonStochastic <: DESPOTUpperBound #TODO: perhaps make parametric 
+type UpperBoundNonStochastic{ActionType} <: DESPOTUpperBound
 
-    upper_bound_act::Vector
+    upper_bound_act::Vector{ActionType}
     upper_bound_memo::Vector{Float64}
     
     # Constructor
-    function UpperBoundNonStochastic(pomdp::POMDP)
+    function UpperBoundNonStochastic{ActionType}(pomdp::POMDP,::ActionType)
     
         this = new()
         
         # this executes just once per problem run
-        this.upper_bound_act = Array(typeof(create_action(pomdp)), n_states(pomdp))    # upper_bound_act
+#        this.upper_bound_act = Array(typeof(create_action(pomdp)), n_states(pomdp))    # upper_bound_act
+        this.upper_bound_act = Array(ActionType, n_states(pomdp)) 
 #        fill!(this.upper_bound_act, 0)
         this.upper_bound_memo = Array(Float64, n_states(pomdp)) # upper_bound_memo
 
