@@ -165,6 +165,7 @@ end
 function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
 
     n_nodes_added::Int64 = 0
+    ub::Float64 = 0.0
     
     if (node.depth >= solver.config.search_depth) || isterminal(pomdp, node.particles[1].state)
       return 0 # nodes added

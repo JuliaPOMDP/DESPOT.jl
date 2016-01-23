@@ -72,9 +72,7 @@ type DESPOTPolicy <: POMDPs.Policy
     pomdp ::POMDPs.POMDP
 end
 
-function create_policy(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
-    return DESPOTPolicy(solver, pomdp)
-end
+create_policy(solver::DESPOTSolver, pomdp::POMDPs.POMDP) = DESPOTPolicy(solver, pomdp)
 
 # UPPER and LOWER BOUND FUNCTION INTERFACES
 #TODO: try specializing types for DESPOTParticle

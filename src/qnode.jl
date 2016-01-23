@@ -17,16 +17,17 @@
 
 
 type QNode{StateType, ActionType, ObservationType}
-  obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}}
-  depth::Int64
-  action::POMDPs.Action
-  first_step_reward::Float64
-  history::History
-  weight_sum::Float64
-  obs_to_node::Dict #TODO: See if this can be specified better
-  n_visits::Int64                # Needed for large problems
-  lb::DESPOTLowerBound
-  ub::DESPOTUpperBound
+    obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}}
+    depth::Int64
+    action::ActionType
+    first_step_reward::Float64
+    history::History
+    weight_sum::Float64
+    obs_to_node::Dict #TODO: See if this can be specified better
+    n_visits::Int64                # Needed for large problems
+    lb::DESPOTLowerBound
+    ub::DESPOTUpperBound
+    obs_type::DataType
   
       # default constructor
       function QNode{StateType, ActionType, ObservationType}(
@@ -51,6 +52,7 @@ type QNode{StateType, ActionType, ObservationType}
             this.n_visits = 0
             this.lb = lb
             this.ub = ub
+            this.obs_type = ObservationType
             
             for (obs, particles) in this.obs_to_particles
                 obs_weight_sum = 0.0
@@ -61,14 +63,15 @@ type QNode{StateType, ActionType, ObservationType}
                 add(this.history, action, obs)
                 
                 l::Float64, action::ActionType = DESPOT.lower_bound(
-                                                    lb,
-                                                    pomdp,
-                                                    particles,
-                                                    ub.upper_bound_act,
-                                                    config)
+                                                lb,
+                                                pomdp,
+                                                particles,
+                                                ub.upper_bound_act,
+                                                config)
                 u::Float64 = upper_bound(ub, pomdp, particles, config)
                 remove_last(this.history)
                 #TODO: See if this can be done without deepcopy
+                #(note: for some reason it works slower *without* deepcopy!)
                 this.obs_to_node[deepcopy(obs)] = VNode{StateType, ActionType}(
                                             particles,
                                             l,
@@ -84,7 +87,7 @@ type QNode{StateType, ActionType, ObservationType}
 end
 
 function get_upper_bound(qnode::QNode)
-  ub = 0.
+  ub::Float64 = 0.0
   for (obs, node) in qnode.obs_to_node
       ub += node.ub * node.weight
   end
@@ -92,7 +95,7 @@ function get_upper_bound(qnode::QNode)
 end
 
 function get_lower_bound(qnode::QNode)
-  lb = 0.
+  lb::Float64 = 0.0
   for (obs, node) in qnode.obs_to_node
       lb += node.lb * node.weight
   end
@@ -101,7 +104,9 @@ end
 
 #TODO: Fix this
 function prune(qnode::QNode, total_pruned::Int64, config::DESPOTConfig)
-  cost = 0.
+  cost::Float64 = 0.0
+  total_pruned::Int64 = 0
+  
   for (obs,node) in qnode.obs_to_node
     cost, total_pruned += prune(node, total_pruned, config)
   end

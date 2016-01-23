@@ -7,9 +7,9 @@ function excess_uncertainty(l::Float64,
                             eta::Float64,
                             discount::Float64)
 
-  eu =  (u-l) - #width of current node
-        (eta * (root_u-root_l)) * # epsilon
-        (discount^(-depth))
+  eu::Float64 = (u-l) - #width of current node
+                (eta * (root_u-root_l)) * # epsilon
+                (discount^(-depth))
   return eu
 end
 
@@ -22,8 +22,8 @@ function get_best_weuo(qnode::QNode,
                        root::VNode,
                        config::DESPOTConfig,
                        discount::Float64)
-  weighted_eu_star = -Inf
-  oStar = 0.
+  weighted_eu_star::Float64 = -Inf
+  oStar::qnode.obs_type = collect(keys(qnode.obs_to_node))[1] # init with something
   
   for (obs,node) in qnode.obs_to_node
         weighted_eu = node.weight / qnode.weight_sum *

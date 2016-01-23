@@ -105,7 +105,7 @@ function execute(;
     b_seed::UInt32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
     m_seed::UInt32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
 
-    pomdp    = RockSample(grid_size,
+    pomdp   = RockSample(grid_size,
                           num_rocks,
                           rand_max = rand_max,      # optional, default: 2^31-1
                           belief_seed = b_seed,     # optional, default: 479

@@ -40,13 +40,11 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
         next_level_ub_memo[index(pomdp,s)+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
     end
     
-
     for i in 1:config.search_depth # length of horizon
         for s in iterator(states(pomdp))
             for a in iterator(actions(pomdp))
                 trans_distribution.state = s #TODO: this might not be necessary - do by reference
                 trans_distribution.action = a #TODO: this might not be necessary - do by reference
-  #              println("s: $(trans_distribution.state.index), a: $(trans_distribution.action.index)")
                 rand!(rng, next_state, trans_distribution)
                 r = reward(pomdp, s, a)
                 possibly_improved_value = r + pomdp.discount * next_level_ub_memo[next_state.index+1]
@@ -54,7 +52,7 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
                     current_level_ub_memo[s.index+1] = possibly_improved_value
                     if i == config.search_depth
                         # Set best actions when last level is being computed
-                        ub.upper_bound_act[s.index+1] = deepcopy(a) #TODO: consider replacing with a custom copy for speed
+                        ub.upper_bound_act[s.index+1] = a
                     end
                 end
             end # for a

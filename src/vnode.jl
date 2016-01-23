@@ -26,6 +26,8 @@ type VNode{StateType, ActionType}
   n_visits::Int64                   # Needed for large domains
   n_actions_allowed::Int64          # current number of action branches allowed in the node, needed for large domains
   q_star::Float64                   # best current Q-value, needed for large domains
+  state_type::DataType
+  action_type::DataType
   
 
   # default constructor
@@ -54,6 +56,8 @@ type VNode{StateType, ActionType}
         this.n_visits           = 0
         this.n_actions_allowed  = 0
         this.q_star             = -Inf
+        this.state_type         = StateType        
+        this.action_type        = ActionType
         
         validate_bounds(l_bound, u_bound, config)
         return this
@@ -61,8 +65,10 @@ type VNode{StateType, ActionType}
 end
 
 function get_lb_action(node::VNode, config::DESPOTConfig, discount::Float64)
-  a_star = -1 #TODO: this needs to be fixed
-  q_star = -Inf
+  a_star = node.best_ub_action #init with something
+  q_star::Float64 = -Inf
+  remaining_reward::Float64 = 0.0
+  
   for (a,q_node) in node.q_nodes
     remaining_reward = get_lower_bound(q_node)
     if q_node.first_step_reward + discount * remaining_reward > q_star + config.tiny

@@ -1,5 +1,9 @@
 using Base.Test
 
+if OS_NAME != :Linux
+    error("This test is only valid on Linux platforms at this time") 
+end
+
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
 

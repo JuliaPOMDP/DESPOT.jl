@@ -65,23 +65,20 @@ function create_belief(bu::DESPOTBeliefUpdater)
     return belief
 end
 
-function get_belief_update_seed(bu::DESPOTBeliefUpdater)
-  return bu.seed $ (bu.n_particles + 1)
-end
+get_belief_update_seed(bu::DESPOTBeliefUpdater) = bu.seed $ (bu.n_particles + 1)
 
-function reset_belief(bu::DESPOTBeliefUpdater)
-    bu.num_updates = 0
-end
+reset_belief(bu::DESPOTBeliefUpdater) = bu.num_updates = 0
+
 
 #TODO: figure out why particles::Vector{Particle} does not work
 function normalize!(particles::Vector) 
-  prob_sum = 0.0
-  for p in particles
-    prob_sum += p.weight
-  end
-  for p in particles
-    p.weight /= prob_sum
-  end
+    prob_sum = 0.0
+    for p in particles
+        prob_sum += p.weight
+    end
+    for p in particles
+        p.weight /= prob_sum
+    end
 end
 
 function update(bu::DESPOTBeliefUpdater,
@@ -142,7 +139,6 @@ function update(bu::DESPOTBeliefUpdater,
                                next_state,
                                bu.observation_distribution)
             bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
-#            println("s': $next_state, p($obs): $(bu.obs_probability)")
             if bu.obs_probability > 0.0
                 bu.n_sampled += 1
                 bu.new_particle = DESPOTParticle(next_state, bu.obs_probability)

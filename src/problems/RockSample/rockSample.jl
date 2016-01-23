@@ -2,6 +2,7 @@
 import Base:
     ==,
     hash
+#     deepcopy
 
 ##### state, action, and observation spaces and related functions #####
 
@@ -86,6 +87,10 @@ POMDPs.index(pomdp::POMDP, state::RockSampleState)  = state.index
 Base.hash(x::RockSampleState,       h::Int64 = 0)   = x.index
 Base.hash(x::RockSampleAction,      h::Int64 = 0)   = x.index
 Base.hash(x::RockSampleObservation, h::Int64 = 0)   = x.index
+
+# Base.deepcopy(x::RockSampleState)       = RockSampleState(x.index)
+# Base.deepcopy(x::RockSampleAction)      = RockSampleAction(x.index)
+# Base.deepcopy(x::RockSampleObservation) = RockSampleObservation(x.index)
 
 ######## RockSample type definition ########
 type RockSample <: POMDPs.POMDP
