@@ -123,8 +123,9 @@ function execute(;
     initial_belief(pomdp, current_belief)
     
     custom_lb::RockSampleParticleLB     = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
-    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleAction}(pomdp, create_action(pomdp)) # custom upper bound to use with DESPOT solver
-    
+#     custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleAction}(pomdp, create_action(pomdp)) # custom upper bound to use with DESPOT solver
+    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic(pomdp)
+      
     solver::DESPOTSolver      = DESPOTSolver(pomdp,
                                current_belief,
                                # specify some of the optional keyword parameters
@@ -155,10 +156,10 @@ function execute(;
         println("\n*************** STEP $(sim_steps+1) ***************")
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
-        POMDPs.rand!(rng, next_state, transition_distribution) # update state to next state
+        next_state = POMDPs.rand(rng, next_state, transition_distribution) # update state to next state
         POMDPs.observation(pomdp, state, action, next_state, observation_distribution)
         observation_distribution.debug = 1 #TODO: remove -debug
-        POMDPs.rand!(rng, obs, observation_distribution)
+        obs = POMDPs.rand(rng, obs, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
         state = deepcopy(next_state) #TODO: see if this is necessary

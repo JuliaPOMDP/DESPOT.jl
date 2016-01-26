@@ -7,7 +7,7 @@ import Base:
 ##### state, action, and observation spaces and related functions #####
 
 ## basic types
-type RockSampleState <: POMDPs.State
+immutable RockSampleState <: POMDPs.State
     index::Int64
 end
 
@@ -559,18 +559,54 @@ function POMDPs.observation(
     return nothing
 end
 
-function POMDPs.rand!(
+# function POMDPs.rand!(
+#                     rng::AbstractRNG,
+#                     sample::RockSampleState,
+#                     distribution::RockSampleTransitionDistribution)
+#     
+#     sample.index = distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index
+#     return nothing
+# end
+
+function POMDPs.rand(
                     rng::AbstractRNG,
-                    sample::RockSampleState,
+                    ::RockSampleState,
                     distribution::RockSampleTransitionDistribution)
     
-    sample.index = distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index
-    return nothing
+    return RockSampleState(
+        distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index)
 end
 
-function POMDPs.rand!(
+# function POMDPs.rand!(
+#                     rng::AbstractRNG,
+#                     sample::RockSampleObservation,
+#                     distribution::RockSampleObservationDistribution)
+#     
+#     # generate a new random number regardless of whether it's used below or not
+#     rand_num::Array{Float64} = Array{Float64}(1)
+#     rand!(rng, rand_num)
+#     
+#     if (distribution.action.index < 5)
+#         sample.index = isterminal(distribution.pomdp, distribution.next_state) ?
+#                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
+#     else
+#         rock_cell = distribution.pomdp.rocks[distribution.action.index - 4] # would be [action-5] with 0-based indexing
+#         agent_cell = cell_of(distribution.pomdp, distribution.state)
+#         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
+#         
+#         if (rand_num[1] <= eff) == rock_status(distribution.action.index - 5, distribution.state.index)   
+#             sample.index = distribution.pomdp.GOOD_OBS
+#         else
+#             sample.index = distribution.pomdp.BAD_OBS
+#         end
+#     end
+#     
+#     return nothing
+# end
+
+function POMDPs.rand(
                     rng::AbstractRNG,
-                    sample::RockSampleObservation,
+                    ::RockSampleObservation,
                     distribution::RockSampleObservationDistribution)
     
     # generate a new random number regardless of whether it's used below or not
@@ -578,27 +614,43 @@ function POMDPs.rand!(
     rand!(rng, rand_num)
     
     if (distribution.action.index < 5)
-        sample.index = isterminal(distribution.pomdp, distribution.next_state) ?
-                    distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
+        obs = isterminal(distribution.pomdp, distribution.next_state) ?
+                    RockSampleObservation(distribution.pomdp.TERMINAL_OBS) :
+                    RockSampleObservation(distribution.pomdp.NONE_OBS) # rs.T is an array
     else
         rock_cell = distribution.pomdp.rocks[distribution.action.index - 4] # would be [action-5] with 0-based indexing
         agent_cell = cell_of(distribution.pomdp, distribution.state)
         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
         
         if (rand_num[1] <= eff) == rock_status(distribution.action.index - 5, distribution.state.index)   
-            sample.index = distribution.pomdp.GOOD_OBS
+            obs = RockSampleObservation(distribution.pomdp.GOOD_OBS)
         else
-            sample.index = distribution.pomdp.BAD_OBS
+            obs = RockSampleObservation(distribution.pomdp.BAD_OBS)
         end
     end
     
-    return nothing
+    return obs
 end
 
 #TODO: Check if we should be using rand or rand_r here
-function POMDPs.rand!(
+# function POMDPs.rand!(
+#                     rng::AbstractRNG,
+#                     state::RockSampleState,
+#                     state_space::RockSampleStateIterator)
+#     if OS_NAME == :Linux
+#         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
+#     else #Windows, etc
+#         srand(seed)
+#         random_number = rand()
+#     end
+# 
+#     state.index = floor(random_number*(state_space.max_index-state_space.min_index))
+#     return nothing
+# end
+
+function POMDPs.rand(
                     rng::AbstractRNG,
-                    state::RockSampleState,
+                    ::RockSampleState,
                     state_space::RockSampleStateIterator)
     if OS_NAME == :Linux
         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
@@ -607,8 +659,8 @@ function POMDPs.rand!(
         random_number = rand()
     end
 
-    state.index = floor(random_number*(state_space.max_index-state_space.min_index))
-    return nothing
+    return RockSampleState(floor(
+           random_number*(state_space.max_index-state_space.min_index)))
 end
 
 function POMDPs.pdf(distribution::RockSampleObservationDistribution,

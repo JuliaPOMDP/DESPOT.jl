@@ -3,19 +3,21 @@
 #     upper_bound,
 #     init_upper_bound
 
-type UpperBoundNonStochastic{ActionType} <: DESPOTUpperBound
+type UpperBoundNonStochastic <: DESPOTUpperBound
+#type UpperBoundNonStochastic{ActionType} <: DESPOTUpperBound
 
-    upper_bound_act::Vector{ActionType}
+#     upper_bound_act::Vector{ActionType}
+    upper_bound_act::Vector
     upper_bound_memo::Vector{Float64}
     
     # Constructor
-    function UpperBoundNonStochastic{ActionType}(pomdp::POMDP,::ActionType)
+#     function UpperBoundNonStochastic{ActionType}(pomdp::POMDP,::ActionType)
+    function UpperBoundNonStochastic(pomdp::POMDP)
     
-        this = new()
-        
+        this = new()       
         # this executes just once per problem run
-#        this.upper_bound_act = Array(typeof(create_action(pomdp)), n_states(pomdp))    # upper_bound_act
-        this.upper_bound_act = Array(ActionType, n_states(pomdp)) 
+        this.upper_bound_act = Array(typeof(create_action(pomdp)), n_states(pomdp))    # upper_bound_act
+#        this.upper_bound_act = Array(ActionType, n_states(pomdp)) 
 #        fill!(this.upper_bound_act, 0)
         this.upper_bound_memo = Array(Float64, n_states(pomdp)) # upper_bound_memo
 
@@ -44,9 +46,9 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
     for i in 1:config.search_depth # length of horizon
         for s in iterator(states(pomdp))
             for a in iterator(actions(pomdp))
-                trans_distribution.state = s #TODO: this might not be necessary - do by reference
-                trans_distribution.action = a #TODO: this might not be necessary - do by reference
-                rand!(rng, next_state, trans_distribution)
+                trans_distribution.state = s
+                trans_distribution.action = a
+                next_state = POMDPs.rand(rng, next_state, trans_distribution)
                 r = reward(pomdp, s, a)
                 possibly_improved_value = r + pomdp.discount * next_level_ub_memo[next_state.index+1]
                 if (possibly_improved_value > current_level_ub_memo[s.index+1])

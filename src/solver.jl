@@ -164,7 +164,7 @@ end
 
 function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
 
-    n_nodes_added = 0
+    n_nodes_added::Int64 = 0
     ub::Float64 = 0.0
     
     if (node.depth >= solver.config.search_depth) || isterminal(pomdp, node.particles[1].state)
@@ -290,9 +290,11 @@ function step(solver::DESPOTSolver,
               
     solver.rng.number = rand_num
     POMDPs.transition(pomdp, state, action, solver.transition_distribution)
-    POMDPs.rand!(solver.rng, solver.next_state, solver.transition_distribution)
+    solver.next_state =
+        POMDPs.rand(solver.rng, solver.next_state, solver.transition_distribution)
     POMDPs.observation(pomdp, state, action, solver.next_state, solver.observation_distribution)
-    POMDPs.rand!(solver.rng, solver.curr_obs, solver.observation_distribution)
+    solver.curr_obs =
+        POMDPs.rand!(solver.rng, solver.curr_obs, solver.observation_distribution)
     solver.curr_reward = POMDPs.reward(pomdp, state, action)
     
     return nothing

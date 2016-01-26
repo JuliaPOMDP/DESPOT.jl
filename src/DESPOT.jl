@@ -7,6 +7,7 @@ import POMDPs:
         solve,
         action,
         create_policy,
+        rand,
         rand!
 
 include("history.jl")
