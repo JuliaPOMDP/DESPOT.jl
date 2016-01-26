@@ -294,7 +294,7 @@ function step(solver::DESPOTSolver,
         POMDPs.rand(solver.rng, solver.next_state, solver.transition_distribution)
     POMDPs.observation(pomdp, state, action, solver.next_state, solver.observation_distribution)
     solver.curr_obs =
-        POMDPs.rand!(solver.rng, solver.curr_obs, solver.observation_distribution)
+        POMDPs.rand(solver.rng, solver.curr_obs, solver.observation_distribution)
     solver.curr_reward = POMDPs.reward(pomdp, state, action)
     
     return nothing

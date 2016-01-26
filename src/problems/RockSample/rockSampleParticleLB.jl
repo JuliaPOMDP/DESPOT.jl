@@ -99,8 +99,8 @@ function lower_bound(lb::RockSampleParticleLB,
 
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
-    s = create_state(pomdp)
-    s.index = make_state_index(pomdp, cell_of(pomdp, particles[1].state), most_likely_rock_set)
+    s = RockSampleState(
+        make_state_index(pomdp, cell_of(pomdp, particles[1].state), most_likely_rock_set))
 
     # Sequence of actions taken in the optimal policy
     optimal_policy = Vector{RockSampleAction}()
@@ -114,9 +114,9 @@ function lower_bound(lb::RockSampleParticleLB,
     
     while true
         a = ub_actions[s.index+1]
-        trans_distribution.state.index = s.index
-        trans_distribution.action.index = a.index
-        rand!(rng, next_s, trans_distribution)       
+        trans_distribution.state = s
+        trans_distribution.action = a
+        next_s = POMDPs.rand(rng, next_s, trans_distribution)       
         if isterminal(pomdp, next_s)
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][2]
@@ -130,7 +130,7 @@ function lower_bound(lb::RockSampleParticleLB,
             ret = 0.0
             break
         end
-        s.index = next_s.index
+        s = next_s #TODO: deepcopy?
     end
     
     best_action = (length(optimal_policy) == 0) ? RockSampleAction(3) : optimal_policy[1]

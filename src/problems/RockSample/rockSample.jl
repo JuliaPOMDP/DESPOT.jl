@@ -11,11 +11,11 @@ immutable RockSampleState <: POMDPs.State
     index::Int64
 end
 
-type RockSampleAction <: POMDPs.Action
+immutable RockSampleAction <: POMDPs.Action
     index::Int64
 end
 
-type RockSampleObservation <: POMDPs.Observation
+immutable RockSampleObservation <: POMDPs.Observation
     index::Int64
 end
 
