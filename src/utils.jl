@@ -98,7 +98,7 @@ function sample_particles!(sampled_particles::Vector,
         r = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), cseed)/rand_max/N
     else #Windows, etc
         srand(seed)
-        r = rand()/N
+        r = Base.rand()/N
     end
 
     curr_particle = 0

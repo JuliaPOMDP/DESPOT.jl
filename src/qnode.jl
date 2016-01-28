@@ -16,7 +16,7 @@
   # debug: Flag controlling debugging output.
 
 
-type QNode{StateType, ActionType, ObservationType}
+type QNode{StateType, ActionType, ObservationType, LBType, UBType}
     obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}}
     depth::Int64
     action::ActionType
@@ -25,15 +25,17 @@ type QNode{StateType, ActionType, ObservationType}
     weight_sum::Float64
     obs_to_node::Dict #TODO: See if this can be specified better
     n_visits::Int64                # Needed for large problems
-    lb::DESPOTLowerBound
-    ub::DESPOTUpperBound
+#     lb::DESPOTLowerBound
+#     ub::DESPOTUpperBound
+    lb::LBType
+    ub::UBType
     obs_type::DataType
   
       # default constructor
-      function QNode{StateType, ActionType, ObservationType}(
+      function QNode{StateType, ActionType, ObservationType, LBType, UBType}(
                     pomdp::POMDP,
-                    lb::DESPOTLowerBound,
-                    ub::DESPOTUpperBound,
+                    lb::LBType,
+                    ub::UBType,
                     obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}},
                     depth::Int64,
                     action::ActionType,

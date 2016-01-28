@@ -47,7 +47,7 @@ function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
         for i in 1:empty_streams.num_streams
             seed = get_stream_seed(empty_streams, convert(UInt32, i-1))
             srand(seed)
-            empty_streams.streams[i,:] = rand(convert(Int64, empty_streams.len_streams))
+            empty_streams.streams[i,:] = Base.rand(convert(Int64, empty_streams.len_streams))
         end
     end  
 end

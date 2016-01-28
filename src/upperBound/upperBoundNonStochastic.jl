@@ -1,7 +1,4 @@
 
-# import DESPOT:
-#     upper_bound,
-#     init_upper_bound
 
 type UpperBoundNonStochastic <: DESPOTUpperBound
 #type UpperBoundNonStochastic{ActionType} <: DESPOTUpperBound
@@ -11,7 +8,6 @@ type UpperBoundNonStochastic <: DESPOTUpperBound
     upper_bound_memo::Vector{Float64}
     
     # Constructor
-#     function UpperBoundNonStochastic{ActionType}(pomdp::POMDP,::ActionType)
     function UpperBoundNonStochastic(pomdp::POMDP)
     
         this = new()       

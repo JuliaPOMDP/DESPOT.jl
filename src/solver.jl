@@ -230,6 +230,8 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
     remaining_reward::Float64 = 0.0
+    lb_type = typeof(solver.lb)
+    ub_type = typeof(solver.ub)
     
     for curr_action in iterator(actions(pomdp))
         obs_to_particles = Dict{solver.obs_type, Vector{DESPOTParticle{solver.state_type}}}()
@@ -247,18 +249,19 @@ function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
             end
 
             if !haskey(obs_to_particles, solver.curr_obs)
-                obs_to_particles[deepcopy(solver.curr_obs)] = DESPOTParticle[] #TODO: can this be done better?
+                obs_to_particles[solver.curr_obs] = DESPOTParticle[]
             end
 
             push!(obs_to_particles[solver.curr_obs],
-                  DESPOTParticle(deepcopy(solver.next_state),
+                  DESPOTParticle(solver.next_state,
                   p.id,
-                  p.weight)) #TODO: can this be done better?
+                  p.weight))
             first_step_reward += solver.curr_reward * p.weight
         end
         
         first_step_reward /= node.weight
-        new_qnode = QNode{solver.state_type, solver.action_type, solver.obs_type}(
+        #TODO: may want to remove lb_type and ub_type - seem to actually make things slower
+        new_qnode = QNode{solver.state_type, solver.action_type, solver.obs_type, lb_type, ub_type}(
                           pomdp,
                           solver.lb,
                           solver.ub,

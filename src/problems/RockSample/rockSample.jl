@@ -2,7 +2,6 @@
 import Base:
     ==,
     hash
-#     deepcopy
 
 ##### state, action, and observation spaces and related functions #####
 
@@ -20,33 +19,33 @@ immutable RockSampleObservation <: POMDPs.Observation
 end
 
 ## spaces
-type RockSampleStateSpace <: AbstractSpace
+immutable RockSampleStateSpace <: AbstractSpace
     min_index::Int64
     max_index::Int64
 end
 
-type RockSampleActionSpace <: AbstractSpace
+immutable RockSampleActionSpace <: AbstractSpace
     min_index::Int64
     max_index::Int64
 end
 
-type RockSampleObservationSpace <: AbstractSpace
+immutable RockSampleObservationSpace <: AbstractSpace
     min_index::Int64
     max_index::Int64
 end
 
 ## space iterator types
-type RockSampleStateIterator
+immutable RockSampleStateIterator
     min_index::Int64
     max_index::Int64
 end
 
-type RockSampleActionIterator
+immutable RockSampleActionIterator
     min_index::Int64
     max_index::Int64
 end
 
-type RockSampleObservationIterator
+immutable RockSampleObservationIterator
     min_index::Int64
     max_index::Int64
 end
@@ -87,10 +86,6 @@ POMDPs.index(pomdp::POMDP, state::RockSampleState)  = state.index
 Base.hash(x::RockSampleState,       h::Int64 = 0)   = x.index
 Base.hash(x::RockSampleAction,      h::Int64 = 0)   = x.index
 Base.hash(x::RockSampleObservation, h::Int64 = 0)   = x.index
-
-# Base.deepcopy(x::RockSampleState)       = RockSampleState(x.index)
-# Base.deepcopy(x::RockSampleAction)      = RockSampleAction(x.index)
-# Base.deepcopy(x::RockSampleObservation) = RockSampleObservation(x.index)
 
 ######## RockSample type definition ########
 type RockSample <: POMDPs.POMDP
@@ -355,7 +350,7 @@ function init_general(pomdp::RockSample, seed::Array{UInt32,1})
         if OS_NAME == :Linux
             cell = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) % pomdp.n_cells
         else
-            cell = rand(0:pomdp.rand_max) % pomdp.n_cells 
+            cell = Base.rand(0:pomdp.rand_max) % pomdp.n_cells 
         end
         
         if findfirst(pomdp.rocks, cell) == 0
@@ -394,7 +389,7 @@ function init_problem(pomdp::RockSample)
         if OS_NAME == :Linux
             rand_num = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed)
         else #Windows, etc
-            rand_num = rand(0:pomdp.rand_max)
+            rand_num = Base.rand(0:pomdp.rand_max)
         end
 
         if (rand_num & 1) == 1
@@ -559,15 +554,6 @@ function POMDPs.observation(
     return nothing
 end
 
-# function POMDPs.rand!(
-#                     rng::AbstractRNG,
-#                     sample::RockSampleState,
-#                     distribution::RockSampleTransitionDistribution)
-#     
-#     sample.index = distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index
-#     return nothing
-# end
-
 function POMDPs.rand(
                     rng::AbstractRNG,
                     ::RockSampleState,
@@ -577,32 +563,6 @@ function POMDPs.rand(
         distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index)
 end
 
-# function POMDPs.rand!(
-#                     rng::AbstractRNG,
-#                     sample::RockSampleObservation,
-#                     distribution::RockSampleObservationDistribution)
-#     
-#     # generate a new random number regardless of whether it's used below or not
-#     rand_num::Array{Float64} = Array{Float64}(1)
-#     rand!(rng, rand_num)
-#     
-#     if (distribution.action.index < 5)
-#         sample.index = isterminal(distribution.pomdp, distribution.next_state) ?
-#                     distribution.pomdp.TERMINAL_OBS : distribution.pomdp.NONE_OBS # rs.T is an array
-#     else
-#         rock_cell = distribution.pomdp.rocks[distribution.action.index - 4] # would be [action-5] with 0-based indexing
-#         agent_cell = cell_of(distribution.pomdp, distribution.state)
-#         eff = distribution.pomdp.observation_effectiveness[agent_cell+1, rock_cell+1]
-#         
-#         if (rand_num[1] <= eff) == rock_status(distribution.action.index - 5, distribution.state.index)   
-#             sample.index = distribution.pomdp.GOOD_OBS
-#         else
-#             sample.index = distribution.pomdp.BAD_OBS
-#         end
-#     end
-#     
-#     return nothing
-# end
 
 function POMDPs.rand(
                     rng::AbstractRNG,
@@ -632,22 +592,6 @@ function POMDPs.rand(
     return obs
 end
 
-#TODO: Check if we should be using rand or rand_r here
-# function POMDPs.rand!(
-#                     rng::AbstractRNG,
-#                     state::RockSampleState,
-#                     state_space::RockSampleStateIterator)
-#     if OS_NAME == :Linux
-#         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
-#     else #Windows, etc
-#         srand(seed)
-#         random_number = rand()
-#     end
-# 
-#     state.index = floor(random_number*(state_space.max_index-state_space.min_index))
-#     return nothing
-# end
-
 function POMDPs.rand(
                     rng::AbstractRNG,
                     ::RockSampleState,
@@ -656,7 +600,7 @@ function POMDPs.rand(
         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc
         srand(seed)
-        random_number = rand()
+        random_number = Base.rand()
     end
 
     return RockSampleState(floor(
