@@ -72,9 +72,7 @@ type QNode{StateType, ActionType, ObservationType, LBType, UBType}
                                                 config)
                 u::Float64 = upper_bound(ub, pomdp, particles, config)
                 remove_last(this.history)
-                #TODO: See if this can be done without deepcopy
-                #(note: for some reason it works slower *without* deepcopy!)
-                this.obs_to_node[deepcopy(obs)] = VNode{StateType, ActionType}(
+                this.obs_to_node[obs] = VNode{StateType, ActionType}(
                                             particles,
                                             l,
                                             u,

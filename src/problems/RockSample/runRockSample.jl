@@ -162,7 +162,7 @@ function execute(;
         obs = POMDPs.rand(rng, obs, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
-        state = deepcopy(next_state) #TODO: see if this is necessary
+        state = next_state        
         POMDPs.update(bu, current_belief, action, obs, updated_belief)
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
         println("Action = $action")

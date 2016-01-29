@@ -110,8 +110,7 @@ function update(bu::DESPOTBeliefUpdater,
         bu.obs_probability = pdf(bu.observation_distribution, obs)
         
         if bu.obs_probability > 0.0
-            #TODO: can we do without deepcopy?
-            bu.new_particle = DESPOTParticle(deepcopy(bu.next_state), p.id, p.weight * bu.obs_probability)
+            bu.new_particle = DESPOTParticle(bu.next_state, p.id, p.weight * bu.obs_probability)            
             push!(updated_belief.particles, bu.new_particle)
         end
     end
