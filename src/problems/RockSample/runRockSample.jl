@@ -105,12 +105,14 @@ function execute(;
     b_seed::UInt32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
     m_seed::UInt32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
 
-    pomdp   = RockSample(grid_size,
-                          num_rocks,
-                          rand_max = rand_max,      # optional, default: 2^31-1
-                          belief_seed = b_seed,     # optional, default: 479
-                          model_seed  = m_seed,     # optional, default: 476
-                          discount    = discount)   # optional, default: 0.95
+    pomdp   = RockSample{RockSampleState, RockSampleAction, RockSampleObservation}(
+#    pomdp   = RockSample(
+                        grid_size,
+                        num_rocks,
+                        rand_max = rand_max,      # optional, default: 2^31-1
+                        belief_seed = b_seed,     # optional, default: 479
+                        model_seed  = m_seed,     # optional, default: 476
+                        discount    = discount)   # optional, default: 0.95
     
     # construct a belief updater and specify some of the optional keyword parameters
     bu = DESPOTBeliefUpdater(pomdp::POMDP,
@@ -126,7 +128,8 @@ function execute(;
 #     custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleAction}(pomdp, create_action(pomdp)) # custom upper bound to use with DESPOT solver
     custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic(pomdp)
       
-    solver::DESPOTSolver      = DESPOTSolver(pomdp,
+    solver::DESPOTSolver = DESPOTSolver{RockSampleState, RockSampleAction, RockSampleObservation}(
+                               pomdp,
                                current_belief,
                                # specify some of the optional keyword parameters
                                lb = custom_lb, # use the custom lower bound

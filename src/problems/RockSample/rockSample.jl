@@ -88,7 +88,7 @@ Base.hash(x::RockSampleAction,      h::Int64 = 0)   = x.index
 Base.hash(x::RockSampleObservation, h::Int64 = 0)   = x.index
 
 ######## RockSample type definition ########
-type RockSample <: POMDPs.POMDP
+type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObservation}
     #problem parameters
     grid_size::Int64
     n_rocks::Int64

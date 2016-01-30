@@ -1,8 +1,6 @@
 
-# type DESPOTSolver{  state_type <: POMDPs.State,
-#                     action_type <: POMDPs.Action,
-#                     obs_type <: POMDPs.Observation} <: POMDPs.Solver
-type DESPOTSolver <: POMDPs.Solver
+type DESPOTSolver{S,A,O} <: POMDPs.Solver
+# type DESPOTSolver <: POMDPs.Solver
     belief::DESPOTBelief
     lb::DESPOTLowerBound
     ub::DESPOTUpperBound
@@ -18,12 +16,9 @@ type DESPOTSolver <: POMDPs.Solver
     curr_reward::POMDPs.Reward
     next_state::POMDPs.State
     curr_obs::POMDPs.Observation
-    state_type::DataType
-    action_type::DataType
-    obs_type::DataType
 
   # default constructor
-    function DESPOTSolver(pomdp::POMDPs.POMDP,
+    function DESPOTSolver(pomdp::POMDPs.POMDP{S,A,O},
                             belief::DESPOTBelief;
                             lb::DESPOTLowerBound = DESPOTDefaultLowerBound(),
                             ub::DESPOTUpperBound = DESPOTDefaultUpperBound(),
@@ -137,7 +132,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
                                 pomdp.discount) > 1e-6)
                                 && !stop_now)
 
-        trial(solver, pomdp, solver.root, n_trials)
+        trial{solver.state_type, ActionType}(solver, pomdp, solver.root, n_trials)
         n_trials += 1
         
         if ((solver.config.max_trials > 0) && (n_trials >= solver.config.max_trials)) ||
@@ -162,7 +157,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
     return nothing
 end
 
-function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
+function trial{StateType, ActionType}(solver::DESPOTSolver{StateType, ActionType}, pomdp::POMDP, node::VNode{StateType, ActionType}, n_trials::Int64)
 
     n_nodes_added::Int64 = 0
     ub::Float64 = 0.0
@@ -172,7 +167,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     end
     
     if isempty(node.q_nodes)
-        expand_one_step(solver, pomdp, node)
+        expand_one_step{StateType, ActionType}(solver, pomdp, node)
     end
 
     a_star::solver.action_type = node.best_ub_action
@@ -225,7 +220,7 @@ function trial(solver::DESPOTSolver, pomdp::POMDP, node::VNode, n_trials::Int64)
     return n_nodes_added
 end
 
-function expand_one_step(solver::DESPOTSolver, pomdp::POMDP, node::VNode)
+function expand_one_step{StateType, ActionType}(solver::DESPOTSolver, pomdp::POMDP, node::VNode{StateType, ActionType})
   
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
