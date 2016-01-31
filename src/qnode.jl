@@ -16,31 +16,30 @@
   # debug: Flag controlling debugging output.
 
 
-type QNode{StateType, ActionType, ObservationType, LBType, UBType}
-    obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}}
+type QNode{S,A,O}
+    obs_to_particles::Dict{O, Vector{DESPOTParticle{S}}}
     depth::Int64
-    action::ActionType
+    action::A
     first_step_reward::Float64
     history::History
     weight_sum::Float64
-    obs_to_node::Dict #TODO: See if this can be specified better
+    obs_to_node::Dict    #TODO: See if this can be specified better
     n_visits::Int64                # Needed for large problems
-#     lb::DESPOTLowerBound
-#     ub::DESPOTUpperBound
-    lb::LBType
-    ub::UBType
-    obs_type::DataType
+    lb::DESPOTLowerBound #TODO: see if this can be specified better
+    ub::DESPOTUpperBound
+#     lb::LBType
+#     ub::UBType
   
       # default constructor
-      function QNode{StateType, ActionType, ObservationType, LBType, UBType}(
+      function QNode{S,A,O}(
                     pomdp::POMDP,
-                    lb::LBType,
-                    ub::UBType,
-                    obs_to_particles::Dict{ObservationType, Vector{DESPOTParticle{StateType}}},
+                    lb::DESPOTLowerBound,
+                    ub::DESPOTUpperBound,
+                    obs_to_particles::Dict{O, Vector{DESPOTParticle{S}}},
                     depth::Int64,
-                    action::ActionType,
+                    action::A,
                     first_step_reward::Float64,
-                    history::History{ActionType, ObservationType},
+                    history::History{A,O},
                     config::DESPOTConfig)
                       
             this = new()
@@ -50,11 +49,10 @@ type QNode{StateType, ActionType, ObservationType, LBType, UBType}
             this.first_step_reward = first_step_reward
             this.history = history
             this.weight_sum = 0
-            this.obs_to_node = Dict{ObservationType, VNode{StateType, ActionType}}()
+            this.obs_to_node = Dict{O,VNode{S,A}}()
             this.n_visits = 0
             this.lb = lb
             this.ub = ub
-            this.obs_type = ObservationType
             
             for (obs, particles) in this.obs_to_particles
                 obs_weight_sum = 0.0
@@ -64,7 +62,7 @@ type QNode{StateType, ActionType, ObservationType, LBType, UBType}
                 this.weight_sum += obs_weight_sum
                 add(this.history, action, obs)
                 
-                l::Float64, action::ActionType = DESPOT.lower_bound(
+                l::Float64, action::A = DESPOT.lower_bound(
                                                 lb,
                                                 pomdp,
                                                 particles,
@@ -72,7 +70,7 @@ type QNode{StateType, ActionType, ObservationType, LBType, UBType}
                                                 config)
                 u::Float64 = upper_bound(ub, pomdp, particles, config)
                 remove_last(this.history)
-                this.obs_to_node[obs] = VNode{StateType, ActionType}(
+                this.obs_to_node[obs] = VNode{S,A}(
                                             particles,
                                             l,
                                             u,
@@ -86,7 +84,7 @@ type QNode{StateType, ActionType, ObservationType, LBType, UBType}
         end
 end
 
-function get_upper_bound(qnode::QNode)
+function get_upper_bound{S,A,O}(qnode::QNode{S,A,O})
   ub::Float64 = 0.0
   for (obs, node) in qnode.obs_to_node
       ub += node.ub * node.weight
@@ -103,7 +101,7 @@ function get_lower_bound(qnode::QNode)
 end
 
 #TODO: Fix this
-function prune(qnode::QNode, total_pruned::Int64, config::DESPOTConfig)
+function prune{S,A,O}(qnode::QNode{S,A,O}, total_pruned::Int64, config::DESPOTConfig)
   cost::Float64 = 0.0
   total_pruned::Int64 = 0
   

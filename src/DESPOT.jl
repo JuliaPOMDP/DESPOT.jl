@@ -12,24 +12,23 @@ import POMDPs:
 
 include("history.jl")
 
-abstract DESPOTUpperBound
-abstract DESPOTLowerBound
-abstract DESPOTBeliefUpdate
+abstract DESPOTUpperBound{S,A,O}
+abstract DESPOTLowerBound{S,A,O}
+abstract DESPOTBeliefUpdate{S,A,O}
 
 type DESPOTRandomNumber <: POMDPs.AbstractRNG
     number::Float64
 end
 
-type DESPOTParticle{StateType}
-  state::StateType
+type DESPOTParticle{S}
+  state::S
   id::Int64
   weight::Float64
 end
 
-#TODO: figure out how to do this properly!
-type DESPOTBelief{StateType} <: POMDPs.Belief
-    particles::Vector{DESPOTParticle{StateType}}
-    history::History 
+type DESPOTBelief{S,A,O} <: POMDPs.Belief
+    particles::Vector{DESPOTParticle{S}}
+    history::History{A,O}
 end
 
 function rand!(rng::DESPOTRandomNumber, random_number::Array{Float64})
@@ -68,49 +67,49 @@ include("vnode.jl")
 include("utils.jl")
 include("solver.jl")
 
-type DESPOTPolicy <: POMDPs.Policy
-    solver::DESPOTSolver
-    pomdp ::POMDPs.POMDP
+type DESPOTPolicy{S,A,O} <: POMDPs.Policy{S,A,O}
+    solver::DESPOTSolver{S,A,O}
+    pomdp ::POMDPs.POMDP{S,A,O}
 end
 
-create_policy(solver::DESPOTSolver, pomdp::POMDPs.POMDP) = DESPOTPolicy(solver, pomdp)
+create_policy{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDPs.POMDP{S,A,O}) = DESPOTPolicy(solver, pomdp)
 
 # UPPER and LOWER BOUND FUNCTION INTERFACES
 #TODO: try specializing types for DESPOTParticle
-lower_bound(lb::DESPOTLowerBound,
-            pomdp::POMDPs.POMDP,
-            particles::Vector, 
+lower_bound{S,A,O}(lb::DESPOTLowerBound{S,A,O},
+            pomdp::POMDPs.POMDP{S,A,O},
+            particles::Vector{DESPOTParticle{S}}, 
             config::DESPOTConfig) = 
     error("no lower_bound method found for $(typeof(lb)) type")
 
-upper_bound(ub::DESPOTUpperBound,
-            pomdp::POMDP,
-            particles::Vector, 
+upper_bound{S,A,O}(ub::DESPOTUpperBound{S,A,O},
+            pomdp::POMDP{S,A,O},
+            particles::Vector{DESPOTParticle{S}},
             config::DESPOTConfig) = 
     error("no upper_bound method found for $(typeof(lb)) type")
     
-init_lower_bound(lb::DESPOTLowerBound,
-                    pomdp::POMDPs.POMDP,
+init_lower_bound{S,A,O}(lb::DESPOTLowerBound{S,A,O},
+                    pomdp::POMDPs.POMDP{S,A,O},
                     config::DESPOTConfig) =
     error("$(typeof(lb)) bound does not implement init_lower_bound")                    
     
-init_upper_bound(ub::DESPOTUpperBound,
-                    pomdp::POMDPs.POMDP,
+init_upper_bound{S,A,O}(ub::DESPOTUpperBound{S,A,O},
+                    pomdp::POMDPs.POMDP{S,A,O},
                     config::DESPOTConfig) =
     error("$(typeof(ub)) bound does not implement init_upper_bound")
     
-fringe_upper_bound(pomdp::POMDP, state::POMDPs.State) = 
+fringe_upper_bound{S,A,O}(pomdp::POMDP{S,A,O}, state::S) = 
     error("$(typeof(pomdp)) does not implement fringe_upper_bound")
 
 # FUNCTIONS
 
-function action(policy::DESPOTPolicy, belief::DESPOTBelief)
+function action{S,A,O}(policy::DESPOTPolicy{S,A,O}, belief::DESPOTBelief{S})
     new_root(policy.solver, policy.pomdp, belief.particles)
     a, n_trials = search(policy.solver, policy.pomdp) #TODO: return n_trials some other way
     return a
 end
 
-function solve(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
+function solve{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDPs.POMDP{S,A,O})
     policy = DESPOTPolicy(solver, pomdp)
     init_solver(solver, pomdp)
     return policy

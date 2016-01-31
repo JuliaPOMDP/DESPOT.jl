@@ -1,28 +1,28 @@
 
 
-type UpperBoundNonStochastic <: DESPOTUpperBound
+type UpperBoundNonStochastic{S,A,O} <: DESPOTUpperBound
 #type UpperBoundNonStochastic{ActionType} <: DESPOTUpperBound
 
 #     upper_bound_act::Vector{ActionType}
-    upper_bound_act::Vector
+    upper_bound_act::Vector{A}
     upper_bound_memo::Vector{Float64}
     
     # Constructor
-    function UpperBoundNonStochastic(pomdp::POMDP)
+    function UpperBoundNonStochastic(pomdp::POMDP{S,A,O})
     
         this = new()       
         # this executes just once per problem run
-        this.upper_bound_act = Array(typeof(create_action(pomdp)), n_states(pomdp))    # upper_bound_act
+        this.upper_bound_act = Array{A}(n_states(pomdp))    # upper_bound_act
 #        this.upper_bound_act = Array(ActionType, n_states(pomdp)) 
 #        fill!(this.upper_bound_act, 0)
-        this.upper_bound_memo = Array(Float64, n_states(pomdp)) # upper_bound_memo
+        this.upper_bound_memo = Array{Float64}(n_states(pomdp)) # upper_bound_memo
 
     return this
   end
 end
 
-function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
-                    pomdp::POMDP,
+function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
+                    pomdp::POMDP{S,A,O},
                     config::DESPOTConfig)
     
     current_level_ub_memo = Array(Float64, n_states(pomdp))
@@ -72,10 +72,10 @@ function DESPOT.init_upper_bound(ub::UpperBoundNonStochastic,
     return nothing
 end
 
-function DESPOT.upper_bound(ub::UpperBoundNonStochastic,
-                     pomdp::POMDP,
+function DESPOT.upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
+                     pomdp::POMDP{S,A,O},
                      #particles::Vector{Particle}, #TODO: figure out why this does not work
-                     particles::Vector,
+                     particles::Vector{DESPOTParticle{S}},
                      config::DESPOTConfig)
   weight_sum = 0.
   total_cost = 0.

@@ -16,8 +16,8 @@ function main(;
                 main_seed::Int64            = 42,
                 discount::Float64           = 0.95,
                 search_depth::Int64         = 90,
-                time_per_move::Int64        = 1,
-                pruning_constant::Int64     = 0,
+                time_per_move::Float64      = 1.0,
+                pruning_constant::Float64   = 0.0,
                 eta::Float64                = 0.95,
                 sim_len::Int64              = -1,
                 max_trials::Int64           = -1,
@@ -36,8 +36,8 @@ function main(;
     # Setting either parameter to 0 or a negative number disables that limit.
     
     search_depth::Int64 = 90 #default: 90
-    time_per_move::Int64 = -1 # sec, default: 1, unlimited: -1
-    pruning_constant::Int64 = 0
+    time_per_move::Float64 = -1.0 # sec, default: 1, unlimited: -1
+    pruning_constant::Float64 = 0.0
     eta::Float64 = 0.95 # default: 0.95
     sim_len::Int64 = -1 # default: -1
     max_trials::Int64 = 100 # default: -1
@@ -88,8 +88,8 @@ function execute(;
                 main_seed::Int64            = 42,
                 discount::Float64           = 0.95,
                 search_depth::Int64         = 90,
-                time_per_move::Int64        = 1,
-                pruning_constant::Int64     = 0,
+                time_per_move::Float64      = 1.0,
+                pruning_constant::Float64   = 0.0,
                 eta::Float64                = 0.95,
                 sim_len::Int64              = -1,
                 max_trials::Int64           = -1,
@@ -105,7 +105,7 @@ function execute(;
     b_seed::UInt32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
     m_seed::UInt32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
 
-    pomdp   = RockSample{RockSampleState, RockSampleAction, RockSampleObservation}(
+    pomdp   = RockSample{RockSampleState, RockSampleAction, RockSampleObs}(
 #    pomdp   = RockSample(
                         grid_size,
                         num_rocks,
@@ -115,7 +115,8 @@ function execute(;
                         discount    = discount)   # optional, default: 0.95
     
     # construct a belief updater and specify some of the optional keyword parameters
-    bu = DESPOTBeliefUpdater(pomdp::POMDP,
+    bu = DESPOTBeliefUpdater{RockSampleState, RockSampleAction, RockSampleObs}(
+                             pomdp::POMDP,
                              seed = seed,
                              rand_max = rand_max,
                              n_particles = n_particles)
@@ -124,26 +125,35 @@ function execute(;
     updated_belief = create_belief(bu)
     initial_belief(pomdp, current_belief)
     
-    custom_lb::RockSampleParticleLB     = RockSampleParticleLB(pomdp) # custom lower bound to use with DESPOT solver
+    custom_lb::RockSampleParticleLB     = RockSampleParticleLB{RockSampleState, RockSampleAction, RockSampleObs}(pomdp) # custom lower bound to use with DESPOT solver
 #     custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleAction}(pomdp, create_action(pomdp)) # custom upper bound to use with DESPOT solver
-    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic(pomdp)
+    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleState, RockSampleAction, RockSampleObs}(pomdp)
       
-    solver::DESPOTSolver = DESPOTSolver{RockSampleState, RockSampleAction, RockSampleObservation}(
+    solver::DESPOTSolver = DESPOTSolver{RockSampleState, RockSampleAction, RockSampleObs}(
                                pomdp,
                                current_belief,
-                               # specify some of the optional keyword parameters
+                               # specify the optional keyword parameters
                                lb = custom_lb, # use the custom lower bound
                                ub = custom_ub, # use the custom lower bound
+                               search_depth = search_depth,                                                                                       
                                main_seed = seed, # specify the main random seed
-                               n_particles = n_particles)
+                               time_per_move = time_per_move,
+                               n_particles = n_particles,
+                               pruning_constant = pruning_constant,
+                               eta = eta,
+                               sim_len = sim_len,
+                               approximate_ubound = approximate_ubound,
+                               max_trials =  max_trials,
+                               rand_max = rand_max,
+                               debug = debug)
                                
     state::RockSampleState       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
     next_state::RockSampleState  = POMDPs.create_state(pomdp)
-    obs::RockSampleObservation   = POMDPs.create_observation(pomdp)
+    obs::RockSampleObs   = POMDPs.create_observation(pomdp)
     rewards::Array{Float64}      = Array(Float64, 0)
     transition_distribution::RockSampleTransitionDistribution =
             POMDPs.create_transition_distribution(pomdp)
-    observation_distribution::RockSampleObservationDistribution =
+    observation_distribution::RockSampleObsDistribution =
             POMDPs.create_observation_distribution(pomdp)
                                   
     rng::DESPOTDefaultRNG = DESPOTDefaultRNG(w_seed, rand_max) # used to advance the state of the simulation (world) 

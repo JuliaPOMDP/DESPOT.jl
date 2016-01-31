@@ -1,32 +1,28 @@
 import POMDPs: update
 using DESPOT
 
-type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
+type DESPOTBeliefUpdater{S,A,O} <: POMDPs.BeliefUpdater{S,A,O}
     pomdp::POMDP
     num_updates::Int64
     rng::DESPOTDefaultRNG
     transition_distribution::AbstractDistribution
     observation_distribution::AbstractDistribution
-    state_type::DataType
-    action_type::DataType
-    observation_type::DataType
     seed::UInt32
     rand_max::Int64
     belief_update_seed::UInt32
     particle_weight_threshold::Float64
     eff_particle_fraction::Float64
     
-    
     #pre-allocated variables (TODO: add the rest at some point)
     n_particles::Int64
-    next_state::POMDPs.State
-    observation::POMDPs.Observation
-    new_particle::DESPOTParticle
+    next_state::S
+    observation::O
+    new_particle::DESPOTParticle{S}
     n_sampled::Int64
     obs_probability::Float64
     
     #default constructor
-    function DESPOTBeliefUpdater(pomdp::POMDP;
+    function DESPOTBeliefUpdater(pomdp::POMDP{S,A,O};
                                  seed::UInt32 = convert(UInt32, 42),
                                  rand_max::Int64 = 2147483647,
                                  n_particles = 500,
@@ -39,9 +35,6 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
         this.rng = DESPOTDefaultRNG(this.belief_update_seed, rand_max)
         this.transition_distribution  = POMDPs.create_transition_distribution(pomdp)
         this.observation_distribution = POMDPs.create_observation_distribution(pomdp)
-        this.state_type = typeof(POMDPs.create_state(pomdp))
-        this.action_type = typeof(POMDPs.create_action(pomdp))
-        this.observation_type = typeof(POMDPs.create_observation(pomdp))
         this.rand_max = rand_max
         this.particle_weight_threshold = particle_weight_threshold
         this.eff_particle_fraction = eff_particle_fraction
@@ -50,7 +43,7 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
         # init preallocated variables
         this.next_state = POMDPs.create_state(pomdp)
         this.observation = POMDPs.create_observation(pomdp)
-        this.new_particle = DESPOTParticle{typeof(this.next_state)}(this.next_state, 1, 1) #placeholder
+        this.new_particle = DESPOTParticle{S}(this.next_state, 1, 1) #placeholder
         this.n_sampled = 0
         this.obs_probability = -1.0
         return this
@@ -58,20 +51,14 @@ type DESPOTBeliefUpdater <: POMDPs.BeliefUpdater
 end
 
 # Special create_belief version for DESPOTBeliefUpdater
-function create_belief(bu::DESPOTBeliefUpdater)
-    particles = Array(DESPOTParticle{bu.state_type}, bu.n_particles) 
-    history = History{bu.action_type, bu.observation_type}()
-    belief = DESPOTBelief{bu.state_type}(particles, history)
-    return belief
-end
+create_belief{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O}) = 
+    DESPOTBelief{S,A,O}(Array(DESPOTParticle{S}, bu.n_particles), History{A,O}())
 
 get_belief_update_seed(bu::DESPOTBeliefUpdater) = bu.seed $ (bu.n_particles + 1)
 
 reset_belief(bu::DESPOTBeliefUpdater) = bu.num_updates = 0
 
-
-#TODO: figure out why particles::Vector{Particle} does not work
-function normalize!(particles::Vector) 
+function normalize!{S}(particles::Vector{DESPOTParticle{S}}) 
     prob_sum = 0.0
     for p in particles
         prob_sum += p.weight
@@ -81,11 +68,11 @@ function normalize!(particles::Vector)
     end
 end
 
-function update(bu::DESPOTBeliefUpdater,
-                current_belief::DESPOTBelief,
-                action::POMDPs.Action,
-                obs::POMDPs.Observation,
-                updated_belief::DESPOTBelief = create_belief(pomdp))
+function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
+                current_belief::DESPOTBelief{S},
+                action::A,
+                obs::O,
+                updated_belief::DESPOTBelief{S} = create_belief(bu.pomdp))
     
     random_number = Array{Float64}(1)
             

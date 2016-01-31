@@ -3,16 +3,16 @@
 # belief tree). It stores the set of particles associated with the node, an
 # AND-node for each action, and some bookkeeping information.
 
-type VNode{StateType, ActionType}
-  particles::Array{DESPOTParticle{StateType},1}
+type VNode{S,A}
+  particles::Array{DESPOTParticle{S},1}
   lb::Float64
   ub::Float64
   depth::Int64
   default_value::Float64            # Value of the default policy (= lbound value
                                     # before any backups are performed)
-  pruned_action::ActionType         # Best action at the node after pruning
+  pruned_action::A                  # Best action at the node after pruning
   weight::Float64                   # Sum of particle weights at this belief
-  best_ub_action::ActionType        # Action that gives the highest upper bound
+  best_ub_action::A                 # Action that gives the highest upper bound
   in_tree::Bool                     # True if the node is visited by Solver::trial().
                                     # In order to determine if a node is a fringe node
                                     # of the belief tree, we need to expand it one level.
@@ -22,21 +22,19 @@ type VNode{StateType, ActionType}
                                     # this indicator variable.
   n_tree_nodes::Int64               # Number of nodes with inTree == true in the subtree
                                     # rooted at this node
-  q_nodes::Dict{ActionType, QNode}  # Dict of children q-nodes
+  q_nodes::Dict{A,QNode}            # Dict of children q-nodes
+                                    #   TODO: specify QNode type
   n_visits::Int64                   # Needed for large domains
   n_actions_allowed::Int64          # current number of action branches allowed in the node, needed for large domains
   q_star::Float64                   # best current Q-value, needed for large domains
-  state_type::DataType
-  action_type::DataType
-  
 
   # default constructor
-  function VNode{StateType, ActionType}( 
-               particles::Vector{DESPOTParticle{StateType}},
+  function VNode{S,A}( 
+               particles::Vector{DESPOTParticle{S}},
                l_bound::Float64,
                u_bound::Float64,
                depth::Int64,
-               default_action::ActionType, #TODO: maybe pass pomdp instead?
+               default_action::A, #TODO: maybe pass pomdp instead?
                weight::Float64,
                in_tree::Bool,
                config::DESPOTConfig)
@@ -52,19 +50,17 @@ type VNode{StateType, ActionType}
         this.best_ub_action     = default_action
         this.in_tree            = in_tree
         this.n_tree_nodes       = in_tree ? 1:0
-        this.q_nodes            = Dict{ActionType,QNode}()
+        this.q_nodes            = Dict{A,QNode}()
         this.n_visits           = 0
         this.n_actions_allowed  = 0
         this.q_star             = -Inf
-        this.state_type         = StateType        
-        this.action_type        = ActionType
         
         validate_bounds(l_bound, u_bound, config)
         return this
   end
 end
 
-function get_lb_action(node::VNode, config::DESPOTConfig, discount::Float64)
+function get_lb_action{S,A}(node::VNode{S,A}, config::DESPOTConfig, discount::Float64)
   a_star = node.best_ub_action #init with something
   q_star::Float64 = -Inf
   remaining_reward::Float64 = 0.0
@@ -80,7 +76,7 @@ function get_lb_action(node::VNode, config::DESPOTConfig, discount::Float64)
 end
 
 #TODO: fix pruning
-function prune(node::VNode, total_pruned::Int64, config::DESPOTConfig)
+function prune{S,A}(node::VNode{S,A}, total_pruned::Int64, config::DESPOTConfig)
   # Cost if the node were pruned
   cost = (config.discount^node.depth) * node.weight * node.default_value
                 - config.pruning_constant

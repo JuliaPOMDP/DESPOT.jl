@@ -18,12 +18,12 @@ end
 # root: Root of the search tree, passed to facilitate computation of the
 # excess uncertainty
 
-function get_best_weuo(qnode::QNode,
-                       root::VNode,
+function get_best_weuo{S,A,O}(qnode::QNode{S,A,O},
+                       root::VNode{S,A},
                        config::DESPOTConfig,
                        discount::Float64)
   weighted_eu_star::Float64 = -Inf
-  oStar::qnode.obs_type = collect(keys(qnode.obs_to_node))[1] # init with something
+  oStar = collect(keys(qnode.obs_to_node))[1] # init with something
   
   for (obs,node) in qnode.obs_to_node
         weighted_eu = node.weight / qnode.weight_sum *
@@ -44,7 +44,7 @@ function get_best_weuo(qnode::QNode,
 end
 
 # Get WEUO for a single observation branch
-function get_node_weuo(qnode::QNode, root::VNode, obs::Int64)
+function get_node_weuo{S,A,O}(qnode::QNode{S,A,O}, root::VNode{S,A}, obs::Int64)
    weighted_eu = qnode.obs_to_node[obs].weight / qnode.weight_sum *
                         excess_uncertainty(
                         qnode.obs_to_node[obs].lb, qnode.obs_to_node[obs].ub,
@@ -52,8 +52,9 @@ function get_node_weuo(qnode::QNode, root::VNode, obs::Int64)
    return weighted_eu
 end
 
+#
 # Returns the v-node corresponding to a given observation
-function belief(qnode::QNode, obs::Int64)
+function belief{S,A,O}(qnode::QNode{S,A,O}, obs::O)
   return qnode.obs_to_node[obs]
 end
 
@@ -75,8 +76,8 @@ function almost_the_same(x::Float64, y::Float64, config::DESPOTConfig)
 end
 
 # TODO: This probably can be replaced by just a weighted sampling call - check later
-function sample_particles!(sampled_particles::Vector,
-                           pool::Vector, #TODO: see if this can be tightened
+function sample_particles!{S}(sampled_particles::Vector{DESPOTParticle{S}},
+                           pool::Vector{DESPOTParticle{S}}, #TODO: see if this can be tightened
                            N::Int64,
                            seed::UInt32,
                            rand_max::Int64)

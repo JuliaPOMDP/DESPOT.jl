@@ -5,8 +5,8 @@ type DESPOTSolver{S,A,O} <: POMDPs.Solver
     lb::DESPOTLowerBound
     ub::DESPOTUpperBound
     random_streams::RandomStreams
-    root::VNode
-    root_default_action::POMDPs.Action
+    root::VNode{S,A}
+    root_default_action::A
     node_count::Int64
     config::DESPOTConfig
     #preallocated for simulations
@@ -14,12 +14,12 @@ type DESPOTSolver{S,A,O} <: POMDPs.Solver
     observation_distribution::POMDPs.AbstractDistribution
     rng::DESPOT.DESPOTRandomNumber
     curr_reward::POMDPs.Reward
-    next_state::POMDPs.State
-    curr_obs::POMDPs.Observation
+    next_state::S
+    curr_obs::O
 
   # default constructor
     function DESPOTSolver(pomdp::POMDPs.POMDP{S,A,O},
-                            belief::DESPOTBelief;
+                            belief::DESPOTBelief{S};
                             lb::DESPOTLowerBound = DESPOTDefaultLowerBound(),
                             ub::DESPOTUpperBound = DESPOTDefaultUpperBound(),
                             search_depth::Int64 = 90,
@@ -66,15 +66,11 @@ type DESPOTSolver{S,A,O} <: POMDPs.Solver
         this.curr_obs = create_observation(pomdp)
         this.curr_reward = 0.0
         
-        this.state_type     = typeof(this.next_state)
-        this.action_type    = typeof(this.root_default_action)        
-        this.obs_type       = typeof(this.curr_obs)
-        
         return this
     end
 end
 
-function init_solver(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
+function init_solver{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
     solver.random_streams = RandomStreams(solver.config.n_particles,
@@ -88,9 +84,9 @@ function init_solver(solver::DESPOTSolver, pomdp::POMDPs.POMDP)
     return nothing
 end
 
-function new_root{state_type}(solver::DESPOTSolver,
-                  pomdp::POMDP,
-                  particles::Vector{DESPOTParticle{state_type}})
+function new_root{S,A,O}(solver::DESPOTSolver{S,A,O},
+                  pomdp::POMDP{S,A,O},
+                  particles::Vector{DESPOTParticle{S}})
   
     lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
                                                                 pomdp,
@@ -103,7 +99,7 @@ function new_root{state_type}(solver::DESPOTSolver,
                                     particles,
                                     solver.config)
         
-    solver.root = VNode{solver.state_type, solver.action_type}(
+    solver.root = VNode{S,A}(
                         particles,
                         lbound, 
                         ubound,
@@ -117,7 +113,7 @@ function new_root{state_type}(solver::DESPOTSolver,
 end
 
 
-function search(solver::DESPOTSolver, pomdp::POMDP)
+function search{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O})
     n_trials::Int64 = 0
     start_time::Float64 = time()
     stop_now::Bool = false
@@ -132,9 +128,8 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
                                 pomdp.discount) > 1e-6)
                                 && !stop_now)
 
-        trial{solver.state_type, ActionType}(solver, pomdp, solver.root, n_trials)
+        trial(solver, pomdp, solver.root, n_trials)
         n_trials += 1
-        
         if ((solver.config.max_trials > 0) && (n_trials >= solver.config.max_trials)) ||
         ((solver.config.time_per_move > 0) && ((time() - start_time) >= solver.config.time_per_move))
             stop_now = true
@@ -157,7 +152,7 @@ function search(solver::DESPOTSolver, pomdp::POMDP)
     return nothing
 end
 
-function trial{StateType, ActionType}(solver::DESPOTSolver{StateType, ActionType}, pomdp::POMDP, node::VNode{StateType, ActionType}, n_trials::Int64)
+function trial{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A}, n_trials::Int64)
 
     n_nodes_added::Int64 = 0
     ub::Float64 = 0.0
@@ -167,12 +162,12 @@ function trial{StateType, ActionType}(solver::DESPOTSolver{StateType, ActionType
     end
     
     if isempty(node.q_nodes)
-        expand_one_step{StateType, ActionType}(solver, pomdp, node)
+        expand_one_step(solver, pomdp, node)
     end
 
-    a_star::solver.action_type = node.best_ub_action
+    a_star::A = node.best_ub_action
 
-    o_star::solver.obs_type, weighted_eu_star::Float64 =
+    o_star::O, weighted_eu_star::Float64 =
                                get_best_weuo(node.q_nodes[a_star],
                                              solver.root,
                                              solver.config,
@@ -220,16 +215,14 @@ function trial{StateType, ActionType}(solver::DESPOTSolver{StateType, ActionType
     return n_nodes_added
 end
 
-function expand_one_step{StateType, ActionType}(solver::DESPOTSolver, pomdp::POMDP, node::VNode{StateType, ActionType})
+function expand_one_step{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A})
   
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
     remaining_reward::Float64 = 0.0
-    lb_type = typeof(solver.lb)
-    ub_type = typeof(solver.ub)
     
     for curr_action in iterator(actions(pomdp))
-        obs_to_particles = Dict{solver.obs_type, Vector{DESPOTParticle{solver.state_type}}}()
+        obs_to_particles = Dict{O, Vector{DESPOTParticle{S}}}()
 
         for p in node.particles
             step(   
@@ -244,7 +237,7 @@ function expand_one_step{StateType, ActionType}(solver::DESPOTSolver, pomdp::POM
             end
 
             if !haskey(obs_to_particles, solver.curr_obs)
-                obs_to_particles[solver.curr_obs] = DESPOTParticle[]
+                obs_to_particles[solver.curr_obs] = DESPOTParticle{S}[]
             end
 
             push!(obs_to_particles[solver.curr_obs],
@@ -256,7 +249,7 @@ function expand_one_step{StateType, ActionType}(solver::DESPOTSolver, pomdp::POM
         
         first_step_reward /= node.weight
         #TODO: may want to remove lb_type and ub_type - seem to actually make things slower
-        new_qnode = QNode{solver.state_type, solver.action_type, solver.obs_type, lb_type, ub_type}(
+        new_qnode = QNode{S,A,O}(
                           pomdp,
                           solver.lb,
                           solver.ub,
@@ -280,11 +273,11 @@ function expand_one_step{StateType, ActionType}(solver::DESPOTSolver, pomdp::POM
 end
 
 # fill in pre-allocated variables
-function step(solver::DESPOTSolver,
-              pomdp::POMDPs.POMDP,
-              state::POMDPs.State,
+function step{S,A,O}(solver::DESPOTSolver{S,A,O},
+              pomdp::POMDPs.POMDP{S,A,O},
+              state::S,
               rand_num::Float64,
-              action::POMDPs.Action)
+              action::A)
               
     solver.rng.number = rand_num
     POMDPs.transition(pomdp, state, action, solver.transition_distribution)
