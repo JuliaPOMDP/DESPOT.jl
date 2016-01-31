@@ -41,8 +41,10 @@ type DESPOTBeliefUpdater{S,A,O} <: POMDPs.BeliefUpdater{S,A,O}
         this.n_particles = n_particles
         
         # init preallocated variables
-        this.next_state = POMDPs.create_state(pomdp)
-        this.observation = POMDPs.create_observation(pomdp)
+#         this.next_state = POMDPs.create_state(pomdp)
+#         this.observation = POMDPs.create_observation(pomdp)
+         this.next_state = S()
+         this.observation = O()
         this.new_particle = DESPOTParticle{S}(this.next_state, 1, 1) #placeholder
         this.n_sampled = 0
         this.obs_probability = -1.0

@@ -21,14 +21,17 @@ import Base:
 immutable RockSampleState
     index::Int64
 end
+RockSampleState() = RockSampleState(-1)
 
 immutable RockSampleAction
     index::Int64
 end
+RockSampleAction() = RockSampleAction(-1)
 
 immutable RockSampleObs
     index::Int64
 end
+RockSampleObs() = RockSampleObs(-1)
 
 ## spaces
 immutable RockSampleStateSpace <: AbstractSpace
@@ -213,12 +216,16 @@ end
 ## create_* functions
 
 # This function returns the start state, serving two purposes simultaneously
-POMDPs.create_state(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})          =
-    RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
-POMDPs.create_action(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})         = RockSampleAction(-1)
-POMDPs.create_observation(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})    = RockSampleObs(-1)
+# POMDPs.create_state(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})          =
+#     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
+# POMDPs.create_action(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})         = RockSampleAction(-1)
+# POMDPs.create_observation(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})    = RockSampleObs(-1)
 
 # Creates a default belief structure to store the problem's initial belief
+
+start_state(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs}) = 
+    RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
+
 POMDPs.create_belief(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})         = 
     ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
     
@@ -348,8 +355,8 @@ function init_15_15(pomdp::RockSample{RockSampleState, RockSampleAction, RockSam
   pomdp.robot_start_cell = cell_num(pomdp,5,0)
 end
 
-start_state(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs}) = 
-    make_state(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start)
+# start_state(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs}) = 
+#     make_state(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start)
 
 function init_general(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs}, seed::Array{UInt32,1})
   

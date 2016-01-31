@@ -28,7 +28,8 @@ function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
     current_level_ub_memo = Array(Float64, n_states(pomdp))
     next_level_ub_memo = Array(Float64, n_states(pomdp))
     
-    next_state = create_state(pomdp)
+#    next_state = create_state(pomdp)
+    next_state = S()
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG

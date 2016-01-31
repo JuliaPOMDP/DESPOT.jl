@@ -75,7 +75,7 @@ type QNode{S,A,O}
                                             l,
                                             u,
                                             this.depth+1,  # TODO: check depth
-                                            create_action(pomdp),
+                                            A(),
                                             obs_weight_sum,
                                             false,
                                             config)

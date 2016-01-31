@@ -57,13 +57,16 @@ type DESPOTSolver{S,A,O} <: POMDPs.Solver
         this.config.rand_max = rand_max
         this.config.debug = debug
         
-        this.root_default_action = create_action(pomdp) # root_default_action
+#        this.root_default_action = create_action(pomdp) # root_default_action
+        this.root_default_action = A()
         
         this.rng = DESPOTRandomNumber(-1)
         this.transition_distribution = create_transition_distribution(pomdp)
         this.observation_distribution = create_observation_distribution(pomdp)
-        this.next_state = create_state(pomdp)
-        this.curr_obs = create_observation(pomdp)
+#        this.next_state = create_state(pomdp)
+        this.next_state = S()
+#         this.curr_obs = create_observation(pomdp)
+        this.curr_obs = O()
         this.curr_reward = 0.0
         
         return this
@@ -104,7 +107,7 @@ function new_root{S,A,O}(solver::DESPOTSolver{S,A,O},
                         lbound, 
                         ubound,
                         0,
-                        create_action(pomdp), #default(dummy) action
+                        A(), #default(dummy) action
                         1.0,
                         false,
                         solver.config)

@@ -107,7 +107,8 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
     ret::Float64 = 0.0
     reward::Float64 = 0.0
     prev_cell_coord = [0,0] # initial value - should cause error if not properly assigned
-    next_s::RockSampleState = create_state(pomdp)
+#    next_s::RockSampleState = create_state(pomdp)
+    next_s::RockSampleState = RockSampleState()
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG

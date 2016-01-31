@@ -147,9 +147,12 @@ function execute(;
                                rand_max = rand_max,
                                debug = debug)
                                
-    state::RockSampleState       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
-    next_state::RockSampleState  = POMDPs.create_state(pomdp)
-    obs::RockSampleObs   = POMDPs.create_observation(pomdp)
+#     state::RockSampleState       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
+#     next_state::RockSampleState  = POMDPs.create_state(pomdp)    
+    state::RockSampleState       = start_state(pomdp)
+    next_state::RockSampleState  = RockSampleState()
+#    obs::RockSampleObs   = POMDPs.create_observation(pomdp)
+    obs::RockSampleObs   = RockSampleObs()
     rewards::Array{Float64}      = Array(Float64, 0)
     transition_distribution::RockSampleTransitionDistribution =
             POMDPs.create_transition_distribution(pomdp)
