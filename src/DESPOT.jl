@@ -26,7 +26,7 @@ type DESPOTParticle{S}
   weight::Float64
 end
 
-type DESPOTBelief{S,A,O} <: POMDPs.Belief
+type DESPOTBelief{S,A,O} <: POMDPs.Belief{S}
     particles::Vector{DESPOTParticle{S}}
     history::History{A,O}
 end

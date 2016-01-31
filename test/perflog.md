@@ -12,5 +12,5 @@
 |Implementation				|Time			|Comments											|
 ----------------------------|--------------:|---------------------------------------------------|
 |C++ 						|0.78s			|													|
-|Julia (without POMCP.jl)	|2.58s			|													|
-|Julia (with POMCP.jl)		|5.69s			|Improved type specifications and var preallocation	|
+|Julia (without POMCP.jl)	|1.98s			|Retested in a cleaner configuration				|
+|Julia (with POMCP.jl)		|4.67s			|Converted all types to parametric					|
