@@ -105,8 +105,7 @@ function execute(;
     b_seed::UInt32   = seed $ (n_particles + 1) # belief seed, used for belief particle sampling, among other things
     m_seed::UInt32   = seed $ (n_particles + 2) # model seed, used to initialize the problem model   
 
-    pomdp   = RockSample{RockSampleState, RockSampleAction, RockSampleObs}(
-#    pomdp   = RockSample(
+    pomdp   = RockSample(
                         grid_size,
                         num_rocks,
                         rand_max = rand_max,      # optional, default: 2^31-1
@@ -123,13 +122,15 @@ function execute(;
                              
     current_belief = create_belief(bu)
     updated_belief = create_belief(bu)
-    initial_belief(pomdp, current_belief)
-    
-    custom_lb::RockSampleParticleLB     = RockSampleParticleLB{RockSampleState, RockSampleAction, RockSampleObs}(pomdp) # custom lower bound to use with DESPOT solver
-#     custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleAction}(pomdp, create_action(pomdp)) # custom upper bound to use with DESPOT solver
-    custom_ub::UpperBoundNonStochastic  = UpperBoundNonStochastic{RockSampleState, RockSampleAction, RockSampleObs}(pomdp)
+    initial_belief(pomdp, current_belief)   
+    custom_lb = RockSampleParticleLB{RockSampleState, RockSampleAction, RockSampleObs}(pomdp) # custom lower bound to use with DESPOT solver
+    custom_ub = UpperBoundNonStochastic{RockSampleState, RockSampleAction, RockSampleObs}(pomdp)
       
-    solver::DESPOTSolver = DESPOTSolver{RockSampleState, RockSampleAction, RockSampleObs}(
+    solver::DESPOTSolver = DESPOTSolver{RockSampleState,
+                                        RockSampleAction,
+                                        RockSampleObs,
+                                        RockSampleParticleLB,
+                                        UpperBoundNonStochastic}(
                                pomdp,
                                current_belief,
                                # specify the optional keyword parameters
@@ -147,11 +148,8 @@ function execute(;
                                rand_max = rand_max,
                                debug = debug)
                                
-#     state::RockSampleState       = POMDPs.create_state(pomdp) # the returned state is also the start state of RockSample
-#     next_state::RockSampleState  = POMDPs.create_state(pomdp)    
     state::RockSampleState       = start_state(pomdp)
     next_state::RockSampleState  = RockSampleState()
-#    obs::RockSampleObs   = POMDPs.create_observation(pomdp)
     obs::RockSampleObs   = RockSampleObs()
     rewards::Array{Float64}      = Array(Float64, 0)
     transition_distribution::RockSampleTransitionDistribution =

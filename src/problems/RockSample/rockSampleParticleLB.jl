@@ -20,7 +20,7 @@ import DESPOT:
 type RockSampleParticleLB{S,A,O} <: DESPOTLowerBound{S,A,O}
     weight_sum_of_state::Vector{Float64}
     
-    function RockSampleParticleLB(pomdp::RockSample{S,A,O})
+    function RockSampleParticleLB(pomdp::RockSample)
         this = new()
         this.weight_sum_of_state = Array(Float64, pomdp.n_states)
         fill!(this.weight_sum_of_state, -Inf)
@@ -29,13 +29,13 @@ type RockSampleParticleLB{S,A,O} <: DESPOTLowerBound{S,A,O}
 end
 
 function init_lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
-                    pomdp::RockSample{S,A,O},
+                    pomdp::RockSample,
                     config::DESPOTConfig)
     # nothing to do for now
 end
 
 function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
-                     pomdp::RockSample{S,A,O},
+                     pomdp::RockSample,
                      particles::Vector{DESPOTParticle{S}},
                      ub_actions::Vector{A},
                      config::DESPOTConfig)

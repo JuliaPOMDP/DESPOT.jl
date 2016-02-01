@@ -1,11 +1,10 @@
 
-type DESPOTSolver{S,A,O} <: POMDPs.Solver{S,A,O}
-# type DESPOTSolver <: POMDPs.Solver
-    belief::DESPOTBelief
-    lb::DESPOTLowerBound
-    ub::DESPOTUpperBound
+type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver{S,A,O}
+    belief::DESPOTBelief{S,A,O}
+    lb::L
+    ub::U
     random_streams::RandomStreams
-    root::VNode{S,A}
+    root::VNode{S,A,O,L,U}
     root_default_action::A
     node_count::Int64
     config::DESPOTConfig
@@ -19,9 +18,9 @@ type DESPOTSolver{S,A,O} <: POMDPs.Solver{S,A,O}
 
   # default constructor
     function DESPOTSolver(pomdp::POMDPs.POMDP{S,A,O},
-                            belief::DESPOTBelief{S};
-                            lb::DESPOTLowerBound = DESPOTDefaultLowerBound(),
-                            ub::DESPOTUpperBound = DESPOTDefaultUpperBound(),
+                            belief::DESPOTBelief{S,A,O};
+                            lb::DESPOTLowerBound{S,A,O} = L(),
+                            ub::DESPOTUpperBound{S,A,O} = U(),
                             search_depth::Int64 = 90,
                             main_seed::UInt32 = convert(UInt32, 42),
                             time_per_move::Float64 = 1.0,                 # sec
@@ -55,17 +54,12 @@ type DESPOTSolver{S,A,O} <: POMDPs.Solver{S,A,O}
         this.config.tiny = tiny
         this.config.max_trials = max_trials
         this.config.rand_max = rand_max
-        this.config.debug = debug
-        
-#        this.root_default_action = create_action(pomdp) # root_default_action
+        this.config.debug = debug        
         this.root_default_action = A()
-        
         this.rng = DESPOTRandomNumber(-1)
         this.transition_distribution = create_transition_distribution(pomdp)
         this.observation_distribution = create_observation_distribution(pomdp)
-#        this.next_state = create_state(pomdp)
         this.next_state = S()
-#         this.curr_obs = create_observation(pomdp)
         this.curr_obs = O()
         this.curr_reward = 0.0
         
@@ -73,7 +67,7 @@ type DESPOTSolver{S,A,O} <: POMDPs.Solver{S,A,O}
     end
 end
 
-function init_solver{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDPs.POMDP{S,A,O})
+function init_solver{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
     solver.random_streams = RandomStreams(solver.config.n_particles,
@@ -87,45 +81,44 @@ function init_solver{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDPs.POMDP{S,A
     return nothing
 end
 
-function new_root{S,A,O}(solver::DESPOTSolver{S,A,O},
+function new_root{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
                   pomdp::POMDP{S,A,O},
                   particles::Vector{DESPOTParticle{S}})
   
-    lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
-                                                                pomdp,
-                                                                particles,
-                                                                solver.ub.upper_bound_act,
-                                                                solver.config)
-                                                            
-    ubound::Float64 = upper_bound(solver.ub,
-                                    pomdp,
-                                    particles,
-                                    solver.config)
+#     lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
+#                                                                 pomdp,
+#                                                                 particles,
+#                                                                 solver.ub.upper_bound_act,
+#                                                                 solver.config)
+#                                                             
+#     ubound::Float64 = upper_bound(solver.ub,
+#                                     pomdp,
+#                                     particles,
+#                                     solver.config)
         
-    solver.root = VNode{S,A}(
+    solver.root, solver.root_default_action = VNode{S,A,O,L,U}(
+                        pomdp,
                         particles,
-                        lbound, 
-                        ubound,
+                        solver.lb, 
+                        solver.ub,
                         0,
-                        A(), #default(dummy) action
                         1.0,
                         false,
                         solver.config)
-
     return nothing
 end
 
 
-function search{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O})
+function search{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O})
     n_trials::Int64 = 0
     start_time::Float64 = time()
     stop_now::Bool = false
     
-    @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
-    while ((excess_uncertainty(solver.root.lb,
-                                solver.root.ub,
-                                solver.root.lb,
-                                solver.root.ub,
+    @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
+    while ((excess_uncertainty(solver.root.lbound,
+                                solver.root.ubound,
+                                solver.root.lbound,
+                                solver.root.ubound,
                                 0,
                                 solver.config.eta,
                                 pomdp.discount) > 1e-6)
@@ -139,7 +132,7 @@ function search{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O})
         end
     end
 
-    @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lb, solver.root.ub)
+    @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
     @printf("Number of trials: %d\n", n_trials)
 
     if solver.config.pruning_constant != 0
@@ -155,17 +148,17 @@ function search{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O})
     return nothing
 end
 
-function trial{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A}, n_trials::Int64)
+function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, node::VNode{S,A,O,L,U}, n_trials::Int64)
 
     n_nodes_added::Int64 = 0
-    ub::Float64 = 0.0
+    ubound::Float64 = 0.0
     
     if (node.depth >= solver.config.search_depth) || isterminal(pomdp, node.particles[1].state)
       return 0 # nodes added
     end
     
     if isempty(node.q_nodes)
-        expand_one_step(solver, pomdp, node)
+        expand_one_step(solver, pomdp, node, solver.lb, solver.ub)
     end
 
     a_star::A = node.best_ub_action
@@ -180,7 +173,7 @@ function trial{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VN
         add(solver.belief.history, a_star, o_star)
         n_nodes_added = trial(solver,
                             pomdp,
-                            node.q_nodes[a_star].obs_to_node[o_star], # obs_to_node is a Dict
+                            node.q_nodes[a_star].obs_to_node[o_star],
                             n_trials) 
         remove_last(solver.belief.history)
     end
@@ -189,25 +182,25 @@ function trial{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VN
     # Backup
     potential_lbound = node.q_nodes[a_star].first_step_reward +
                         pomdp.discount * get_lower_bound(node.q_nodes[a_star])
-    node.lb = max(node.lb, potential_lbound)
+    node.lbound = max(node.lbound, potential_lbound)
 
     # As the upper bound of a_star may become smaller than the upper bound of
     # another action, we need to check all actions - unlike the lower bound.
-    node.ub = -Inf
+    node.ubound = -Inf
 
     for a in iterator(actions(pomdp))
-        ub = node.q_nodes[a].first_step_reward +
+        ubound = node.q_nodes[a].first_step_reward +
               pomdp.discount * get_upper_bound(node.q_nodes[a])
-        if ub > node.ub
-            node.ub = ub
+        if ubound > node.ubound
+            node.ubound = ubound
             node.best_ub_action = a
         end
     end
 
     # Sanity check
-    if (node.lb > node.ub + solver.config.tiny)
+    if (node.lbound > node.ubound + solver.config.tiny)
         println("depth = $(node.depth)")
-        warn("Lower bound ($(node.lb)) is higher than upper bound ($(node.ub))")
+        warn("Lower bound ($(node.lbound)) is higher than upper bound ($(node.ubound))")
     end
 
     if !node.in_tree
@@ -218,14 +211,14 @@ function trial{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VN
     return n_nodes_added
 end
 
-function expand_one_step{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A})
+function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A,O,L,U}, lb::L, ub::U)
   
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
     remaining_reward::Float64 = 0.0
     
     for curr_action in iterator(actions(pomdp))
-        obs_to_particles = Dict{O, Vector{DESPOTParticle{S}}}()
+        obs_to_particles = Dict{O,Vector{DESPOTParticle{S}}}()
 
         for p in node.particles
             step(   
@@ -251,13 +244,13 @@ function expand_one_step{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}
         end
         
         first_step_reward /= node.weight
-        #TODO: may want to remove lb_type and ub_type - seem to actually make things slower
-        new_qnode = QNode{S,A,O}(
+
+        new_qnode = QNode{S,A,O,L,U}(
                           pomdp,
-                          solver.lb,
-                          solver.ub,
+                          lb,
+                          ub,
                           obs_to_particles,
-                          node.depth,
+                          node.depth,                                     
                           curr_action,
                           first_step_reward,
                           solver.belief.history,
@@ -276,7 +269,7 @@ function expand_one_step{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}
 end
 
 # fill in pre-allocated variables
-function step{S,A,O}(solver::DESPOTSolver{S,A,O},
+function step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
               pomdp::POMDPs.POMDP{S,A,O},
               state::S,
               rand_num::Float64,

@@ -15,6 +15,7 @@
   # history: history up to the V-node *above* this node.
   # debug: Flag controlling debugging output.
 
+abstract Node{S,A,O,L,U}
 
 type QNode{S,A,O,L,U}
     obs_to_particles::Dict{O, Vector{DESPOTParticle{S}}}
@@ -23,7 +24,7 @@ type QNode{S,A,O,L,U}
     first_step_reward::Float64
     history::History
     weight_sum::Float64
-    obs_to_node::Dict    #TODO: See if this can be specified better
+    obs_to_node::Dict{O,Node{S,A,O,L,U}}    #TODO: See if this can be specified better
     n_visits::Int64                # Needed for large problems
     lb::L
     ub::U
@@ -109,12 +110,11 @@ function prune{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, total_pruned::Int64, config::
   return cost, total_pruned
 end
 
-
 # This type ("Value Node") encapsulates a belief node (and recursively, a
 # belief tree). It stores the set of particles associated with the node, an
 # AND-node for each action, and some bookkeeping information.
 
-type VNode{S,A,O,L,U}
+type VNode{S,A,O,L,U} <: Node{S,A,O,L,U}
   particles::Array{DESPOTParticle{S},1}
   lbound::Float64
   ubound::Float64

@@ -1,24 +1,17 @@
 
 
-type UpperBoundNonStochastic{S,A,O} <: DESPOTUpperBound
-#type UpperBoundNonStochastic{ActionType} <: DESPOTUpperBound
-
-#     upper_bound_act::Vector{ActionType}
+type UpperBoundNonStochastic{S,A,O} <: DESPOTUpperBound{S,A,O}
     upper_bound_act::Vector{A}
     upper_bound_memo::Vector{Float64}
     
     # Constructor
-    function UpperBoundNonStochastic(pomdp::POMDP{S,A,O})
-    
+    function UpperBoundNonStochastic(pomdp::POMDP{S,A,O})    
         this = new()       
         # this executes just once per problem run
         this.upper_bound_act = Array{A}(n_states(pomdp))    # upper_bound_act
-#        this.upper_bound_act = Array(ActionType, n_states(pomdp)) 
-#        fill!(this.upper_bound_act, 0)
         this.upper_bound_memo = Array{Float64}(n_states(pomdp)) # upper_bound_memo
-
-    return this
-  end
+        return this
+    end
 end
 
 function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
@@ -28,7 +21,6 @@ function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
     current_level_ub_memo = Array(Float64, n_states(pomdp))
     next_level_ub_memo = Array(Float64, n_states(pomdp))
     
-#    next_state = create_state(pomdp)
     next_state = S()
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
@@ -75,7 +67,6 @@ end
 
 function DESPOT.upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
                      pomdp::POMDP{S,A,O},
-                     #particles::Vector{Particle}, #TODO: figure out why this does not work
                      particles::Vector{DESPOTParticle{S}},
                      config::DESPOTConfig)
   weight_sum = 0.

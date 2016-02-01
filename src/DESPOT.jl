@@ -62,20 +62,20 @@ end
 
 include("config.jl")
 include("randomStreams.jl")
-include("qnode.jl")
-include("vnode.jl")
+# include("qnode.jl")
+# include("vnode.jl")
+include("nodes.jl")
 include("utils.jl")
 include("solver.jl")
 
-type DESPOTPolicy{S,A,O} <: POMDPs.Policy{S,A,O}
-    solver::DESPOTSolver{S,A,O}
+type DESPOTPolicy{S,A,O,L,U} <: POMDPs.Policy{S,A,O}
+    solver::DESPOTSolver{S,A,O,L,U}
     pomdp ::POMDPs.POMDP{S,A,O}
 end
 
-create_policy{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDPs.POMDP{S,A,O}) = DESPOTPolicy(solver, pomdp)
+create_policy{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O}) = DESPOTPolicy(solver, pomdp)
 
 # UPPER and LOWER BOUND FUNCTION INTERFACES
-#TODO: try specializing types for DESPOTParticle
 lower_bound{S,A,O}(lb::DESPOTLowerBound{S,A,O},
             pomdp::POMDPs.POMDP{S,A,O},
             particles::Vector{DESPOTParticle{S}}, 
@@ -109,7 +109,7 @@ function action{S,A,O}(policy::DESPOTPolicy{S,A,O}, belief::DESPOTBelief{S})
     return a
 end
 
-function solve{S,A,O}(solver::DESPOTSolver{S,A,O}, pomdp::POMDPs.POMDP{S,A,O})
+function solve{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
     policy = DESPOTPolicy(solver, pomdp)
     init_solver(solver, pomdp)
     return policy

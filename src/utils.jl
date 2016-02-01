@@ -18,8 +18,8 @@ end
 # root: Root of the search tree, passed to facilitate computation of the
 # excess uncertainty
 
-function get_best_weuo{S,A,O}(qnode::QNode{S,A,O},
-                       root::VNode{S,A},
+function get_best_weuo{S,A,O,L,U}(qnode::QNode{S,A,O,L,U},
+                       root::VNode{S,A,O,L,U},
                        config::DESPOTConfig,
                        discount::Float64)
   weighted_eu_star::Float64 = -Inf
@@ -27,10 +27,10 @@ function get_best_weuo{S,A,O}(qnode::QNode{S,A,O},
   
   for (obs,node) in qnode.obs_to_node
         weighted_eu = node.weight / qnode.weight_sum *
-                            excess_uncertainty(node.lb,
-                                               node.ub,
-                                               root.lb,
-                                               root.ub,
+                            excess_uncertainty(node.lbound,
+                                               node.ubound,
+                                               root.lbound,
+                                               root.ubound,
                                                qnode.depth+1,
                                                config.eta,
                                                discount)
@@ -44,17 +44,17 @@ function get_best_weuo{S,A,O}(qnode::QNode{S,A,O},
 end
 
 # Get WEUO for a single observation branch
-function get_node_weuo{S,A,O}(qnode::QNode{S,A,O}, root::VNode{S,A}, obs::Int64)
+function get_node_weuo{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, root::VNode{S,A,O,L,U}, obs::Int64)
    weighted_eu = qnode.obs_to_node[obs].weight / qnode.weight_sum *
                         excess_uncertainty(
-                        qnode.obs_to_node[obs].lb, qnode.obs_to_node[obs].ub,
-                        root.lb, root.ub, qnode.depth+1)
+                        qnode.obs_to_node[obs].lbound, qnode.obs_to_node[obs].ubound,
+                        root.lbound, root.ubound, qnode.depth+1)
    return weighted_eu
 end
 
 #
 # Returns the v-node corresponding to a given observation
-function belief{S,A,O}(qnode::QNode{S,A,O}, obs::O)
+function belief{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, obs::O)
   return qnode.obs_to_node[obs]
 end
 
