@@ -91,7 +91,7 @@ function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
         rng = DESPOTRandomNumber(random_number[1])
         
         POMDPs.transition(bu.pomdp, p.state, action, bu.transition_distribution)
-        bu.next_state = POMDPs.rand(rng, bu.next_state, bu.transition_distribution) # update state to next state
+        bu.next_state = POMDPs.rand(rng, bu.transition_distribution, bu.next_state) # update state to next state
 
         #get observation distribution for (s,a,s') tuple
         POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
@@ -120,7 +120,7 @@ function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
             particle_number = ceil(bu.n_particles * random_number[1])
             
             next_state = create_state(bu.pomdp) #TODO: this can be done better
-            next_state = POMDPs.rand(resample_rng, next_state, states(bu.pomdp)) #generate a random state
+            next_state = POMDPs.rand(resample_rng, states(bu.pomdp), next_state) #generate a random state
             POMDPs.observation(bu.pomdp,
                                current_belief.particles[particle_number].state,
                                action,

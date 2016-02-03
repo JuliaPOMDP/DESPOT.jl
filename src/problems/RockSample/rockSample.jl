@@ -577,8 +577,9 @@ end
 
 function POMDPs.rand(
                     rng::AbstractRNG,
-                    ::RockSampleState,
-                    distribution::RockSampleTransitionDistribution)
+                    distribution::RockSampleTransitionDistribution,
+                    ::RockSampleState)
+
     
     return RockSampleState(
         distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index)
@@ -587,8 +588,8 @@ end
 
 function POMDPs.rand(
                     rng::AbstractRNG,
-                    ::RockSampleObs,
-                    distribution::RockSampleObsDistribution)
+                    distribution::RockSampleObsDistribution,
+                    ::RockSampleObs)
     
     # generate a new random number regardless of whether it's used below or not
     rand_num::Array{Float64} = Array{Float64}(1)
@@ -615,8 +616,9 @@ end
 
 function POMDPs.rand(
                     rng::AbstractRNG,
-                    ::RockSampleState,
-                    state_space::RockSampleStateIterator)
+                    state_space::RockSampleStateIterator,
+                    ::RockSampleState)
+
     if OS_NAME == :Linux
         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc

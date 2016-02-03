@@ -170,10 +170,10 @@ function execute(;
         println("\n*************** STEP $(sim_steps+1) ***************")
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
-        next_state = POMDPs.rand(rng, next_state, transition_distribution) # update state to next state
+        next_state = POMDPs.rand(rng, transition_distribution, next_state) # update state to next state
         POMDPs.observation(pomdp, state, action, next_state, observation_distribution)
         observation_distribution.debug = 1 #TODO: remove -debug
-        obs = POMDPs.rand(rng, obs, observation_distribution)
+        obs = POMDPs.rand(rng, observation_distribution, obs)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
         state = next_state        

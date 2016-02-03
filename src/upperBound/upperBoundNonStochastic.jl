@@ -37,7 +37,7 @@ function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
             for a in iterator(actions(pomdp))
                 trans_distribution.state = s
                 trans_distribution.action = a
-                next_state = POMDPs.rand(rng, next_state, trans_distribution)
+                next_state = POMDPs.rand(rng, trans_distribution, next_state)
                 r = reward(pomdp, s, a)
                 possibly_improved_value = r + pomdp.discount * next_level_ub_memo[next_state.index+1]
                 if (possibly_improved_value > current_level_ub_memo[s.index+1])

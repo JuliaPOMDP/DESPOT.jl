@@ -15,22 +15,20 @@
   # history: history up to the V-node *above* this node.
   # debug: Flag controlling debugging output.
 
-abstract Node{S,A,O,L,U}
-
-type QNode{S,A,O,L,U}
+type _QNode{S,A,O,L,U,T} #Workaround to achieve a circular type definition
     obs_to_particles::Dict{O, Vector{DESPOTParticle{S}}}
     depth::Int64
     action::A
     first_step_reward::Float64
     history::History
     weight_sum::Float64
-    obs_to_node::Dict{O,Node{S,A,O,L,U}}    #TODO: See if this can be specified better
+    obs_to_node::Dict{O,T}
     n_visits::Int64                # Needed for large problems
     lb::L
     ub::U
   
       # default constructor
-      function QNode(
+      function _QNode(
                     pomdp::POMDP{S,A,O},
                     lb::L,
                     ub::U,
@@ -48,7 +46,7 @@ type QNode{S,A,O,L,U}
             this.first_step_reward = first_step_reward
             this.history = history
             this.weight_sum = 0
-            this.obs_to_node = Dict{O,VNode{S,A,O,L,U}}()
+            this.obs_to_node = Dict{O,T}()
             this.n_visits = 0
             this.lb = lb
             this.ub = ub
@@ -60,14 +58,6 @@ type QNode{S,A,O,L,U}
                 end
                 this.weight_sum += obs_weight_sum
                 add(this.history, action, obs)
-                
-#                 l::Float64, action::A = DESPOT.lower_bound(
-#                                                 lb,
-#                                                 pomdp,
-#                                                 particles,
-#                                                 ub.upper_bound_act,
-#                                                 config)
-#                 u::Float64 = upper_bound(ub, pomdp, particles, config)
                 remove_last(this.history)
                 this.obs_to_node[obs], a::A = VNode{S,A,O,L,U}(
                                             pomdp,
@@ -83,38 +73,7 @@ type QNode{S,A,O,L,U}
         end
 end
 
-function get_upper_bound{S,A,O,L,U}(qnode::QNode{S,A,O,L,U})
-  ubound::Float64 = 0.0
-  for (obs, node) in qnode.obs_to_node
-      ubound += node.ubound * node.weight
-  end
-  return ubound/qnode.weight_sum
-end
-
-function get_lower_bound{S,A,O,L,U}(qnode::QNode{S,A,O,L,U})
-  lbound::Float64 = 0.0
-  for (obs, node) in qnode.obs_to_node
-      lbound += node.lbound * node.weight
-  end
-  return lbound/qnode.weight_sum
-end
-
-#TODO: Fix this
-function prune{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, total_pruned::Int64, config::DESPOTConfig)
-  cost::Float64 = 0.0
-  total_pruned::Int64 = 0
-  
-  for (obs,node) in qnode.obs_to_node
-    cost, total_pruned += prune(node, total_pruned, config)
-  end
-  return cost, total_pruned
-end
-
-# This type ("Value Node") encapsulates a belief node (and recursively, a
-# belief tree). It stores the set of particles associated with the node, an
-# AND-node for each action, and some bookkeeping information.
-
-type VNode{S,A,O,L,U} <: Node{S,A,O,L,U}
+type VNode{S,A,O,L,U}
   particles::Array{DESPOTParticle{S},1}
   lbound::Float64
   ubound::Float64
@@ -133,7 +92,8 @@ type VNode{S,A,O,L,U} <: Node{S,A,O,L,U}
                                     # this indicator variable.
   n_tree_nodes::Int64               # Number of nodes with in_tree == true in the subtree
                                     # rooted at this node
-  q_nodes::Dict{A,QNode{S,A,O,L,U}} # Dict of children q-nodes
+  q_nodes::Dict{A,_QNode{S,A,O,L,U,
+                VNode{S,A,O,L,U}}}  # Dict of children q-nodes
   n_visits::Int64                   # Needed for large domains
   n_actions_allowed::Int64          # current number of action branches allowed in the node, needed for large domains
   q_star::Float64                   # best current Q-value, needed for large domains
@@ -175,6 +135,39 @@ type VNode{S,A,O,L,U} <: Node{S,A,O,L,U}
   end
 end
 
+typealias QNode{S,A,O,L,U} _QNode{S,A,O,L,U,VNode{S,A,O,L,U}}
+
+function get_upper_bound{S,A,O,L,U}(qnode::QNode{S,A,O,L,U})
+  ubound::Float64 = 0.0
+  for (obs, node) in qnode.obs_to_node
+      ubound += node.ubound * node.weight
+  end
+  return ubound/qnode.weight_sum
+end
+
+function get_lower_bound{S,A,O,L,U}(qnode::QNode{S,A,O,L,U})
+  lbound::Float64 = 0.0
+  for (obs, node) in qnode.obs_to_node
+      lbound += node.lbound * node.weight
+  end
+  return lbound/qnode.weight_sum
+end
+
+#TODO: Fix this
+function prune{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, total_pruned::Int64, config::DESPOTConfig)
+  cost::Float64 = 0.0
+  total_pruned::Int64 = 0
+  
+  for (obs,node) in qnode.obs_to_node
+    cost, total_pruned += prune(node, total_pruned, config)
+  end
+  return cost, total_pruned
+end
+
+# This type ("Value Node") encapsulates a belief node (and recursively, a
+# belief tree). It stores the set of particles associated with the node, an
+# AND-node for each action, and some bookkeeping information.
+
 function get_lb_action{S,A,O,L,U}(node::VNode{S,A,O,L,U}, config::DESPOTConfig, discount::Float64)
   a_star = A()
   q_star::Float64 = -Inf
@@ -195,7 +188,6 @@ function prune{S,A,O,L,U}(node::VNode{S,A,O,L,U}, total_pruned::Int64, config::D
   # Cost if the node was pruned
   cost = (config.discount^node.depth) * node.weight * node.default_value
                 - config.pruning_constant
-
   if !node.inTree # Leaf
     @assert(nodes.n_tree_nodes == 0)
     return cost, total_pruned

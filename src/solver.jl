@@ -278,10 +278,10 @@ function step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
     solver.rng.number = rand_num
     POMDPs.transition(pomdp, state, action, solver.transition_distribution)
     solver.next_state =
-        POMDPs.rand(solver.rng, solver.next_state, solver.transition_distribution)
+        POMDPs.rand(solver.rng, solver.transition_distribution, solver.next_state)
     POMDPs.observation(pomdp, state, action, solver.next_state, solver.observation_distribution)
     solver.curr_obs =
-        POMDPs.rand(solver.rng, solver.curr_obs, solver.observation_distribution)
+        POMDPs.rand(solver.rng, solver.observation_distribution, solver.curr_obs)
     solver.curr_reward = POMDPs.reward(pomdp, state, action)
     
     return nothing
