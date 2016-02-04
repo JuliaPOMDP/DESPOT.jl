@@ -114,7 +114,11 @@ function execute(;
                         discount    = discount)   # optional, default: 0.95
     
     # construct a belief updater and specify some of the optional keyword parameters
-    bu = DESPOTBeliefUpdater{RockSampleState, RockSampleAction, RockSampleObs}(
+    bu = DESPOTBeliefUpdater{RockSampleState,
+                             RockSampleAction,
+                             RockSampleObs,
+                             RockSampleTransitionDistribution,
+                             RockSampleObsDistribution}(
                              pomdp::POMDP,
                              seed = seed,
                              rand_max = rand_max,
@@ -130,7 +134,9 @@ function execute(;
                                         RockSampleAction,
                                         RockSampleObs,
                                         RockSampleParticleLB,
-                                        UpperBoundNonStochastic}(
+                                        UpperBoundNonStochastic,
+                                        RockSampleTransitionDistribution,
+                                        RockSampleObsDistribution}(
                                pomdp,
                                current_belief,
                                # specify the optional keyword parameters

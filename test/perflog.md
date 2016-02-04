@@ -13,4 +13,4 @@
 ----------------------------|--------------:|---------------------------------------------------|
 |C++ 						|0.78s			|													|
 |Julia (without POMCP.jl)	|1.98s			|Retested in a cleaner configuration				|
-|Julia (with POMCP.jl)		|4.67s			|Converted all types to parametric					|
+|Julia (with POMCP.jl)		|2.49s			|Templatized distributions							|

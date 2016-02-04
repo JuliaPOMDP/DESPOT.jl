@@ -1,17 +1,8 @@
 
 type History{A,O}
-    actions::Vector{A}#Array{A,1}
-    observations::Vector{O}#Array{O,1}
-
+    actions::Vector{A}
+    observations::Vector{O}
     History() = new(Array(A, 0), Array(O, 0))
-#     function History()
-#         this = new()
-#         this.actions = Array(ActionType, 0)
-#         this.observations = Array(ObservationType, 0)
-#         this.ActionType = ActionType
-#         this.ObservationType = ObservationType
-#         return this
-#     end
 end
 
 function add{A,O}(history::History{A,O},

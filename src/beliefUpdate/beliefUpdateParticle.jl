@@ -1,12 +1,12 @@
 import POMDPs: update
 using DESPOT
 
-type DESPOTBeliefUpdater{S,A,O} <: POMDPs.BeliefUpdater{S,A,O}
+type DESPOTBeliefUpdater{S,A,O,TD,OD} <: POMDPs.BeliefUpdater{S,A,O}
     pomdp::POMDP
     num_updates::Int64
     rng::DESPOTDefaultRNG
-    transition_distribution::AbstractDistribution
-    observation_distribution::AbstractDistribution
+    transition_distribution::TD
+    observation_distribution::OD
     seed::UInt32
     rand_max::Int64
     belief_update_seed::UInt32
@@ -41,8 +41,6 @@ type DESPOTBeliefUpdater{S,A,O} <: POMDPs.BeliefUpdater{S,A,O}
         this.n_particles = n_particles
         
         # init preallocated variables
-#         this.next_state = POMDPs.create_state(pomdp)
-#         this.observation = POMDPs.create_observation(pomdp)
          this.next_state = S()
          this.observation = O()
         this.new_particle = DESPOTParticle{S}(this.next_state, 1, 1) #placeholder

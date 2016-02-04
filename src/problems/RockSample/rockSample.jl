@@ -103,7 +103,6 @@ Base.hash(x::RockSampleAction, h::Int64 = 0)   = x.index
 Base.hash(x::RockSampleObs, h::Int64 = 0)      = x.index
 
 ######## RockSample type definition ########
-#type RockSample{RockSampleState, RockSampleAction, RockSampleObs} <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs}
 type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs}
     #problem parameters
     grid_size::Int64
@@ -185,13 +184,13 @@ end
 
 ## distribution types
 type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution{RockSampleState}
-    pomdp::RockSample#{RockSampleState, RockSampleAction, RockSampleObs}
+    pomdp::RockSample
     state::RockSampleState
     action::RockSampleAction
 end
 
 type RockSampleObsDistribution <: POMDPs.AbstractDistribution{RockSampleObs}
-    pomdp::RockSample#{RockSampleState, RockSampleAction, RockSampleObs}
+    pomdp::RockSample
     state::RockSampleState
     action::RockSampleAction
     next_state::RockSampleState
@@ -221,8 +220,6 @@ end
 #     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
 # POMDPs.create_action(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})         = RockSampleAction(-1)
 # POMDPs.create_observation(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})    = RockSampleObs(-1)
-
-
 
 start_state(pomdp::RockSample) = 
     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
