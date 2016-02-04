@@ -184,13 +184,13 @@ type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs
 end
 
 ## distribution types
-type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution
+type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution{RockSampleState}
     pomdp::RockSample#{RockSampleState, RockSampleAction, RockSampleObs}
     state::RockSampleState
     action::RockSampleAction
 end
 
-type RockSampleObsDistribution <: POMDPs.AbstractDistribution
+type RockSampleObsDistribution <: POMDPs.AbstractDistribution{RockSampleObs}
     pomdp::RockSample#{RockSampleState, RockSampleAction, RockSampleObs}
     state::RockSampleState
     action::RockSampleAction
@@ -198,7 +198,7 @@ type RockSampleObsDistribution <: POMDPs.AbstractDistribution
     debug::Int64 #TODO: consider removing
     
     #TODO: consider removing, not really needed except for debugging
-    function RockSampleObsDistribution(pomdp::RockSample,#{RockSampleState, RockSampleAction, RockSampleObs},
+    function RockSampleObsDistribution(pomdp::RockSample,
                                                state::RockSampleState,
                                                action::RockSampleAction,
                                                next_state::RockSampleState,
@@ -235,9 +235,9 @@ POMDPs.create_transition_distribution(pomdp::RockSample)    =
     RockSampleTransitionDistribution(pomdp, RockSampleState(-1), RockSampleAction(-1))
 POMDPs.create_observation_distribution(pomdp::RockSample)   =
     RockSampleObsDistribution(pomdp,
-                                      RockSampleState(-1),
-                                      RockSampleAction(-1),
-                                      RockSampleState(-1))
+                              RockSampleState(-1),
+                              RockSampleAction(-1),
+                              RockSampleState(-1))
 
 function POMDPs.initial_belief(
                         pomdp::RockSample,
@@ -556,7 +556,7 @@ function POMDPs.transition(
     distribution.state = state
     distribution.action = action
 
-    return nothing
+    return distribution
 end
 
 function POMDPs.observation(
@@ -572,15 +572,14 @@ function POMDPs.observation(
     distribution.action = action
     distribution.next_state = next_state
 
-    return nothing
+    return distribution
 end
 
 function POMDPs.rand(
                     rng::AbstractRNG,
                     distribution::RockSampleTransitionDistribution,
                     ::RockSampleState)
-
-    
+ 
     return RockSampleState(
         distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index)
 end
