@@ -2,7 +2,7 @@ using POMDPs
 using DESPOT
 using POMDPToolbox
 
-include("rockSample_int.jl")
+include("rockSampleInt.jl")
 include("rockSampleParticleLB.jl")
 include("rockSampleFringeUB.jl")
 include("../../upperBound/upperBoundNonStochastic.jl")
