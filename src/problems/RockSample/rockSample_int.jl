@@ -1,8 +1,3 @@
-
-import Base:
-    ==,
-    hash
-
 typealias RockSampleState Int64
 RockSampleState() = RockSampleState(-1)
 
@@ -28,56 +23,13 @@ immutable RockSampleObsSpace <: AbstractSpace
     max_index::Int64
 end
 
-## space iterator types
-immutable RockSampleStateIterator
-    min_index::Int64
-    max_index::Int64
-end
-
-immutable RockSampleActionIterator
-    min_index::Int64
-    max_index::Int64
-end
-
-immutable RockSampleObsIterator
-    min_index::Int64
-    max_index::Int64
-end
-
-# iterator enabling functions
-Base.start(::RockSampleStateIterator)   = RockSampleState(0)
-Base.start(::RockSampleActionIterator)  = RockSampleAction(0)
-Base.start(::RockSampleObsIterator)     = RockSampleObs(0)
-
-Base.next(::RockSampleStateIterator, state::RockSampleState)            = 
-    (state, RockSampleState(state+1))
-Base.next(::RockSampleActionIterator, action::RockSampleAction)         =
-    (action, RockSampleAction(action+1))
-Base.next(::RockSampleObsIterator, obs::RockSampleObs)  =
-    (obs, RockSampleObs(obs+1))
-
-Base.done(iter::RockSampleStateIterator, state::RockSampleState)            =
-    (state > iter.max_index)
-Base.done(iter::RockSampleActionIterator, action::RockSampleAction)         =
-    (action > iter.max_index)
-Base.done(iter::RockSampleObsIterator, obs::RockSampleObs)  = 
-    (obs > iter.max_index)
-
-## iterator creation functions
+# ## iterator creation functions
 POMDPs.iterator(space::RockSampleStateSpace)        =
-    RockSampleStateIterator(space.min_index, space.max_index)
+    space.min_index:space.max_index
 POMDPs.iterator(space::RockSampleActionSpace)       =
-    RockSampleActionIterator(space.min_index, space.max_index)
-POMDPs.iterator(space::RockSampleObsSpace)  =
-    RockSampleObsIterator(space.min_index, space.max_index)
-
-# ==(x::RockSampleState,  y::RockSampleState)  = (x == y)
-# ==(x::RockSampleAction, y::RockSampleAction) = (x == y)
-# ==(x::RockSampleObs,    y::RockSampleObs)    = (x == y)
-
-Base.hash(x::RockSampleState,  h::Int64 = 0)   = x
-Base.hash(x::RockSampleAction, h::Int64 = 0)   = x
-Base.hash(x::RockSampleObs, h::Int64 = 0)      = x
+    space.min_index:space.max_index
+POMDPs.iterator(space::RockSampleObsSpace)          =
+    space.min_index:space.max_index
 
 ######## RockSample type definition ########
 type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs}
@@ -193,14 +145,6 @@ type RockSampleObsDistribution <: POMDPs.AbstractDistribution{RockSampleObs}
         return this
     end
 end
-
-## create_* functions
-
-# This function returns the start state, serving two purposes simultaneously
-# POMDPs.create_state(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})          =
-#     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
-# POMDPs.create_action(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})         = RockSampleAction(-1)
-# POMDPs.create_observation(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})    = RockSampleObs(-1)
 
 start_state(pomdp::RockSample) = 
     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
@@ -407,89 +351,89 @@ function init_problem(pomdp::RockSample)
     # T and R - ALL INDICES BELOW ARE OFFSET BY +1 (for 1-based array indexing)
     for cell in 0 : pomdp.n_cells-1
         for rock_set = 0:(1 << pomdp.n_rocks)-1
-        s_index = make_state_index(pomdp, cell, rock_set)
+        s = make_state_index(pomdp, cell, rock_set)
         
             #initialize transition and rewards with default values
-            for a_index in 0:pomdp.n_actions-1
-                pomdp.T[s_index+1,a_index+1] = 
-                    RockSampleState(s_index)
-                pomdp.R[s_index+1,a_index+1] = 0.
+            for a in 0:pomdp.n_actions-1
+                pomdp.T[s+1,a+1] = 
+                    RockSampleState(s)
+                pomdp.R[s+1,a+1] = 0.
             end
             
             row, col = pomdp.cell_to_coords[cell+1]
             # North
             if row == 0
-                pomdp.T[s_index+1,1] = 
-                    RockSampleState(s_index)
-                pomdp.R[s_index+1,1] = -100.
+                pomdp.T[s+1,1] = 
+                    RockSampleState(s)
+                pomdp.R[s+1,1] = -100.
             else
-                pomdp.T[s_index+1,1] = 
+                pomdp.T[s+1,1] = 
                     RockSampleState(make_state_index(pomdp, cell_num(pomdp,row-1,col), rock_set))
-                pomdp.R[s_index+1,1] = 0
+                pomdp.R[s+1,1] = 0
             end
 
             # South
             if row == pomdp.grid_size-1
-                pomdp.T[s_index+1,2] = 
-                    RockSampleState(s_index)
-                pomdp.R[s_index+1,2] = -100.
+                pomdp.T[s+1,2] = 
+                    RockSampleState(s)
+                pomdp.R[s+1,2] = -100.
             else
-                pomdp.T[s_index+1,2] = 
+                pomdp.T[s+1,2] = 
                     RockSampleState(make_state_index(pomdp, cell_num(pomdp,row+1,col), rock_set))
-                pomdp.R[s_index+1,2] = 0.
+                pomdp.R[s+1,2] = 0.
             end
 
             # East
             if col == pomdp.grid_size-1
-                pomdp.T[s_index+1,3] = 
+                pomdp.T[s+1,3] = 
                     RockSampleState(make_state_index(pomdp, pomdp.n_cells, rock_set))
-                pomdp.R[s_index+1,3] = 10.
+                pomdp.R[s+1,3] = 10.
             else
-                pomdp.T[s_index+1,3] = 
+                pomdp.T[s+1,3] = 
                     RockSampleState(make_state_index(pomdp, cell_num(pomdp,row,col+1), rock_set))
-                pomdp.R[s_index+1,3] = 0.
+                pomdp.R[s+1,3] = 0.
             end
 
             # West
             if col == 0
-                pomdp.T[s_index+1, 4] = RockSampleState(s_index)
-                pomdp.R[s_index+1, 4] = -100.
+                pomdp.T[s+1, 4] = RockSampleState(s)
+                pomdp.R[s+1, 4] = -100.
             else
-                pomdp.T[s_index+1, 4] = 
+                pomdp.T[s+1, 4] = 
                     RockSampleState(make_state_index(pomdp, cell_num(pomdp,row,col-1), rock_set))
-                pomdp.R[s_index+1, 4] = 0.
+                pomdp.R[s+1, 4] = 0.
             end
 
             # Sample
             rock = pomdp.rock_at_cell[cell+1] # array
             if rock != -1
                 if rock_status(rock, rock_set)
-                    pomdp.T[s_index+1, 5] = 
+                    pomdp.T[s+1, 5] = 
                         RockSampleState(make_state_index(pomdp, cell, sample_rock_set(rock, rock_set)))
-                    pomdp.R[s_index+1, 5] = +10.
+                    pomdp.R[s+1, 5] = +10.
                 else
-                    pomdp.T[s_index+1, 5] = RockSampleState(s_index)
-                    pomdp.R[s_index+1, 5] = -10.
+                    pomdp.T[s+1, 5] = RockSampleState(s)
+                    pomdp.R[s+1, 5] = -10.
                 end
             else
-                pomdp.T[s_index+1, 5] = RockSampleState(s_index)
-                pomdp.R[s_index+1, 5] = -100.
+                pomdp.T[s+1, 5] = RockSampleState(s)
+                pomdp.R[s+1, 5] = -100.
             end
 
             # Check
-            for a_index in 5:pomdp.n_actions-1
-                pomdp.T[s_index+1, a_index+1] = RockSampleState(s_index)
-                pomdp.R[s_index+1, a_index+1] = 0.
+            for a in 5:pomdp.n_actions-1
+                pomdp.T[s+1, a+1] = RockSampleState(s)
+                pomdp.R[s+1, a+1] = 0.
             end
         end
     end
 
     # Terminal states
     for k = 0:(1 << pomdp.n_rocks)-1
-        s_index = make_state_index(pomdp, pomdp.n_cells, k);
-        for a_index in 0:pomdp.n_actions-1
-            pomdp.T[s_index+1, a_index+1] = RockSampleState(s_index)
-            pomdp.R[s_index+1, a_index+1] = 0.
+        s = make_state_index(pomdp, pomdp.n_cells, k);
+        for a in 0:pomdp.n_actions-1
+            pomdp.T[s+1, a+1] = RockSampleState(s)
+            pomdp.R[s+1, a+1] = 0.
         end
     end
 
@@ -518,7 +462,7 @@ make_state_index(pomdp::RockSample, cell::Int64, rock_set::Int64) =
     convert(Int64, (cell << pomdp.n_rocks) + rock_set)
 
 POMDPs.reward(pomdp::RockSample, s::RockSampleState, a::RockSampleAction) =
-    pomdp.R[s+1, a+1]
+    pomdp.R[s+1,a+1]
 
 function POMDPs.transition(
                     pomdp::RockSample,
@@ -590,7 +534,7 @@ end
 
 function POMDPs.rand(
                     rng::AbstractRNG,
-                    state_space::RockSampleStateIterator,
+                    state_space::RockSampleStateSpace,
                     ::RockSampleState)
 
     if OS_NAME == :Linux
@@ -644,7 +588,7 @@ end
 
 POMDPs.isterminal(pomdp::RockSample, s::RockSampleState)    = 
     cell_of(pomdp,s) == pomdp.n_cells
-POMDPs.isterminal(pomdp::RockSample, obs::RockSampleObs)    =
+POMDPs.isterminal_obs(pomdp::RockSample, obs::RockSampleObs)    =
     obs == pomdp.TERMINAL_OBS
 
 # Which cell the agent is in

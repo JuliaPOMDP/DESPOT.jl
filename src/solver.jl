@@ -228,7 +228,7 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
                 solver.random_streams.streams[p.id+1, node.depth+1],
                 curr_action)
             
-            if isterminal(pomdp, solver.next_state) && !isterminal(pomdp, solver.curr_obs)
+            if isterminal(pomdp, solver.next_state) && !isterminal_obs(pomdp, solver.curr_obs)
                 error("Terminal state in a particle mismatches observation")
             end
 

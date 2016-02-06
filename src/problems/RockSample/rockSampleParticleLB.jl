@@ -117,8 +117,6 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
         trans_distribution.state = s
         trans_distribution.action = a
         next_s = POMDPs.rand(rng, trans_distribution, next_s)
-        println("next_s: $next_s")
-        println("s: $s")
         if isterminal(pomdp, next_s)
             prev_cell_coord[1] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][1]
             prev_cell_coord[2] = pomdp.cell_to_coords[cell_of(pomdp, s)+1][2]
@@ -150,13 +148,13 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
         end
 
         # Move in the opposite direction since we're going backwards
-        if index(act) == 0
+        if index(pomdp, act) == 0
             prev_cell_coord[1] += 1
-        elseif index(act) == 1
+        elseif index(pomdp, act) == 1
             prev_cell_coord[1] -= 1
-        elseif index(act) == 2
+        elseif index(pomdp, act) == 2
             prev_cell_coord[2] -= 1
-        elseif index(act) == 3
+        elseif index(pomdp, act) == 3
             prev_cell_coord[2] += 1
         else
             @assert(false)

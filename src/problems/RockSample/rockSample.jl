@@ -5,19 +5,6 @@ import Base:
 
 ##### state, action, and observation spaces and related functions #####
 
-## basic types
-# immutable RockSampleState <: POMDPs.State
-#     index::Int64
-# end
-# 
-# immutable RockSampleAction <: POMDPs.Action
-#     index::Int64
-# end
-# 
-# immutable RockSampleObs <: POMDPs.Observation
-#     index::Int64
-# end
-
 immutable RockSampleState
     index::Int64
 end
@@ -34,17 +21,17 @@ end
 RockSampleObs() = RockSampleObs(-1)
 
 ## spaces
-immutable RockSampleStateSpace <: AbstractSpace
+immutable RockSampleStateSpace <: AbstractSpace{RockSampleState}
     min_index::Int64
     max_index::Int64
 end
 
-immutable RockSampleActionSpace <: AbstractSpace
+immutable RockSampleActionSpace <: AbstractSpace{RockSampleAction}
     min_index::Int64
     max_index::Int64
 end
 
-immutable RockSampleObsSpace <: AbstractSpace
+immutable RockSampleObsSpace <: AbstractSpace{RockSampleObs}
     min_index::Int64
     max_index::Int64
 end
@@ -91,8 +78,6 @@ POMDPs.iterator(space::RockSampleActionSpace)       =
     RockSampleActionIterator(space.min_index, space.max_index)
 POMDPs.iterator(space::RockSampleObsSpace)  =
     RockSampleObsIterator(space.min_index, space.max_index)
-
-POMDPs.index(pomdp::POMDP, state::RockSampleState)  = state.index
 
 ==(x::RockSampleState, y::RockSampleState) = (x.index == y.index)
 ==(x::RockSampleAction, y::RockSampleAction) = (x.index == y.index)
@@ -181,6 +166,10 @@ type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs
           return this
      end
 end
+
+POMDPs.index(pomdp::POMDP, state::RockSampleState)   = state.index
+POMDPs.index(pomdp::POMDP, action::RockSampleAction) = action.index
+POMDPs.index(pomdp::POMDP, obs::RockSampleObs)       = obs.index
 
 ## distribution types
 type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution{RockSampleState}
@@ -612,7 +601,7 @@ end
 
 function POMDPs.rand(
                     rng::AbstractRNG,
-                    state_space::RockSampleStateIterator,
+                    state_space::RockSampleStateSpace,
                     ::RockSampleState)
 
     if OS_NAME == :Linux
@@ -666,7 +655,7 @@ end
 
 POMDPs.isterminal(pomdp::RockSample, s::RockSampleState)            = 
     cell_of(pomdp, s) == pomdp.n_cells
-POMDPs.isterminal(pomdp::RockSample, obs::RockSampleObs)    =
+POMDPs.isterminal_obs(pomdp::RockSample, obs::RockSampleObs)    =
     obs.index == pomdp.TERMINAL_OBS
 
 # Which cell the agent is in

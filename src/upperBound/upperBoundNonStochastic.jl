@@ -74,7 +74,7 @@ function DESPOT.upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
 
   for p in particles
     weight_sum += p.weight
-    total_cost += p.weight * ub.upper_bound_memo[p.state.index+1]
+    total_cost += p.weight * ub.upper_bound_memo[index(pomdp,p.state)+1]
   end
   return total_cost / weight_sum
 end
