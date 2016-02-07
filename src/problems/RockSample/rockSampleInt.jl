@@ -111,9 +111,9 @@ type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs
      end
 end
 
-POMDPs.index(::RockSample, state::RockSampleState)  = state
-POMDPs.index(::RockSample, action::RockSampleAction) = action
-POMDPs.index(::RockSample, obs::RockSampleObs)    = obs
+POMDPs.state_index(::RockSample, state::RockSampleState)  = state
+POMDPs.action_index(::RockSample, action::RockSampleAction) = action
+POMDPs.obs_index(::RockSample, obs::RockSampleObs)    = obs
 
 ## distribution types
 type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution{RockSampleState}

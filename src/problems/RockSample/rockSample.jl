@@ -167,9 +167,9 @@ type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs
      end
 end
 
-POMDPs.index(pomdp::POMDP, state::RockSampleState)   = state.index
-POMDPs.index(pomdp::POMDP, action::RockSampleAction) = action.index
-POMDPs.index(pomdp::POMDP, obs::RockSampleObs)       = obs.index
+POMDPs.state_index(pomdp::RockSample, state::RockSampleState)   = state.index
+POMDPs.action_index(pomdp::RockSample, action::RockSampleAction) = action.index
+POMDPs.obs_index(pomdp::RockSample, obs::RockSampleObs)       = obs.index
 
 ## distribution types
 type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution{RockSampleState}
@@ -201,14 +201,6 @@ type RockSampleObsDistribution <: POMDPs.AbstractDistribution{RockSampleObs}
         return this
     end
 end
-
-## create_* functions
-
-# This function returns the start state, serving two purposes simultaneously
-# POMDPs.create_state(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})          =
-#     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
-# POMDPs.create_action(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})         = RockSampleAction(-1)
-# POMDPs.create_observation(pomdp::RockSample{RockSampleState, RockSampleAction, RockSampleObs})    = RockSampleObs(-1)
 
 start_state(pomdp::RockSample) = 
     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))

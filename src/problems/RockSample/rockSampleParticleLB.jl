@@ -65,12 +65,12 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
     # bottleneck.
 
     for p in particles
-        if lb.weight_sum_of_state[index(pomdp,p.state)+1] == -Inf #Array
-            lb.weight_sum_of_state[index(pomdp,p.state)+1] = p.weight
-            state_seen[seen_ptr] = index(pomdp,p.state)
+        if lb.weight_sum_of_state[state_index(pomdp,p.state)+1] == -Inf #Array
+            lb.weight_sum_of_state[state_index(pomdp,p.state)+1] = p.weight
+            state_seen[seen_ptr] = state_index(pomdp,p.state)
             seen_ptr += 1
         else
-            lb.weight_sum_of_state[index(pomdp,p.state)+1] += p.weight;
+            lb.weight_sum_of_state[state_index(pomdp,p.state)+1] += p.weight;
         end
     end
     
@@ -113,7 +113,7 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
     rng = DESPOTRandomNumber(0) # dummy RNG
     
     while true
-        a = ub_actions[index(pomdp,s)+1]
+        a = ub_actions[state_index(pomdp,s)+1]
         trans_distribution.state = s
         trans_distribution.action = a
         next_s = POMDPs.rand(rng, trans_distribution, next_s)
@@ -139,7 +139,7 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
     for i = length(optimal_policy):-1:1
         act = optimal_policy[i]
         ret *= pomdp.discount
-        if index(pomdp,act) == 4
+        if action_index(pomdp,act) == 4
             rock = pomdp.rock_at_cell[cell_num(pomdp, prev_cell_coord[1], prev_cell_coord[2])+1]
             if rock != -1
                 ret = expected_sampling_value[rock+1] + ret # expected sampling value is an array
@@ -148,13 +148,13 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
         end
 
         # Move in the opposite direction since we're going backwards
-        if index(pomdp, act) == 0
+        if action_index(pomdp, act) == 0
             prev_cell_coord[1] += 1
-        elseif index(pomdp, act) == 1
+        elseif action_index(pomdp, act) == 1
             prev_cell_coord[1] -= 1
-        elseif index(pomdp, act) == 2
+        elseif action_index(pomdp, act) == 2
             prev_cell_coord[2] -= 1
-        elseif index(pomdp, act) == 3
+        elseif action_index(pomdp, act) == 3
             prev_cell_coord[2] += 1
         else
             @assert(false)

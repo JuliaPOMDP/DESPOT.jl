@@ -29,7 +29,7 @@ function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
     fill!(current_level_ub_memo, -Inf)
     
     for s in iterator(states(pomdp))
-        next_level_ub_memo[index(pomdp,s)+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
+        next_level_ub_memo[state_index(pomdp,s)+1] = fringe_upper_bound(pomdp,s) # 1-based indexing
     end
     
     for i in 1:config.search_depth # length of horizon
@@ -39,12 +39,13 @@ function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
                 trans_distribution.action = a
                 next_state = POMDPs.rand(rng, trans_distribution, next_state)
                 r = reward(pomdp, s, a)
-                possibly_improved_value = r + pomdp.discount * next_level_ub_memo[index(pomdp,next_state)+1]
-                if (possibly_improved_value > current_level_ub_memo[index(pomdp,s)+1])
-                    current_level_ub_memo[index(pomdp,s)+1] = possibly_improved_value
+                possibly_improved_value = 
+                    r + pomdp.discount * next_level_ub_memo[state_index(pomdp,next_state)+1]
+                if (possibly_improved_value > current_level_ub_memo[state_index(pomdp,s)+1])
+                    current_level_ub_memo[state_index(pomdp,s)+1] = possibly_improved_value
                     if i == config.search_depth
                         # Set best actions when last level is being computed
-                        ub.upper_bound_act[index(pomdp,s)+1] = a
+                        ub.upper_bound_act[state_index(pomdp,s)+1] = a
                     end
                 end
             end # for a
@@ -74,7 +75,7 @@ function DESPOT.upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
 
   for p in particles
     weight_sum += p.weight
-    total_cost += p.weight * ub.upper_bound_memo[index(pomdp,p.state)+1]
+    total_cost += p.weight * ub.upper_bound_memo[state_index(pomdp,p.state)+1]
   end
   return total_cost / weight_sum
 end
