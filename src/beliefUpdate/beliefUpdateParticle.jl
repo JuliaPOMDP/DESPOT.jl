@@ -158,7 +158,7 @@ function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
     num_eff_particles = 1./num_eff_particles
     if (num_eff_particles < bu.n_particles * bu.eff_particle_fraction) ||
         (length(updated_belief.particles) < bu.n_particles)
-        resampled_set = Array(DESPOTParticle{bu.state_type}, bu.n_particles)
+        resampled_set = Array(DESPOTParticle{S}, bu.n_particles)
         sample_particles!(resampled_set, 
                           updated_belief.particles,
                           bu.n_particles,
