@@ -22,8 +22,8 @@ The results below are averages of 5 runs per solver:
 |Implementation				|Time			|Comments											|
 ----------------------------|--------------:|---------------------------------------------------|
 |C++ 						|7.46s			|													|
-|Julia (without POMCP.jl)	|28.35s			|													|
-|Julia (with POMCP.jl)		|36.31s			|													|
+|Julia (without POMCP.jl)	|27.54s			|Retested in a cleaner configuration				|
+|Julia (with POMCP.jl)		|33.58s			|Retested in a cleaner configuration				|
 
 *RockSample, grid_size = 11, num_rocks = 11*
 
