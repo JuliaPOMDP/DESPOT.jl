@@ -84,17 +84,6 @@ end
 function new_root{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
                   pomdp::POMDP{S,A,O},
                   particles::Vector{DESPOTParticle{S}})
-  
-#     lbound::Float64, solver.root_default_action = lower_bound(solver.lb,
-#                                                                 pomdp,
-#                                                                 particles,
-#                                                                 solver.ub.upper_bound_act,
-#                                                                 solver.config)
-#                                                             
-#     ubound::Float64 = upper_bound(solver.ub,
-#                                     pomdp,
-#                                     particles,
-#                                     solver.config)
         
     solver.root, solver.root_default_action = VNode{S,A,O,L,U}(
                         pomdp,

@@ -335,9 +335,6 @@ function init_15_15(pomdp::RockSample)
   pomdp.robot_start_cell = cell_num(pomdp,5,0)
 end
 
-# start_state(pomdp::RockSample) = 
-#     make_state(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start)
-
 function init_general(pomdp::RockSample, seed::Array{UInt32,1})
   
     rockIndex::Int64 = 1 # rocks is an array
