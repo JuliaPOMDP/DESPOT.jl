@@ -111,9 +111,9 @@ type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs
      end
 end
 
-POMDPs.state_index(::RockSample, state::RockSampleState)  = state
+POMDPs.state_index(::RockSample, state::RockSampleState)    = state
 POMDPs.action_index(::RockSample, action::RockSampleAction) = action
-POMDPs.obs_index(::RockSample, obs::RockSampleObs)    = obs
+POMDPs.obs_index(::RockSample, obs::RockSampleObs)          = obs
 
 ## distribution types
 type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution{RockSampleState}
@@ -600,6 +600,7 @@ sample_rock_set(rock::Int64, rock_set::Int64) = (rock_set & ~(1 << rock))
 # The set of rocks in the state
 rock_set_of(pomdp::RockSample, s::RockSampleState) = 
     s & ((1 << pomdp.n_rocks)-1)
+
 
 function show_state(pomdp::RockSample, s::RockSampleState)
   ac = cell_of(pomdp, s)
