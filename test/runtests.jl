@@ -13,8 +13,8 @@ n_particles             = 500 # for both solver and belief updater
 main_seed               = 42
 discount                = 0.95
 search_depth            = 90
-time_per_move           = -1 #default: 1
-pruning_constant        = 0
+time_per_move           = -1. #default: 1
+pruning_constant        = 0.
 eta                     = 0.95
 sim_len                 = -1
 max_trials              = 100 #default: -1
@@ -37,7 +37,8 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     approximate_ubound = approximate_ubound,
                     debug = debug
                     )
-        
+
+println(sim_steps, undiscounted_return, discounted_return, run_time)
 @test               sim_steps == 11
 @test_approx_eq_eps discounted_return 12.62 1e-2
 @test               undiscounted_return == 20.00
