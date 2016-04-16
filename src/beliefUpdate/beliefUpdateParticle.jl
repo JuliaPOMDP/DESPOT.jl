@@ -1,7 +1,7 @@
 import POMDPs: update
 using DESPOT
 
-type DESPOTBeliefUpdater{S,A,O,TD,OD} <: POMDPs.BeliefUpdater{S,A,O}
+type DESPOTBeliefUpdater{S,A,O,TD,OD} <: POMDPs.BeliefUpdater
     pomdp::POMDP
     num_updates::Int64
     rng::DESPOTDefaultRNG

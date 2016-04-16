@@ -1,5 +1,5 @@
 
-type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver{S,A,O}
+type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
     lb::L
     ub::U
@@ -12,7 +12,7 @@ type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver{S,A,O}
     transition_distribution::TD
     observation_distribution::OD
     rng::DESPOT.DESPOTRandomNumber
-    curr_reward::POMDPs.Reward
+    curr_reward::DESPOTReward
     next_state::S
     curr_obs::O
 

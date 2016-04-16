@@ -16,6 +16,8 @@ abstract DESPOTUpperBound{S,A,O}
 abstract DESPOTLowerBound{S,A,O}
 abstract DESPOTBeliefUpdate{S,A,O}
 
+typealias DESPOTReward Float64
+
 type DESPOTRandomNumber <: POMDPs.AbstractRNG
     number::Float64
 end
@@ -26,7 +28,7 @@ type DESPOTParticle{S}
   weight::Float64
 end
 
-type DESPOTBelief{S,A,O} <: POMDPs.Belief{S}
+type DESPOTBelief{S,A,O} <: POMDPs.Belief
     particles::Vector{DESPOTParticle{S}}
     history::History{A,O}
 end
@@ -66,7 +68,7 @@ include("nodes.jl")
 include("utils.jl")
 include("solver.jl")
 
-type DESPOTPolicy{S,A,O,L,U} <: POMDPs.Policy{S,A,O}
+type DESPOTPolicy{S,A,O,L,U} <: POMDPs.Policy
     solver::DESPOTSolver{S,A,O,L,U}
     pomdp ::POMDPs.POMDP{S,A,O}
 end
@@ -125,6 +127,7 @@ export
     DESPOTConfig,
     DESPOTDefaultRNG,
     DESPOTRandomNumber,
+    DESPOTReward,
     ######## HISTORY-RELATED TYPES AND METHODS ######
     History, #TODO: need to handle history-related stuff better, place somewhere else
     add,

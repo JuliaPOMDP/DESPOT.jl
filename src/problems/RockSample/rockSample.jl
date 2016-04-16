@@ -113,7 +113,7 @@ type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs
     observation_effectiveness::Array{Float64,2}
     rocks::Array{Int64,1}
     T::Array{RockSampleState,2}
-    R::Array{POMDPs.Reward,2}
+    R::Array{DESPOTReward,2}
     actions::Array{Int64,1} # needed for large problems
     
     #observation aliases
