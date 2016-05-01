@@ -123,10 +123,13 @@ function execute(;
                              seed = seed,
                              rand_max = rand_max,
                              n_particles = n_particles)
-                             
+    
+    # create initial belief and allocate an updated belief object
+    initial_states = initial_state_distribution(pomdp)
     current_belief = create_belief(bu)
+    initialize_belief(bu, initial_states, current_belief) 
     updated_belief = create_belief(bu)
-    initial_belief(pomdp, current_belief)   
+ 
     custom_lb = RockSampleParticleLB{RockSampleState, RockSampleAction, RockSampleObs}(pomdp) # custom lower bound to use with DESPOT solver
     custom_ub = UpperBoundNonStochastic{RockSampleState, RockSampleAction, RockSampleObs}(pomdp)
       

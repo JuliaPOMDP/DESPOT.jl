@@ -217,55 +217,17 @@ POMDPs.create_observation_distribution(pomdp::RockSample)   =
                               RockSampleAction(-1),
                               RockSampleState(-1))
 
-function POMDPs.initial_belief(
-                        pomdp::RockSample,
-                        belief::POMDPToolbox.ParticleBelief{RockSampleState} = create_belief(pomdp))
-
-    fill_initial_belief_particles!(pomdp, belief.particles)
-    return belief
-end
-
-function POMDPs.initial_belief(
-                        pomdp::RockSample,
-                        belief::DESPOT.DESPOTBelief{RockSampleState})
+# default initial state distribution represented as a set of generic particles
+function POMDPs.initial_state_distribution(pomdp::RockSample)    
+    n_states = 1 << pomdp.n_rocks
+    pool = Array(POMDPToolbox.Particle{RockSampleState},0)
     
-    fill_initial_belief_particles!(pomdp, belief.particles)
-    return belief
-end
-
-# default belief represented through generic particles
-function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{POMDPToolbox.Particle{RockSampleState}})    
-    
-    pool = Array(POMDPToolbox.Particle{RockSampleState},0)   
-    
-    p = 1.0/(1 << pomdp.n_rocks)
-    for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
-        push!(pool, POMDPToolbox.Particle{RockSampleState}(make_state(pomdp, k), k, p))
+    p = 1.0/n_states
+    for k = 0:n_states-1 #TODO: can make faster, potentially
+        push!(pool, POMDPToolbox.Particle{RockSampleState}(RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, k)), p))
     end
-
-    shuffle!(particles)
-    return nothing
-end
-
-# belief supplied in the format of a specific POMDP solver, DESPOT (https://github.com/sisl/DESPOT.jl)
-function fill_initial_belief_particles!(pomdp::RockSample, particles::Vector{DESPOTParticle{RockSampleState}})    
-    
-    n_particles = length(particles)
-    pool = Array(DESPOTParticle{RockSampleState},0)   
-    
-    p = 1.0/(1 << pomdp.n_rocks)
-    for k = 0:(1 << pomdp.n_rocks)-1 #TODO: can make faster, potentially
-        push!(pool,
-              DESPOTParticle{RockSampleState}(RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, k)), k, p))
-    end
-    
-    #shuffle!(particles) #TODO: Uncomment!!!
-    DESPOT.sample_particles!(particles,
-                             pool,
-                             n_particles,
-                             pomdp.belief_seed,
-                             pomdp.rand_max)
-    return nothing
+                             
+    return POMDPToolbox.ParticleDistribution(pool)
 end
 
 ## accessor functions

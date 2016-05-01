@@ -1,7 +1,7 @@
 import POMDPs: update
 using DESPOT
 
-type DESPOTBeliefUpdater{S,A,O,TD,OD} <: POMDPs.BeliefUpdater
+type DESPOTBeliefUpdater{S,A,O,TD,OD} <: POMDPs.Updater
     pomdp::POMDP
     num_updates::Int64
     rng::DESPOTDefaultRNG
@@ -57,6 +57,31 @@ create_belief{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O}) =
 get_belief_update_seed(bu::DESPOTBeliefUpdater) = bu.seed $ (bu.n_particles + 1)
 
 reset_belief(bu::DESPOTBeliefUpdater) = bu.num_updates = 0
+
+function initialize_belief{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
+                  state_distribution::ParticleDistribution{S},
+                  new_belief::DESPOTBelief = create_belief{S,A,O}(bu))
+                  
+    n_particles = length(state_distribution.particles)
+        
+    # convert to DESPOTParticle type
+    pool = Array(DESPOTParticle{S}, n_particles)
+
+    for i in 1:n_particles
+        pool[i] = DESPOTParticle{S}(state_distribution.particles[i].state,
+                                 i, # id
+                                 state_distribution.particles[i].weight)
+    end
+    
+    DESPOT.sample_particles!(new_belief.particles,
+                             pool,
+                             bu.n_particles,
+                             bu.belief_update_seed,
+                             bu.rand_max)
+                             
+    #shuffle!(new_belief.particles) #TODO: uncomment if higher randomness is required
+    return new_belief
+end
 
 function normalize!{S}(particles::Vector{DESPOTParticle{S}}) 
     prob_sum = 0.0
