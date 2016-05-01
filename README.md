@@ -114,7 +114,7 @@ Instantiate an object of type *MyUpperBound*, e.g.:
 ```julia
 my_ub = MyUpperBound(pomdp)
 ```
-Then pass it to the DESPOT solver as a keyword argument:
+then pass it to the DESPOT solver as a keyword argument:
 ```julia
 solver = DESPOTSolver(pomdp, 			# reference to the problem model
                       current_belief, 	# reference to the current belief structure
