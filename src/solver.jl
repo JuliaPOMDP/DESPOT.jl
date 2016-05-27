@@ -17,8 +17,7 @@ type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
     curr_obs::O
 
   # default constructor
-    function DESPOTSolver(pomdp::POMDPs.POMDP{S,A,O},
-                            belief::DESPOTBelief{S,A,O};
+    function DESPOTSolver(  belief::DESPOTBelief{S,A,O};
                             lb::DESPOTLowerBound{S,A,O} = L(),
                             ub::DESPOTUpperBound{S,A,O} = U(),
                             search_depth::Int64 = 90,
@@ -57,8 +56,6 @@ type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
         this.config.debug = debug        
         this.root_default_action = A()
         this.rng = DESPOTRandomNumber(-1)
-        this.transition_distribution = create_transition_distribution(pomdp)
-        this.observation_distribution = create_observation_distribution(pomdp)
         this.next_state = S()
         this.curr_obs = O()
         this.curr_reward = 0.0
@@ -70,6 +67,8 @@ end
 function init_solver{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
+    solver.transition_distribution = create_transition_distribution(pomdp)
+    solver.observation_distribution = create_observation_distribution(pomdp)
     solver.random_streams = RandomStreams(solver.config.n_particles,
                                           solver.config.search_depth,
                                           solver.config.main_seed)
