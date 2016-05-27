@@ -3,14 +3,11 @@
 
 # README #
 
-This repository contains a Julia language implementation of DESPOT POMDP algorithm, designed to work with the [POMDPs.jl](https://github.com/sisl/POMDPs.jl) API.
-The original (C++) version of DESPOT was developed at National University of Singapore and can be found here:
+This repository contains a Julia language implementation of DESPOT POMDP algorithm (http://www.comp.nus.edu.sg/~yenan/pub/somani2013despot.pdf), designed to work with the [POMDPs.jl](https://github.com/sisl/POMDPs.jl) API. 
+
+A C++ implementation of DESPOT was developed at National University of Singapore and can be found here:
 
 http://bigbird.comp.nus.edu.sg/pmwiki/farm/appl/index.php?n=Main.DownloadDespot
-
-A detailed description of the algorithm can be found in this paper:
-
-http://www.comp.nus.edu.sg/~yenan/pub/somani2013despot.pdf
 
 The code has been tested with Julia v0.4.2.
 
@@ -37,7 +34,7 @@ The following DESPOT-specific types are likely to be of interest to problem and 
 |DESPOTLowerBound		|Any			|An abstract type for defining types and functions for computing a lower bound			|
 |DESPOTPolicy			|POMDPs.Policy		|A custom policy type											|
 |DESPOTParticle			|Any			|A custom particle type used by the solver and the default belief updater				|
-|DESPOTBelief			|POMDPs.Belief		|A custom belief type containing both a particle-based belief and a solver history log		|
+|DESPOTBelief			|Any			|A custom belief type containing both a particle-based belief and a solver history log		|
 |DESPOTConfig			|Any			|A set of DESPOT configuration parameters								|
 |DESPOTDefaultRNG		|POMDPs.AbstractRNG	|The default multi-platform RNG type that can be used to advance the state of the simulation 	| 
 
@@ -117,7 +114,7 @@ Instantiate an object of type *MyUpperBound*, e.g.:
 ```julia
 my_ub = MyUpperBound(pomdp)
 ```
-Then pass it to the DESPOT solver as a keyword argument:
+then pass it to the DESPOT solver as a keyword argument:
 ```julia
 solver = DESPOTSolver(pomdp, 			# reference to the problem model
                       current_belief, 	# reference to the current belief structure
@@ -180,7 +177,10 @@ Upon successful execution, you should see output of the following form:
 Number of steps = 11  
 Undiscounted return = 20.00  
 Discounted return = 12.62  
-Runtime = 6.30 sec  
+Runtime = 2.45 sec
+
+## Performance ##
+Benchmarking results for DESPOT (on RockSample) can be found in [perflog.md](https://github.com/JuliaPOMDP/DESPOT.jl/test/perflog.md). As more problems are tested with DESPOT, their benchmarks will be included as well. 
 
 ## Bugs ##
 

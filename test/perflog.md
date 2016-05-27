@@ -14,21 +14,21 @@ The results below are averages of 5 runs per solver:
 |Implementation				|Time			|Comments											|
 ----------------------------|--------------:|---------------------------------------------------|
 |C++ 						|0.78s			|													|
-|Julia (without POMCP.jl)	|1.98s			|													|
-|Julia (with POMCP.jl)		|2.45s			|													|
+|Julia (without POMDPs.jl)	|1.98s			|													|
+|Julia (with POMDPs.jl)		|2.45s			|													|
 
 *RockSample, grid_size = 7, num_rocks = 8*
 
 |Implementation				|Time			|Comments											|
 ----------------------------|--------------:|---------------------------------------------------|
 |C++ 						|7.46s			|													|
-|Julia (without POMCP.jl)	|27.54s			|Retested in a cleaner configuration				|
-|Julia (with POMCP.jl)		|33.58s			|Retested in a cleaner configuration				|
+|Julia (without POMDPs.jl)	|27.54s			|				|
+|Julia (with POMDPs.jl)		|33.58s			|				|
 
 *RockSample, grid_size = 11, num_rocks = 11*
 
 |Implementation				|Time			|Comments											|
 ----------------------------|--------------:|---------------------------------------------------|
 |C++ 						|40.28s			|													|
-|Julia (without POMCP.jl)	|171.04s		|													|
-|Julia (with POMCP.jl)		|186.72s		|													|
+|Julia (without POMDPs.jl)	|171.04s		|													|
+|Julia (with POMDPs.jl)		|186.72s		|													|
