@@ -38,7 +38,7 @@ The following DESPOT-specific types are likely to be of interest to problem and 
 |DESPOTConfig			|Any			|A set of DESPOT configuration parameters								|
 |DESPOTDefaultRNG		|POMDPs.AbstractRNG	|The default multi-platform RNG type that can be used to advance the state of the simulation 	| 
 
-When defining problem-specific POMDPs.State, POMDPs.Action, and POMDPs.Observation subtypes, the problem developer needs to make sure that *hash()* functions and *==* operators for these subtypes are defined as well, as they are required by the solver. Problem-specific state, action, and observation spaces must be defined as iterable types, either by using existing iterable containers (such as arrays) or by defining *start()*, *next()*, and *finish()* functions for them. For more on this subject, please see [POMDPs.jl documentation](https://github.com/sisl/POMDPs.jl) and Julia documentation on [iteration](http://docs.julialang.org/en/latest/stdlib/collections/#iteration).
+When defining problem-specific state, action, and observation types, the problem developer needs to make sure that *hash()* functions and *==* operators for these types are defined as well, as they are required by the solver. Problem-specific state, action, and observation spaces must be defined as iterable types, either by using existing iterable containers (such as arrays) or by defining *start()*, *next()*, and *finish()* functions for them. For more on this subject, please see [POMDPs.jl documentation](https://github.com/sisl/POMDPs.jl) and Julia documentation on [iteration](http://docs.julialang.org/en/latest/stdlib/collections/#iteration).
 
 ## Instantiating a DESPOT solver ##
 
