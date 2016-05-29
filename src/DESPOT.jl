@@ -104,7 +104,8 @@ fringe_upper_bound{S,A,O}(pomdp::POMDP{S,A,O}, state::S) =
 # FUNCTIONS
 
 function action{S,A,O}(policy::DESPOTPolicy{S,A,O}, belief::DESPOTBelief{S})
-    new_root(policy.solver, policy.pomdp, belief.particles)
+#     new_root(policy.solver, policy.pomdp, belief.particles)
+    new_root(policy.solver, policy.pomdp, belief)
     a, n_trials = search(policy.solver, policy.pomdp) #TODO: return n_trials some other way
     return a
 end

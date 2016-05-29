@@ -17,7 +17,7 @@ type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
     curr_obs::O
 
   # default constructor
-    function DESPOTSolver(  belief::DESPOTBelief{S,A,O};
+    function DESPOTSolver(  ;
                             lb::DESPOTLowerBound{S,A,O} = L(),
                             ub::DESPOTUpperBound{S,A,O} = U(),
                             search_depth::Int64 = 90,
@@ -36,7 +36,6 @@ type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
         this = new()
         
         # supplied variables
-        this.belief = belief
         this.lb     = lb
         this.ub     = ub
         
@@ -82,11 +81,12 @@ end
 
 function new_root{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
                   pomdp::POMDP{S,A,O},
-                  particles::Vector{DESPOTParticle{S}})
-        
+                  belief::DESPOTBelief{S})
+    
+    solver.belief = belief
     solver.root, solver.root_default_action = VNode{S,A,O,L,U}(
                         pomdp,
-                        particles,
+                        belief.particles,
                         solver.lb, 
                         solver.ub,
                         0,

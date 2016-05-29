@@ -140,7 +140,6 @@ function execute(;
                                         UpperBoundNonStochastic,
                                         RockSampleTransitionDistribution,
                                         RockSampleObsDistribution}(
-                               current_belief,
                                # specify the optional keyword parameters
                                lb = custom_lb, # use the custom lower bound
                                ub = custom_ub, # use the custom lower bound
