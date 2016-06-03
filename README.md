@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/JuliaPOMDP/DESPOT.jl.svg?token=PkueYtjwfA15svyJQV4F&branch=master)](https://travis-ci.com/JuliaPOMDP/DESPOT.jl)
+[![Build Status](https://travis-ci.org/JuliaPOMDP/DESPOT.jl.svg?branch=master)](https://travis-ci.com/JuliaPOMDP/DESPOT.jl)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaPOMDP/DESPOT.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaPOMDP/DESPOT.jl?branch=master)
 
 # README #
