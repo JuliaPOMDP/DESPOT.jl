@@ -1,7 +1,6 @@
+# DESPOT.jl
 [![Build Status](https://travis-ci.org/JuliaPOMDP/DESPOT.jl.svg?branch=master)](https://travis-ci.com/JuliaPOMDP/DESPOT.jl)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaPOMDP/DESPOT.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaPOMDP/DESPOT.jl?branch=master)
-
-# README #
 
 This repository contains a Julia language implementation of DESPOT POMDP algorithm (http://www.comp.nus.edu.sg/~yenan/pub/somani2013despot.pdf), designed to work with the [POMDPs.jl](https://github.com/sisl/POMDPs.jl) API. 
 
