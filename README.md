@@ -1,7 +1,6 @@
-[![Build Status](https://travis-ci.com/JuliaPOMDP/DESPOT.jl.svg?token=PkueYtjwfA15svyJQV4F&branch=master)](https://travis-ci.com/JuliaPOMDP/DESPOT.jl)
+# DESPOT.jl
+[![Build Status](https://travis-ci.org/JuliaPOMDP/DESPOT.jl.svg?branch=master)](https://travis-ci.com/JuliaPOMDP/DESPOT.jl)
 [![Coverage Status](https://coveralls.io/repos/github/JuliaPOMDP/DESPOT.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaPOMDP/DESPOT.jl?branch=master)
-
-# README #
 
 This repository contains a Julia language implementation of DESPOT POMDP algorithm (http://www.comp.nus.edu.sg/~yenan/pub/somani2013despot.pdf), designed to work with the [POMDPs.jl](https://github.com/sisl/POMDPs.jl) API. 
 
@@ -14,7 +13,8 @@ The code has been tested with Julia v0.4.2.
 ## Installation ##
 
 ```julia
-Pkg.clone("https://github.com/sisl/DESPOT.jl")
+using POMDPs
+POMDPs.add("DESPOT")
 ```
 
 ## Dependencies ##
@@ -38,7 +38,7 @@ The following DESPOT-specific types are likely to be of interest to problem and 
 |DESPOTConfig			|Any			|A set of DESPOT configuration parameters								|
 |DESPOTDefaultRNG		|POMDPs.AbstractRNG	|The default multi-platform RNG type that can be used to advance the state of the simulation 	| 
 
-When defining problem-specific POMDPs.State, POMDPs.Action, and POMDPs.Observation subtypes, the problem developer needs to make sure that *hash()* functions and *==* operators for these subtypes are defined as well, as they are required by the solver. Problem-specific state, action, and observation spaces must be defined as iterable types, either by using existing iterable containers (such as arrays) or by defining *start()*, *next()*, and *finish()* functions for them. For more on this subject, please see [POMDPs.jl documentation](https://github.com/sisl/POMDPs.jl) and Julia documentation on [iteration](http://docs.julialang.org/en/latest/stdlib/collections/#iteration).
+When defining problem-specific state, action, and observation types, the problem developer needs to make sure that *hash()* functions and *==* operators for these types are defined as well, as they are required by the solver. Problem-specific state, action, and observation spaces must be defined as iterable types, either by using existing iterable containers (such as arrays) or by defining *start()*, *next()*, and *finish()* functions for them. For more on this subject, please see [POMDPs.jl documentation](https://github.com/sisl/POMDPs.jl) and Julia documentation on [iteration](http://docs.julialang.org/en/latest/stdlib/collections/#iteration).
 
 ## Instantiating a DESPOT solver ##
 

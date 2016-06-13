@@ -1,7 +1,7 @@
 using Base.Test
 
-if OS_NAME != :Linux
-    error("This test is only valid on Linux platforms at this time") 
+if OS_NAME != :Linux && OS_NAME != :Darwin
+    error("This test is only valid on Linux and OS X platforms at this time") 
 end
 
 # Test on a simple RockSample problem
@@ -40,7 +40,10 @@ sim_steps, undiscounted_return, discounted_return, run_time =
 
 println(sim_steps, undiscounted_return, discounted_return, run_time)
 @test               sim_steps == 11
-@test_approx_eq_eps discounted_return 12.62 1e-2
-@test               undiscounted_return == 20.00
+@linux_only @test_approx_eq_eps discounted_return 12.62 1e-2
+@linux_only @test               undiscounted_return == 20.00
+# osx tests
+@osx_only @test_approx_eq_eps discounted_return 12.97 1e-2
+@osx_only @test               undiscounted_return == 20.00
 
 println("DESPOT/RockSample test status: PASSED")
