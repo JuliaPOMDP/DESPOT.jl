@@ -7,6 +7,7 @@ end
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
 
+# RockSample(4,4) test
 grid_size               = 4
 num_rocks               = 4
 n_particles             = 500 # for both solver and belief updater
@@ -46,4 +47,36 @@ println(sim_steps, undiscounted_return, discounted_return, run_time)
 @osx_only @test_approx_eq_eps discounted_return 12.97 1e-2
 @osx_only @test               undiscounted_return == 20.00
 
-println("DESPOT/RockSample test status: PASSED")
+println("DESPOT/RockSample(4,4) test status: PASSED")
+
+# RockSample(5,7) test
+grid_size               = 7
+num_rocks               = 8
+
+sim_steps, undiscounted_return, discounted_return, run_time =
+            execute(
+                    grid_size = grid_size,
+                    num_rocks = num_rocks,
+                    n_particles = n_particles,
+                    main_seed = main_seed,
+                    discount = discount,
+                    search_depth = search_depth,
+                    time_per_move = time_per_move,
+                    pruning_constant = pruning_constant, 
+                    eta = eta,
+                    sim_len = sim_len,
+                    max_trials = max_trials,
+                    approximate_ubound = approximate_ubound,
+                    debug = debug
+                    )
+
+println(sim_steps, undiscounted_return, discounted_return, run_time)
+@test               sim_steps == 32
+@linux_only @test_approx_eq_eps discounted_return 24.82 1e-2
+@linux_only @test               undiscounted_return == 50.00
+# osx tests
+@osx_only @test_approx_eq_eps discounted_return 24.82 1e-2
+@osx_only @test               undiscounted_return == 50.00
+
+println("DESPOT/RockSample(7,8) test status: PASSED")
+
