@@ -53,39 +53,39 @@ immutable RockSampleObsIterator
 end
 
 # iterator enabling functions
-Base.start(::RockSampleStateIterator)       = RockSampleState(0)
-Base.start(::RockSampleActionIterator)      = RockSampleAction(0)
-Base.start(::RockSampleObsIterator) = RockSampleObs(0)
+Base.start(::RockSampleStateIterator)   = RockSampleState(0)
+Base.start(::RockSampleActionIterator)  = RockSampleAction(0)
+Base.start(::RockSampleObsIterator)     = RockSampleObs(0)
 
-Base.next(::RockSampleStateIterator, state::RockSampleState)            = 
+Base.next(::RockSampleStateIterator, state::RockSampleState)        = 
     (state, RockSampleState(state.index+1))
-Base.next(::RockSampleActionIterator, action::RockSampleAction)         =
+Base.next(::RockSampleActionIterator, action::RockSampleAction)     =
     (action, RockSampleAction(action.index+1))
-Base.next(::RockSampleObsIterator, obs::RockSampleObs)  =
+Base.next(::RockSampleObsIterator, obs::RockSampleObs)              =
     (obs, RockSampleObs(obs.index+1))
 
-Base.done(iter::RockSampleStateIterator, state::RockSampleState)            =
+Base.done(iter::RockSampleStateIterator, state::RockSampleState)    =
     (state.index > iter.max_index)
-Base.done(iter::RockSampleActionIterator, action::RockSampleAction)         =
+Base.done(iter::RockSampleActionIterator, action::RockSampleAction) =
     (action.index > iter.max_index)
-Base.done(iter::RockSampleObsIterator, obs::RockSampleObs)  = 
+Base.done(iter::RockSampleObsIterator, obs::RockSampleObs)          = 
     (obs.index > iter.max_index)
 
 ## iterator creation functions
-POMDPs.iterator(space::RockSampleStateSpace)        =
+POMDPs.iterator(space::RockSampleStateSpace)                        =
     RockSampleStateIterator(space.min_index, space.max_index)
-POMDPs.iterator(space::RockSampleActionSpace)       =
+POMDPs.iterator(space::RockSampleActionSpace)                       =
     RockSampleActionIterator(space.min_index, space.max_index)
-POMDPs.iterator(space::RockSampleObsSpace)  =
+POMDPs.iterator(space::RockSampleObsSpace)                          =
     RockSampleObsIterator(space.min_index, space.max_index)
 
-==(x::RockSampleState, y::RockSampleState) = (x.index == y.index)
-==(x::RockSampleAction, y::RockSampleAction) = (x.index == y.index)
-==(x::RockSampleObs, y::RockSampleObs) = (x.index == y.index)
+==(x::RockSampleState, y::RockSampleState)      = (x.index == y.index)
+==(x::RockSampleAction, y::RockSampleAction)    = (x.index == y.index)
+==(x::RockSampleObs, y::RockSampleObs)          = (x.index == y.index)
 
-Base.hash(x::RockSampleState,  h::Int64 = 0)   = x.index
-Base.hash(x::RockSampleAction, h::Int64 = 0)   = x.index
-Base.hash(x::RockSampleObs, h::Int64 = 0)      = x.index
+Base.hash(x::RockSampleState,  h::Int64 = 0)    = x.index
+Base.hash(x::RockSampleAction, h::Int64 = 0)    = x.index
+Base.hash(x::RockSampleObs, h::Int64 = 0)       = x.index
 
 ######## RockSample type definition ########
 type RockSample <: POMDPs.POMDP{RockSampleState, RockSampleAction, RockSampleObs}
