@@ -1,8 +1,6 @@
 using Base.Test
 
-if OS_NAME != :Linux && OS_NAME != :Darwin
-    error("This test is only valid on Linux and OS X platforms at this time") 
-end
+@windows_only error("This test is only valid on Linux and OS X platforms at this time") 
 
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
