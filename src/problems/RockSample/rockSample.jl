@@ -316,7 +316,9 @@ function init_general(pomdp::RockSample, seed::Array{UInt32,1})
             rockIndex += 1
         end
     end
-    pomdp.robot_start_cell = cell_num(pomdp, iround(pomdp.grid_size/2), 0)
+    pomdp.robot_start_cell = cell_num(pomdp, round(Integer, pomdp.grid_size/2), 0)
+#     println(pomdp.rocks)
+#     println(pomdp.robot_start_cell)
 end
 
 function init_problem(pomdp::RockSample)
@@ -333,7 +335,7 @@ function init_problem(pomdp::RockSample)
     elseif pomdp.grid_size == 15 && pomdp.n_rocks == 15
         init_15_15(pomdp)
     else
-        init_general(pomdp, model_seed)
+        init_general(pomdp, seed)
     end
   
     # Compute rock set start
@@ -604,8 +606,9 @@ function POMDPs.pdf(distribution::RockSampleObsDistribution,
   end
 end
 
-POMDPs.isterminal(pomdp::RockSample, s::RockSampleState)            = 
+POMDPs.isterminal(pomdp::RockSample, s::RockSampleState)        = 
     cell_of(pomdp, s) == pomdp.n_cells
+
 POMDPs.isterminal_obs(pomdp::RockSample, obs::RockSampleObs)    =
     obs.index == pomdp.TERMINAL_OBS
 

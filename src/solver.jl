@@ -103,6 +103,7 @@ function search{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O})
     stop_now::Bool = false
     
     @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
+                                
     while ((excess_uncertainty(solver.root.lbound,
                                 solver.root.ubound,
                                 solver.root.lbound,
@@ -123,7 +124,7 @@ function search{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O})
     @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
     @printf("Number of trials: %d\n", n_trials)
 
-    if solver.config.pruning_constant != 0
+    if solver.config.pruning_constant != 0.0
         total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
         act = solver.root.pruned_action
         return (act == -1 ? solver.root_default_action : act), n_trials #TODO: fix actions

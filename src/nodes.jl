@@ -73,6 +73,10 @@ type _QNode{S,A,O,L,U,T} #Workaround to achieve a circular type definition
         end
 end
 
+# This type ("Value Node") encapsulates a belief node (and recursively, a
+# belief tree). It stores the set of particles associated with the node, an
+# AND-node for each action, and some bookkeeping information.
+
 type VNode{S,A,O,L,U}
   particles::Array{DESPOTParticle{S},1}
   lbound::Float64
@@ -163,10 +167,6 @@ function prune{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, total_pruned::Int64, config::
   end
   return cost, total_pruned
 end
-
-# This type ("Value Node") encapsulates a belief node (and recursively, a
-# belief tree). It stores the set of particles associated with the node, an
-# AND-node for each action, and some bookkeeping information.
 
 function get_lb_action{S,A,O,L,U}(node::VNode{S,A,O,L,U}, config::DESPOTConfig, discount::Float64)
   a_star = A()
