@@ -1,6 +1,0 @@
-[report]
-omit =  
-    src/problems/RockSample/rockSampleInt.jl
-    src/upperBound/DESPOTDefaultUpperBound.jl
-    src/problems/RockSample/runRockSampleInt.jl
-    src/lowerBound/DESPOTDefaultLowerBound.jl
