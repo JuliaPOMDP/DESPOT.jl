@@ -39,7 +39,7 @@ function main(;
     time_per_move::Float64 = -1.0 # sec, default: 1, unlimited: -1
     pruning_constant::Float64 = 0.0
     eta::Float64 = 0.95 # default: 0.95
-    sim_len::Int64 = 25 # default: -1
+    sim_len::Int64 = -1 # default: -1
     max_trials::Int64 = 100 # default: -1
     approximate_ubound::Bool = false
     tiny::Float64 = 1e-6
