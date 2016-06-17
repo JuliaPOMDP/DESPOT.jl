@@ -39,7 +39,7 @@ function main(;
     time_per_move::Float64 = -1.0 # sec, default: 1, unlimited: -1
     pruning_constant::Float64 = 0.0
     eta::Float64 = 0.95 # default: 0.95
-    sim_len::Int64 = -1 # default: -1
+    sim_len::Int64 = 25 # default: -1
     max_trials::Int64 = 100 # default: -1
     approximate_ubound::Bool = false
     tiny::Float64 = 1e-6
@@ -72,13 +72,19 @@ function main(;
         total_run_time                += run_time
     end
     
+    avg_sim_steps               = total_sim_steps/n_reps
+    avg_discounted_return       = total_discounted_return/n_reps
+    avg_undiscounted_return     = total_undiscounted_return/n_reps
+    avg_run_time                = total_run_time/n_reps
+    
     if (n_reps > 1)
         @printf("\n================= Batch Averages =================\n")
-        @printf("Number of steps = %d\n", total_sim_steps/n_reps)
-        @printf("Discounted return = %.2f\n", total_discounted_return/n_reps)
-        @printf("Undiscounted return = %.2f\n", total_undiscounted_return/n_reps)
-        @printf("Runtime = %.2f sec\n", total_run_time/n_reps)
+        @printf("Number of steps = %d\n", avg_sim_steps)
+        @printf("Discounted return = %.2f\n", avg_discounted_return)
+        @printf("Undiscounted return = %.2f\n", avg_undiscounted_return)
+        @printf("Runtime = %.2f sec\n", avg_run_time)
     end
+    return avg_sim_steps, avg_discounted_return, avg_undiscounted_return, avg_run_time
 end
 
 function execute(;
@@ -173,7 +179,7 @@ function execute(;
     show_state(pomdp, state) #TODO: wrap RockSample in a module
     tic() # start the clock
     while !isterminal(pomdp, state) &&
-        (solver.config.sim_len == -1 || sim_step < solver.config.sim_len)
+        (solver.config.sim_len == -1 || sim_steps < solver.config.sim_len)
         println("\n*************** STEP $(sim_steps+1) ***************")
         action = POMDPs.action(policy, current_belief)
         POMDPs.transition(pomdp, state, action, transition_distribution)
