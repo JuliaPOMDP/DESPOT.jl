@@ -133,7 +133,7 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
         s = next_s #TODO: deepcopy?
     end
     
-    best_action = (length(optimal_policy) == 0) ? RockSampleAction(3) : optimal_policy[1]
+    best_action = (length(optimal_policy) == 0) ? RockSampleAction(2) : optimal_policy[1]
 
     # Execute the sequence backwards to allow using the DP trick
     for i = length(optimal_policy):-1:1
