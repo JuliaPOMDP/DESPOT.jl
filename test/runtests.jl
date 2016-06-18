@@ -1,6 +1,8 @@
 using Base.Test
 
-@windows_only error("This test is only valid on Linux and OS X platforms at this time") 
+if OS_NAME != :Linux && OS_NAME != :Darwin
+    error("This test is only valid on Linux and OS X platforms at this time") 
+end
 
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
@@ -115,3 +117,35 @@ sim_steps, undiscounted_return, discounted_return, run_time =
 @osx_only @test               undiscounted_return == 50.00
 
 println("DESPOT/RockSample(7,8) test status: PASSED")
+
+
+# Standard RockSample(11,11) test
+grid_size               = 11
+num_rocks               = 11
+
+sim_steps, undiscounted_return, discounted_return, run_time =
+            execute(
+                    grid_size = grid_size,
+                    num_rocks = num_rocks,
+                    n_particles = n_particles,
+                    main_seed = main_seed,
+                    discount = discount,
+                    search_depth = search_depth,
+                    time_per_move = time_per_move,
+                    pruning_constant = pruning_constant, 
+                    eta = eta,
+                    sim_len = sim_len,
+                    max_trials = max_trials,
+                    approximate_ubound = approximate_ubound,
+                    debug = debug
+                    )
+
+#println(sim_steps, undiscounted_return, discounted_return, run_time)
+@test               sim_steps == 50
+@linux_only @test_approx_eq_eps discounted_return 21.24 1e-2
+@linux_only @test               undiscounted_return == 60.00
+# osx tests
+@osx_only @test_approx_eq_eps discounted_return 21.24 1e-2
+@osx_only @test               undiscounted_return == 60.00
+
+println("DESPOT/RockSample(11,11) test status: PASSED")

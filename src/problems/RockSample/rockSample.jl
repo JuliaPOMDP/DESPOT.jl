@@ -317,8 +317,6 @@ function init_general(pomdp::RockSample, seed::Array{UInt32,1})
         end
     end
     pomdp.robot_start_cell = cell_num(pomdp, round(Integer, pomdp.grid_size/2), 0)
-#     println(pomdp.rocks)
-#     println(pomdp.robot_start_cell)
 end
 
 function init_problem(pomdp::RockSample)
