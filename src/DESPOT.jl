@@ -53,7 +53,7 @@ type DESPOTDefaultRNG <: POMDPs.AbstractRNG
 end
 
 function rand!(rng::DESPOTDefaultRNG, random_number::Array{Float64})
-    if OS_NAME == :Linux
+    if is_linux()
         random_number[1] = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc
         srand(rng.seed)

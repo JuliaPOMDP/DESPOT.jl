@@ -94,7 +94,7 @@ function sample_particles!{S}(sampled_particles::Vector{DESPOTParticle{S}},
     # Divide the cumulative frequency into N equally-spaced parts
     num_sampled = 0
     
-    if OS_NAME == :Linux
+    if is_linux()
         cseed = Cuint[seed]
         r = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), cseed)/rand_max/N
     else #Windows, etc

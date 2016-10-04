@@ -300,12 +300,12 @@ end
 function init_general(pomdp::RockSample, seed::Array{UInt32,1})
   
     rockIndex::Int64 = 1 # rocks is an array
-    if OS_NAME != :Linux
+    if !is_linux()
         srand(seed[1])
     end
     
     while rockIndex <= pomdp.n_rocks
-        if OS_NAME == :Linux
+        if is_linux()
             cell = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed) % pomdp.n_cells
         else
             cell = Base.rand(0:pomdp.rand_max) % pomdp.n_cells 
@@ -339,12 +339,12 @@ function init_problem(pomdp::RockSample)
     # Compute rock set start
     pomdp.rock_set_start = 0
 
-    if OS_NAME != :Linux
+    if !is_linux()
         srand(seed[1])
     end
   
     for i in 0 : pomdp.n_rocks-1
-        if OS_NAME == :Linux
+        if is_linux()
             rand_num = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), seed)
         else #Windows, etc
             rand_num = Base.rand(0:pomdp.rand_max)
@@ -555,7 +555,7 @@ function POMDPs.rand(
                     state_space::RockSampleStateSpace,
                     ::RockSampleState)
 
-    if OS_NAME == :Linux
+    if is_linux()
         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
     else #Windows, etc
         srand(seed)
