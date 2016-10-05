@@ -8,7 +8,7 @@ A C++ implementation of DESPOT was developed at National University of Singapore
 
 http://bigbird.comp.nus.edu.sg/pmwiki/farm/appl/index.php?n=Main.DownloadDespot
 
-The code has been tested with Julia v0.4.2.
+The code has been tested with Julia v0.5.0.
 
 ## Installation ##
 
