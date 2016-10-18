@@ -1,6 +1,6 @@
 using Base.Test
 
-if OS_NAME != :Linux && OS_NAME != :Darwin
+if is_windows()
     error("This test is only valid on Linux and OS X platforms at this time") 
 end
 
@@ -44,12 +44,17 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     )
 
 #println(sim_steps, undiscounted_return, discounted_return, run_time)
-@test               sim_steps == 11
-@linux_only @test_approx_eq_eps discounted_return 12.62 1e-2
-@linux_only @test               undiscounted_return == 20.00
+if is_linux()
+    @test               sim_steps == 11
+    @test_approx_eq_eps discounted_return 12.62 1e-2
+    @test               undiscounted_return == 20.00
+end
 # osx tests
-@osx_only @test_approx_eq_eps discounted_return 12.97 1e-2
-@osx_only @test               undiscounted_return == 20.00
+if is_apple()
+    @test               sim_steps == 11
+    @test_approx_eq_eps discounted_return 12.97 1e-2
+    @test               undiscounted_return == 20.00
+end
 
 println("DESPOT/RockSample(4,4) batch test status: PASSED")
 
@@ -76,13 +81,18 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     debug = debug
                     )
 
-#println(sim_steps, undiscounted_return, discounted_return, run_time)
-@test               sim_steps == 21
-@linux_only @test_approx_eq_eps discounted_return 28.97 1e-2
-@linux_only @test               undiscounted_return == 50.00
+println(sim_steps, undiscounted_return, discounted_return, run_time)
+if is_linux()
+    @test               sim_steps == 21
+    @test_approx_eq_eps discounted_return 28.97 1e-2
+    @test               undiscounted_return == 50.00
+end
 # osx tests
-@osx_only @test_approx_eq_eps discounted_return 28.97 1e-2
-@osx_only @test               undiscounted_return == 50.00
+if is_apple()
+    @test               sim_steps == 20
+    @test_approx_eq_eps discounted_return 20.80 1e-2
+    @test               undiscounted_return == 40.00
+end
 
 println("DESPOT/RockSample(5,6) test status: PASSED")
 
@@ -90,6 +100,7 @@ println("DESPOT/RockSample(5,6) test status: PASSED")
 # Standard RockSample(7,8) test
 grid_size               = 7
 num_rocks               = 8
+
 
 sim_steps, undiscounted_return, discounted_return, run_time =
             execute(
@@ -109,12 +120,19 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     )
 
 #println(sim_steps, undiscounted_return, discounted_return, run_time)
-@test               sim_steps == 32
-@linux_only @test_approx_eq_eps discounted_return 24.82 1e-2
-@linux_only @test               undiscounted_return == 50.00
+
+
+if is_linux()
+    @test               sim_steps == 32
+    @test_approx_eq_eps discounted_return 24.82 1e-2
+    @test               undiscounted_return == 50.00
+end
 # osx tests
-@osx_only @test_approx_eq_eps discounted_return 24.82 1e-2
-@osx_only @test               undiscounted_return == 50.00
+if is_apple()
+    @test               sim_steps == 30
+    @test_approx_eq_eps discounted_return 16.98 1e-2
+    @test               undiscounted_return == 40.00
+end
 
 println("DESPOT/RockSample(7,8) test status: PASSED")
 
@@ -141,11 +159,16 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     )
 
 #println(sim_steps, undiscounted_return, discounted_return, run_time)
-@test               sim_steps == 50
-@linux_only @test_approx_eq_eps discounted_return 21.24 1e-2
-@linux_only @test               undiscounted_return == 60.00
+if is_linux()
+    @test               sim_steps == 50
+    @test_approx_eq_eps discounted_return 21.24 1e-2
+    @test               undiscounted_return == 60.00
+end
 # osx tests
-@osx_only @test_approx_eq_eps discounted_return 21.24 1e-2
-@osx_only @test               undiscounted_return == 60.00
+if is_apple()
+    @test               sim_steps == 45
+    @test_approx_eq_eps discounted_return 13.5 1e-2
+    @test               undiscounted_return == 40.00
+end
 
 println("DESPOT/RockSample(11,11) test status: PASSED")
