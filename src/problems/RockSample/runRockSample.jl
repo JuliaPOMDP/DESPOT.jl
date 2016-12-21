@@ -122,9 +122,7 @@ function execute(;
     # construct a belief updater and specify some of the optional keyword parameters
     bu = DESPOTBeliefUpdater{RockSampleState,
                              RockSampleAction,
-                             RockSampleObs,
-                             RockSampleTransitionDistribution,
-                             RockSampleObsDistribution}(
+                             RockSampleObs}(
                              pomdp::POMDP,
                              seed = seed,
                              rand_max = rand_max,
@@ -132,8 +130,7 @@ function execute(;
     
     # create initial belief and allocate an updated belief object
     initial_states = initial_state_distribution(pomdp)
-    current_belief = create_belief(bu)
-    initialize_belief(bu, initial_states, current_belief) 
+    current_belief = initialize_belief(bu, initial_states) 
     updated_belief = create_belief(bu)
  
     custom_lb = RockSampleParticleLB{RockSampleState, RockSampleAction, RockSampleObs}(pomdp) # custom lower bound to use with DESPOT solver
@@ -165,10 +162,6 @@ function execute(;
     next_state::RockSampleState  = RockSampleState()
     obs::RockSampleObs   = RockSampleObs()
     rewards::Array{Float64}      = Array(Float64, 0)
-    transition_distribution::RockSampleTransitionDistribution =
-            POMDPs.create_transition_distribution(pomdp)
-    observation_distribution::RockSampleObsDistribution =
-            POMDPs.create_observation_distribution(pomdp)
                                   
     rng::DESPOTDefaultRNG = DESPOTDefaultRNG(w_seed, rand_max) # used to advance the state of the simulation (world) 
     policy::DESPOTPolicy = POMDPs.solve(solver, pomdp)
@@ -182,15 +175,15 @@ function execute(;
         (solver.config.sim_len == -1 || sim_steps < solver.config.sim_len)
         println("\n*************** STEP $(sim_steps+1) ***************")
         action = POMDPs.action(policy, current_belief)
-        POMDPs.transition(pomdp, state, action, transition_distribution)
+        transition_distribution = POMDPs.transition(pomdp, state, action)
         next_state = POMDPs.rand(rng, transition_distribution, next_state) # update state to next state
-        POMDPs.observation(pomdp, state, action, next_state, observation_distribution)
+        observation_distribution = POMDPs.observation(pomdp, state, action, next_state)
         observation_distribution.debug = 1 #TODO: remove -debug
-        obs = POMDPs.rand(rng, observation_distribution, obs)
+        obs = POMDPs.rand(rng, observation_distribution)
         r = POMDPs.reward(pomdp, state, action)
         push!(rewards, r)
         state = next_state        
-        POMDPs.update(bu, current_belief, action, obs, updated_belief)
+        updated_belief = POMDPs.update(bu, current_belief, action, obs)
         current_belief = deepcopy(updated_belief) #TODO: perhaps this could be done better
         println("Action = $action")
         println("State = $next_state"); show_state(pomdp, next_state) #TODO: change once abstract types are introduced

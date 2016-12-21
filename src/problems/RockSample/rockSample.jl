@@ -207,7 +207,7 @@ start_state(pomdp::RockSample) =
 
 # Creates a default belief structure to store the problem's initial belief
 create_belief(pomdp::RockSample)         = 
-    ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
+    ParticleBelief(Array(Particle{RockSampleState},0))
     
 create_transition_distribution(pomdp::RockSample)    =
     RockSampleTransitionDistribution(pomdp, RockSampleState(-1), RockSampleAction(-1))
@@ -513,7 +513,7 @@ end
 function POMDPs.rand(
                     rng::AbstractRNG,
                     distribution::RockSampleTransitionDistribution,
-                    ::RockSampleState)
+                    sample=nothing)
  
     return RockSampleState(
         distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index)
@@ -523,7 +523,7 @@ end
 function POMDPs.rand(
                     rng::AbstractRNG,
                     distribution::RockSampleObsDistribution,
-                    ::RockSampleObs)
+                    sample=nothing)
     
     # generate a new random number regardless of whether it's used below or not
     rand_num::Array{Float64} = Array{Float64}(1)
@@ -551,7 +551,7 @@ end
 function POMDPs.rand(
                     rng::AbstractRNG,
                     state_space::RockSampleStateSpace,
-                    ::RockSampleState)
+                    sample=nothing)
 
     if is_linux()
         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max
