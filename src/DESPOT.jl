@@ -6,7 +6,6 @@ using POMDPs
 import POMDPs:
         solve,
         action,
-        create_policy,
         rand,
         rand!
 
