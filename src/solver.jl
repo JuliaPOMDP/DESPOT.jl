@@ -9,8 +9,8 @@ type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
     node_count::Int64
     config::DESPOTConfig
     #preallocated for simulations
-    transition_distribution::TD
-    observation_distribution::OD
+    # transition_distribution::TD
+    # observation_distribution::OD
     rng::DESPOT.DESPOTRandomNumber
     curr_reward::DESPOTReward
     next_state::S
@@ -66,8 +66,8 @@ end
 function init_solver{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
-    solver.transition_distribution = create_transition_distribution(pomdp)
-    solver.observation_distribution = create_observation_distribution(pomdp)
+    # solver.transition_distribution = create_transition_distribution(pomdp)
+    # solver.observation_distribution = create_observation_distribution(pomdp)
     solver.random_streams = RandomStreams(solver.config.n_particles,
                                           solver.config.search_depth,
                                           solver.config.main_seed)
@@ -265,14 +265,8 @@ function step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
               action::A)
               
     solver.rng.number = rand_num
-    POMDPs.transition(pomdp, state, action, solver.transition_distribution)
-    solver.next_state =
-        POMDPs.rand(solver.rng, solver.transition_distribution, solver.next_state)
-    POMDPs.observation(pomdp, state, action, solver.next_state, solver.observation_distribution)
-    solver.curr_obs =
-        POMDPs.rand(solver.rng, solver.observation_distribution, solver.curr_obs)
-    solver.curr_reward = POMDPs.reward(pomdp, state, action)
-    
+    solver.next_state, solver.curr_obs, solver.curr_reward = GenerativeModels.generate_sor(pomdp, state, action, solver.rng)
+
     return nothing
 end
                                     

@@ -2,11 +2,11 @@ module DESPOT
 
 using Distributions
 using POMDPs
+using GenerativeModels
 
 import POMDPs:
         solve,
         action,
-        create_policy,
         rand,
         rand!
 

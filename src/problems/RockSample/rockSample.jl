@@ -21,17 +21,17 @@ end
 RockSampleObs() = RockSampleObs(-1)
 
 ## spaces
-immutable RockSampleStateSpace <: AbstractSpace{RockSampleState}
+immutable RockSampleStateSpace
     min_index::Int64
     max_index::Int64
 end
 
-immutable RockSampleActionSpace <: AbstractSpace{RockSampleAction}
+immutable RockSampleActionSpace
     min_index::Int64
     max_index::Int64
 end
 
-immutable RockSampleObsSpace <: AbstractSpace{RockSampleObs}
+immutable RockSampleObsSpace
     min_index::Int64
     max_index::Int64
 end
@@ -172,13 +172,13 @@ POMDPs.action_index(pomdp::RockSample, action::RockSampleAction) = action.index
 POMDPs.obs_index(pomdp::RockSample, obs::RockSampleObs)       = obs.index
 
 ## distribution types
-type RockSampleTransitionDistribution <: POMDPs.AbstractDistribution{RockSampleState}
+type RockSampleTransitionDistribution
     pomdp::RockSample
     state::RockSampleState
     action::RockSampleAction
 end
 
-type RockSampleObsDistribution <: POMDPs.AbstractDistribution{RockSampleObs}
+type RockSampleObsDistribution
     pomdp::RockSample
     state::RockSampleState
     action::RockSampleAction
@@ -206,12 +206,12 @@ start_state(pomdp::RockSample) =
     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
 
 # Creates a default belief structure to store the problem's initial belief
-POMDPs.create_belief(pomdp::RockSample)         = 
-    ParticleBelief{RockSampleState}(Array(Particle{RockSampleState},0))
+create_belief(pomdp::RockSample)         = 
+    ParticleBelief(Array(Particle{RockSampleState},0))
     
-POMDPs.create_transition_distribution(pomdp::RockSample)    =
+create_transition_distribution(pomdp::RockSample)    =
     RockSampleTransitionDistribution(pomdp, RockSampleState(-1), RockSampleAction(-1))
-POMDPs.create_observation_distribution(pomdp::RockSample)   =
+create_observation_distribution(pomdp::RockSample)   =
     RockSampleObsDistribution(pomdp,
                               RockSampleState(-1),
                               RockSampleAction(-1),
@@ -485,10 +485,9 @@ POMDPs.reward(pomdp::RockSample, s::RockSampleState, a::RockSampleAction) =
 function POMDPs.transition(
                     pomdp::RockSample,
                     state::RockSampleState,
-                    action::RockSampleAction,
-                    distribution::RockSampleTransitionDistribution =
-                                create_transition_distribution(pomdp))
+                    action::RockSampleAction)
                                 
+    distribution = create_transition_distribution(pomdp)
     distribution.pomdp = pomdp
     distribution.state = state
     distribution.action = action
@@ -500,10 +499,9 @@ function POMDPs.observation(
                     pomdp::RockSample,
                     state::RockSampleState,
                     action::RockSampleAction,
-                    next_state::RockSampleState,
-                    distribution::RockSampleObsDistribution =
-                                create_observation_distribution(pomdp))
+                    next_state::RockSampleState)
                                 
+    distribution = create_observation_distribution(pomdp)
     distribution.pomdp = pomdp
     distribution.state = next_state    
     distribution.action = action
@@ -515,7 +513,7 @@ end
 function POMDPs.rand(
                     rng::AbstractRNG,
                     distribution::RockSampleTransitionDistribution,
-                    ::RockSampleState)
+                    sample=nothing)
  
     return RockSampleState(
         distribution.pomdp.T[distribution.state.index+1, distribution.action.index+1].index)
@@ -525,7 +523,7 @@ end
 function POMDPs.rand(
                     rng::AbstractRNG,
                     distribution::RockSampleObsDistribution,
-                    ::RockSampleObs)
+                    sample=nothing)
     
     # generate a new random number regardless of whether it's used below or not
     rand_num::Array{Float64} = Array{Float64}(1)
@@ -553,7 +551,7 @@ end
 function POMDPs.rand(
                     rng::AbstractRNG,
                     state_space::RockSampleStateSpace,
-                    ::RockSampleState)
+                    sample=nothing)
 
     if is_linux()
         random_number = ccall((:rand_r, "libc"), Int, (Ptr{Cuint},), rng.seed) / rng.rand_max

@@ -1,12 +1,10 @@
 import POMDPs: update
 using DESPOT
 
-type DESPOTBeliefUpdater{S,A,O,TD,OD} <: POMDPs.Updater
+type DESPOTBeliefUpdater{S,A,O} <: POMDPs.Updater
     pomdp::POMDP
     num_updates::Int64
     rng::DESPOTDefaultRNG
-    transition_distribution::TD
-    observation_distribution::OD
     seed::UInt32
     rand_max::Int64
     belief_update_seed::UInt32
@@ -33,8 +31,6 @@ type DESPOTBeliefUpdater{S,A,O,TD,OD} <: POMDPs.Updater
         this.num_updates = 0                               
         this.belief_update_seed = seed $ (n_particles + 1)       
         this.rng = DESPOTDefaultRNG(this.belief_update_seed, rand_max)
-        this.transition_distribution  = POMDPs.create_transition_distribution(pomdp)
-        this.observation_distribution = POMDPs.create_observation_distribution(pomdp)
         this.rand_max = rand_max
         this.particle_weight_threshold = particle_weight_threshold
         this.eff_particle_fraction = eff_particle_fraction
@@ -59,9 +55,9 @@ get_belief_update_seed(bu::DESPOTBeliefUpdater) = bu.seed $ (bu.n_particles + 1)
 reset_belief(bu::DESPOTBeliefUpdater) = bu.num_updates = 0
 
 function initialize_belief{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
-                  state_distribution::ParticleDistribution{S},
-                  new_belief::DESPOTBelief = create_belief{S,A,O}(bu))
+                  state_distribution::ParticleDistribution{S})
                   
+    new_belief = create_belief(bu)
     n_particles = length(state_distribution.particles)
         
     # convert to DESPOTParticle type
@@ -96,9 +92,9 @@ end
 function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
                 current_belief::DESPOTBelief{S},
                 action::A,
-                obs::O,
-                updated_belief::DESPOTBelief{S} = create_belief(bu.pomdp))
+                obs::O)
     
+    updated_belief::DESPOTBelief{S} = create_belief(bu)
     random_number = Array{Float64}(1)
             
     if bu.n_particles != length(current_belief.particles)
@@ -113,13 +109,12 @@ function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
         rand!(bu.rng, random_number)
         rng = DESPOTRandomNumber(random_number[1])
         
-        POMDPs.transition(bu.pomdp, p.state, action, bu.transition_distribution)
-        bu.next_state = POMDPs.rand(rng, bu.transition_distribution, bu.next_state) # update state to next state
+        bu.next_state = GenerativeModels.generate_s(bu.pomdp, p.state, action, rng)
 
         #get observation distribution for (s,a,s') tuple
-        POMDPs.observation(bu.pomdp, p.state, action, bu.next_state, bu.observation_distribution)
+        od = POMDPs.observation(bu.pomdp, p.state, action, bu.next_state)
         
-        bu.obs_probability = pdf(bu.observation_distribution, obs)
+        bu.obs_probability = pdf(od, obs)
         
         if bu.obs_probability > 0.0
             bu.new_particle = DESPOTParticle(bu.next_state, p.id, p.weight * bu.obs_probability)            
@@ -142,14 +137,12 @@ function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
             rand!(resample_rng, random_number)
             particle_number = ceil(bu.n_particles * random_number[1])
             
-            next_state = create_state(bu.pomdp) #TODO: this can be done better
-            next_state = POMDPs.rand(resample_rng, states(bu.pomdp), next_state) #generate a random state
-            POMDPs.observation(bu.pomdp,
+            next_state = POMDPs.rand(resample_rng, states(bu.pomdp)) #generate a random state
+            od = POMDPs.observation(bu.pomdp,
                                current_belief.particles[particle_number].state,
                                action,
-                               next_state,
-                               bu.observation_distribution)
-            bu.obs_probability = pdf(bu.observation_distribution, bu.observation)
+                               next_state)
+            bu.obs_probability = pdf(od, bu.observation)
             if bu.obs_probability > 0.0
                 bu.n_sampled += 1
                 bu.new_particle = DESPOTParticle(next_state, bu.obs_probability)
