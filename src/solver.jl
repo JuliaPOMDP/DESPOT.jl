@@ -1,5 +1,5 @@
 
-type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
+type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
     lb::L
     ub::U
