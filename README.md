@@ -44,9 +44,7 @@ When defining problem-specific state, action, and observation types, the problem
 
 The following example illustrates instantiation of a DESPOT solver
 ```julia
-solver = DESPOTSolver(pomdp,			# reference to the problem model
-					  current_belief, 	# reference to the current belief structure
-					  lb = custom_lb, 	# reference to the optional custom lower bound
+solver = DESPOTSolver(lb = custom_lb, 	# reference to the optional custom lower bound
 					  ub = custom_ub) 	# reference to the optional custom upper bound
 ```
 
