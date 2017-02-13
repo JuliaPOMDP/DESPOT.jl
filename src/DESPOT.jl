@@ -110,9 +110,26 @@ function action{S,A,O}(policy::DESPOTPolicy{S,A,O}, belief::DESPOTBelief{S})
 end
 
 function solve{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
+    @warn_requirements solve(solver, pomdp)
     policy = DESPOTPolicy(solver, pomdp)
     init_solver(solver, pomdp)
     return policy
+end
+
+@POMDP_require solve(solver::DESPOTSolver, pomdp::POMDP) begin
+    P = typeof(pomdp)
+    S = state_type(P)
+    A = action_type(P)
+    O = obs_type(P)
+    @req actions(::P)
+    @req transition(::P,::S,::A)
+    @req observation(::P,::S,::A,::S)    
+    @req reward(::P,::S,::A,::S)
+    @req discount(::P)    
+    @req isterminal(::P,::S)
+    @req isterminal_obs(::P,::O)
+    as = actions(pomdp)
+    @req iterator(::typeof(as))    
 end
 
 export
