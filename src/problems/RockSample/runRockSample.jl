@@ -140,9 +140,7 @@ function execute(;
                                         RockSampleAction,
                                         RockSampleObs,
                                         RockSampleParticleLB,
-                                        UpperBoundNonStochastic,
-                                        RockSampleTransitionDistribution,
-                                        RockSampleObsDistribution}(
+                                        UpperBoundNonStochastic}(
                                # specify the optional keyword parameters
                                lb = custom_lb, # use the custom lower bound
                                ub = custom_ub, # use the custom lower bound
