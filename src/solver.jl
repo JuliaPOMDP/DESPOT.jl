@@ -1,5 +1,5 @@
 
-type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
+type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
     lb::L
     ub::U
@@ -9,8 +9,6 @@ type DESPOTSolver{S,A,O,L,U,TD,OD} <: POMDPs.Solver
     node_count::Int64
     config::DESPOTConfig
     #preallocated for simulations
-    # transition_distribution::TD
-    # observation_distribution::OD
     rng::DESPOT.DESPOTRandomNumber
     curr_reward::DESPOTReward
     next_state::S
