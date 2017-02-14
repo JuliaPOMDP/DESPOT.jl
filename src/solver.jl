@@ -8,8 +8,8 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
     root_default_action::A
     node_count::Int64
     config::DESPOTConfig
+    rng::AbstractRNG
     #preallocated for simulations
-    rng::DESPOT.DESPOTRandomNumber
     curr_reward::DESPOTReward
     next_state::S
     curr_obs::O
@@ -18,6 +18,7 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
     function DESPOTSolver(  ;
                             lb::DESPOTLowerBound{S,A,O} = L(),
                             ub::DESPOTUpperBound{S,A,O} = U(),
+                            rng::AbstractRNG = Base.GLOBAL_RNG,
                             search_depth::Int64 = 90,
                             main_seed::UInt32 = convert(UInt32, 42),
                             time_per_move::Float64 = 1.0,                 # sec
@@ -56,7 +57,7 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
         this.config.rand_max = rand_max
         this.config.debug = debug        
         this.root_default_action = root_default_action
-        this.rng = DESPOTRandomNumber(-1)
+        this.rng = rng
         this.next_state = next_state
         this.curr_obs = curr_obs
         this.curr_reward = 0.0
@@ -266,9 +267,8 @@ function step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
               rand_num::Float64,
               action::A)
               
-    solver.rng.number = rand_num
     solver.next_state, solver.curr_obs, solver.curr_reward =
-        GenerativeModels.generate_sor(pomdp, state, action, solver.rng)
+        GenerativeModels.generate_sor(pomdp, state, action, DESPOTRandomNumber(rand_num))
 
     return nothing
 end
