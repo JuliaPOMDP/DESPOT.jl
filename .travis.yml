@@ -11,6 +11,6 @@ script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaPOMDP/POMDPToolbox.jl"); Pkg.clone("https://github.com/JuliaPOMDP/GenerativeModels.jl"); Pkg.build("DESPOT");'
   - julia -e 'include(Pkg.dir("DESPOT", "test", "build.jl"))'
-  - julia --check-bounds -e 'Pkg.test("DESPOT"; coverage=true)'
+  - julia --check-bounds=yes -e 'Pkg.test("DESPOT"; coverage=true)'
 after_success:
   - julia -e 'cd(Pkg.dir("DESPOT")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
