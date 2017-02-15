@@ -20,7 +20,7 @@ abstract DESPOTBeliefUpdate{S,A,O}
 
 typealias DESPOTReward Float64
 
-immutable DESPOTRandomNumber <: POMDPs.AbstractRNG
+type DESPOTRandomNumber <: POMDPs.AbstractRNG
     number::Float64
 end
 
