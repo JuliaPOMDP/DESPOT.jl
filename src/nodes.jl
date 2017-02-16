@@ -59,7 +59,7 @@ type _QNode{S,A,O,L,U,T} #Workaround to achieve a circular type definition
                 this.weight_sum += obs_weight_sum
                 add(this.history, action, obs)
                 remove_last(this.history)
-                this.obs_to_node[obs], a::A = VNode{S,A,O,L,U}(
+                this.obs_to_node[obs] = VNode{S,A,O,L,U}(
                                             pomdp,
                                             particles,
                                             lb,
@@ -115,18 +115,13 @@ type VNode{S,A,O,L,U}
 
         this = new()
         this.particles          = particles
-        this.lbound, a::A       = DESPOT.lower_bound(
-                                                lb,
-                                                pomdp,
-                                                particles,
-                                                ub.upper_bound_act,
-                                                config)
+        this.lbound             = DESPOT.lower_bound(lb, pomdp, particles, config)
         this.ubound             = upper_bound(ub, pomdp, particles, config)     
         this.depth              = depth
         this.default_value      = this.lbound
-        this.pruned_action      = A()
+        # this.pruned_action      = A()
         this.weight             = weight
-        this.best_ub_action     = A()
+        # this.best_ub_action     = A()
         this.in_tree            = in_tree
         this.n_tree_nodes       = in_tree ? 1:0
         this.q_nodes            = Dict{A,QNode{S,A,O,L,U}}()
@@ -135,7 +130,7 @@ type VNode{S,A,O,L,U}
         this.q_star             = -Inf
         
         validate_bounds(this.lbound, this.ubound, config)
-        return this,a
+        return this
   end
 end
 

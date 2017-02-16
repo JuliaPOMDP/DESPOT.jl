@@ -83,7 +83,7 @@ function new_root{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
                   belief::DESPOTBelief{S})
     
     solver.belief = belief
-    solver.root, solver.root_default_action = VNode{S,A,O,L,U}(
+    solver.root = VNode{S,A,O,L,U}(
                         pomdp,
                         belief.particles,
                         solver.lb, 
