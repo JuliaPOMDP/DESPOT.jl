@@ -160,6 +160,9 @@ export
     DESPOTDefaultRNG,
     DESPOTRandomNumber,
     DESPOTReward,
+    ######## RANDOM STREAMS ######
+    RandomStreams,
+    MersenneStreamArray,
     ######## HISTORY-RELATED TYPES AND METHODS ######
     History, #TODO: need to handle history-related stuff better, place somewhere else
     add,
