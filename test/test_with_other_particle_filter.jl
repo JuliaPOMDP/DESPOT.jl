@@ -11,11 +11,7 @@ solver = DESPOTSolver{RockSampleState,
                       RockSampleAction,
                       RockSampleObs,
                       RockSampleParticleLB,
-                      UpperBoundNonStochastic}(lb = custom_lb,
-                                               ub = custom_ub,
-                                               n_particles = 500,
-                                               max_trials = -1
-                                              )
+                      UpperBoundNonStochastic}(lb = custom_lb, ub = custom_ub)
 
 policy = solve(solver, pomdp)
 

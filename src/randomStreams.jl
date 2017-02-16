@@ -1,3 +1,15 @@
+#=
+############ Streams ############
+This file contains several random stream types. Any new streams type should implement the following interface:
+
+create_rng(::Stream) creates a (mutable) rng of an appropriate type to be emitted from the stream
+fill_random_streams!(::Stream, rand_max::Int) is called at the beginning of action selection
+set_rng_state!(rng::AbstractRNG, ::Stream, scenario::Int, depth::Int) is called at the beginning of each simulation step to set the rng state to a value appropriate for the given scenario and depth
+###############################
+=#
+
+
+# RandomStreams
 # This type encapsulates the streams of random numbers used in state
 # transitions during simulations. It also provides random-number seeds
 # for different components of the system.
