@@ -2,7 +2,6 @@ using POMDPs
 using DESPOT
 using POMDPToolbox
 using POMDPModels
-using ParticleFilters
 
 import DESPOT: upper_bound, lower_bound
 
@@ -24,7 +23,7 @@ problem = BabyPOMDP()
 
 # test_solver is from POMDPToolbox
 test_solver(solver, problem, updater=updater(problem))
-# test_solver(solver, problem)
+test_solver(solver, problem)
 
 
 immutable LightDarkUB <: DESPOTUpperBound{LightDark1DState, Int64, Float64} end
@@ -41,11 +40,4 @@ solver = DESPOTSolver{LightDark1DState, Int64, Float64, LightDarkLB, LightDarkUB
                                                                   curr_obs=0.0
                                                                  )
 
-test_solver(solver, LightDark1D(), updater=SIRParticleFilter(LightDark1D(), 100))
-
-# Usability notes:
-# It would be much easier to use the DESPOTSolver if the user did not have to
-# specify the type parameters up front, and designate the root_default_action,
-# next_state, and curr_obs, and I think it is technically feasible to remove
-# these requirements, but ease-of-use is a secondary goal to getting the solver
-# to work with a variety of problems.
+test_solver(solver, LightDark1D())
