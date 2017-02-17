@@ -92,13 +92,11 @@ upper_bound{S,A,O}(ub::DESPOTUpperBound{S,A,O},
     
 init_lower_bound{S,A,O}(lb::DESPOTLowerBound{S,A,O},
                     pomdp::POMDPs.POMDP{S,A,O},
-                    config::DESPOTConfig) =
-    error("$(typeof(lb)) bound does not implement init_lower_bound")                    
+                    config::DESPOTConfig) = lb
     
 init_upper_bound{S,A,O}(ub::DESPOTUpperBound{S,A,O},
                     pomdp::POMDPs.POMDP{S,A,O},
-                    config::DESPOTConfig) =
-    error("$(typeof(ub)) bound does not implement init_upper_bound")
+                    config::DESPOTConfig) = ub
     
 fringe_upper_bound{S,A,O}(pomdp::POMDP{S,A,O}, state::S) = 
     error("$(typeof(pomdp)) does not implement fringe_upper_bound")

@@ -109,7 +109,7 @@ function search{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O})
                                 solver.root.ubound,
                                 0,
                                 solver.config.eta,
-                                pomdp.discount) > 1e-6)
+                                discount(pomdp)) > 1e-6)
                                 && !stop_now)
 
         trial(solver, pomdp, solver.root, n_trials)
@@ -131,7 +131,7 @@ function search{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O})
         println("Root not in tree")
         return solver.root_default_action, n_trials
     else
-        return get_lb_action(solver.root, solver.config, pomdp.discount), n_trials
+        return get_lb_action(solver.root, solver.config, discount(pomdp)), n_trials
     end
     return nothing
 end
@@ -155,7 +155,7 @@ function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, 
                                get_best_weuo(node.q_nodes[a_star],
                                              solver.root,
                                              solver.config,
-                                             pomdp.discount) # it's an array!
+                                             discount(pomdp)) # it's an array!
     
     if weighted_eu_star > 0.0
         add(solver.belief.history, a_star, o_star)
@@ -169,7 +169,7 @@ function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, 
 
     # Backup
     potential_lbound = node.q_nodes[a_star].first_step_reward +
-                        pomdp.discount * get_lower_bound(node.q_nodes[a_star])
+                    discount(pomdp) * get_lower_bound(node.q_nodes[a_star])
     node.lbound = max(node.lbound, potential_lbound)
 
     # As the upper bound of a_star may become smaller than the upper bound of
@@ -178,7 +178,7 @@ function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, 
 
     for a in iterator(actions(pomdp))
         ubound = node.q_nodes[a].first_step_reward +
-              pomdp.discount * get_upper_bound(node.q_nodes[a])
+            discount(pomdp) * get_upper_bound(node.q_nodes[a])
         if ubound > node.ubound
             node.ubound = ubound
             node.best_ub_action = a
@@ -221,7 +221,11 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
                 curr_action)
             
             if isterminal(pomdp, solver.next_state) && !isterminal_obs(pomdp, solver.curr_obs)
-                error("Terminal state in a particle mismatches observation")
+                error("""
+                      Terminal state in a particle mismatches observation.
+                      sp: $(solver.next_state)
+                      o: $(solver.curr_obs)
+                      """)
             end
 
             if !haskey(obs_to_particles, solver.curr_obs)
@@ -250,8 +254,8 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
         node.q_nodes[curr_action] = new_qnode
         remaining_reward = get_upper_bound(new_qnode)  
         
-        if (first_step_reward + pomdp.discount*remaining_reward) > (q_star + solver.config.tiny)
-            q_star = first_step_reward + pomdp.discount * remaining_reward
+        if (first_step_reward + discount(pomdp)*remaining_reward) > (q_star + solver.config.tiny)
+            q_star = first_step_reward + discount(pomdp) * remaining_reward
             node.best_ub_action = curr_action
         end
         

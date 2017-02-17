@@ -165,7 +165,7 @@ end
 # end
 
 function get_lb_action{S,A,O,L,U}(node::VNode{S,A,O,L,U}, config::DESPOTConfig, discount::Float64)
-  a_star = A()
+  local a_star
   q_star::Float64 = -Inf
   remaining_reward::Float64 = 0.0
   
