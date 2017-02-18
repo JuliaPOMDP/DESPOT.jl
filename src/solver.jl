@@ -29,7 +29,11 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
                             tiny::Float64 = 1e-6,
                             max_trials::Int64 = -1,
                             rand_max::Int64 = 2147483647,
-                            debug::Int64 = 0)
+                            debug::Int64 = 0,
+                            root_default_action = A(),
+                            next_state = S(),
+                            curr_obs = O()
+                           )
 
         this = new()
         
@@ -51,10 +55,10 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
         this.config.max_trials = max_trials
         this.config.rand_max = rand_max
         this.config.debug = debug        
-        this.root_default_action = A()
+        this.root_default_action = root_default_action
         this.rng = DESPOTRandomNumber(-1)
-        this.next_state = S()
-        this.curr_obs = O()
+        this.next_state = next_state
+        this.curr_obs = curr_obs
         this.curr_reward = 0.0
         
         return this
