@@ -1,0 +1,5 @@
+Sat 18 Feb 2017 03:13:56 PM PST
+
+(before this)
+got rid of action
+got rid of isterminal - isterminal_obs check

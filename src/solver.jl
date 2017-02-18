@@ -176,7 +176,7 @@ function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, 
     # another action, we need to check all actions - unlike the lower bound.
     node.ubound = -Inf
 
-    for a in iterator(actions(pomdp))
+    for a in iterator(actions(pomdp, node.particles))
         ubound = node.q_nodes[a].first_step_reward +
             discount(pomdp) * get_upper_bound(node.q_nodes[a])
         if ubound > node.ubound
@@ -206,7 +206,7 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
     remaining_reward::Float64 = 0.0
     rng = create_rng(solver.random_streams)
     
-    for curr_action in iterator(actions(pomdp))
+    for curr_action in iterator(actions(pomdp, node.particles))
         obs_to_particles = Dict{O,Vector{DESPOTParticle{S}}}()
 
         for p in node.particles
@@ -220,6 +220,7 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
                 rng,
                 curr_action)
             
+            #=
             if isterminal(pomdp, solver.next_state) && !isterminal_obs(pomdp, solver.curr_obs)
                 error("""
                       Terminal state in a particle mismatches observation.
@@ -227,6 +228,7 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
                       o: $(solver.curr_obs)
                       """)
             end
+            =#
 
             if !haskey(obs_to_particles, solver.curr_obs)
                 obs_to_particles[solver.curr_obs] = DESPOTParticle{S}[]

@@ -123,7 +123,7 @@ function action{S,A,O}(p::DESPOTPolicy{S,A,O}, b)
 end
 
 function solve{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
-    @warn_requirements solve(solver, pomdp)
+    @warn_requirements solve(solver, pomdp) 
     policy = DESPOTPolicy(solver, pomdp)
     init_solver(solver, pomdp)
     return policy

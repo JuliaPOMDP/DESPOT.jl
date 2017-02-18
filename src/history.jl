@@ -1,4 +1,3 @@
-
 type History{A,O}
     actions::Vector{A}
     observations::Vector{O}
