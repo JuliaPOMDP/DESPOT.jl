@@ -1,7 +1,7 @@
 import DESPOT:
         lower_bound
 
-type DESPOTDefaultLowerBound <: DESPOTLowerBound
+type DESPOTDefaultLowerBound
     #placeholder for now
 end
 

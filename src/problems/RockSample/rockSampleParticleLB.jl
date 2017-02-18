@@ -17,7 +17,7 @@ import DESPOT:
         lower_bound,
         init_lower_bound
         
-type RockSampleParticleLB{S,A,O} <: DESPOTLowerBound{S,A,O}
+type RockSampleParticleLB{S,A,O}
     weight_sum_of_state::Vector{Float64}
     
     function RockSampleParticleLB(pomdp::RockSample)

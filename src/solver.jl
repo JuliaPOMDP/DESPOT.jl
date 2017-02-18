@@ -16,8 +16,8 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
 
   # default constructor
     function DESPOTSolver(  ;
-                            lb::DESPOTLowerBound{S,A,O} = L(),
-                            ub::DESPOTUpperBound{S,A,O} = U(),
+                            lb::L = L(),
+                            ub::U = U(),
                             search_depth::Int64 = 90,
                             main_seed::UInt32 = convert(UInt32, 42),
                             time_per_move::Float64 = 1.0,                 # sec
@@ -64,8 +64,6 @@ end
 function init_solver{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
-    # solver.transition_distribution = create_transition_distribution(pomdp)
-    # solver.observation_distribution = create_observation_distribution(pomdp)
     solver.random_streams = RandomStreams(solver.config.n_particles,
                                           solver.config.search_depth,
                                           solver.config.main_seed)
