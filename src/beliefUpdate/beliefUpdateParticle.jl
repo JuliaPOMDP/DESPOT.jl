@@ -79,6 +79,23 @@ function initialize_belief{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
     return new_belief
 end
 
+#XXX this could probably be combined with the method above or made more efficient without the sample_particles!
+function initialize_belief{S}(bu::DESPOTBeliefUpdater{S}, b)
+    new_belief = create_belief(bu)
+
+    pool = Array(DESPOTParticle{S}, n_particles)
+    w = 1.0/bu.n_particles
+    for i in 1:bu.n_particles
+        pool[i] = DESPOTParticle{S}(rand(bu.rng, b), i, w)
+    end
+
+    DESPOT.sample_particles!(new_belief.particles,
+                             pool,
+                             bu.n_particles,
+                             bu.belief_update_seed,
+                             bu.rand_max)
+end
+
 function normalize!{S}(particles::Vector{DESPOTParticle{S}}) 
     prob_sum = 0.0
     for p in particles

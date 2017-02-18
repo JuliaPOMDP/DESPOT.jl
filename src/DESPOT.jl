@@ -7,6 +7,8 @@ using GenerativeModels
 import POMDPs:
         solve,
         action,
+        initialize_belief,
+        update,
         rand,
         rand!
 
@@ -18,7 +20,7 @@ abstract DESPOTBeliefUpdate{S,A,O}
 
 typealias DESPOTReward Float64
 
-type DESPOTRandomNumber <: POMDPs.AbstractRNG
+immutable DESPOTRandomNumber <: POMDPs.AbstractRNG
     number::Float64
 end
 
@@ -107,6 +109,19 @@ function action{S,A,O}(policy::DESPOTPolicy{S,A,O}, belief::DESPOTBelief{S})
     new_root(policy.solver, policy.pomdp, belief)
     a, n_trials = search(policy.solver, policy.pomdp) #TODO: return n_trials some other way
     return a
+end
+
+# for any kind of belief besides DESPOTBelief
+function action{S,A,O}(p::DESPOTPolicy{S,A,O}, b)
+    N = p.solver.config.n_particles
+    pool = Array(DESPOTParticle{S}, N)
+    w = 1.0/N
+    for i in 1:N
+        pool[i] = DESPOTParticle{S}(rand(p.solver.rng, b), i-1, w)
+    end
+
+    db = DESPOTBelief(pool, History{A,O}())
+    action(p, db)
 end
 
 function solve{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})

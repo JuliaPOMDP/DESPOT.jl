@@ -9,6 +9,7 @@ end
 
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
+include("test_with_other_particle_filter.jl")
 
 # Common problem parameters
 n_particles             = 500 # for both solver and belief updater
