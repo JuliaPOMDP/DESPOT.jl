@@ -6,10 +6,10 @@ using POMDPModels
 import DESPOT: upper_bound, lower_bound
 
 # Note: init_lower_bound and init_upper_bound should have a default implementation that does nothing
-immutable BabyUB <: DESPOTUpperBound{Bool, Bool, Bool} end
+immutable BabyUB end
 upper_bound{S}(::BabyUB, p::BabyPOMDP, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = 0
 
-immutable BabyLB <: DESPOTLowerBound{Bool, Bool, Bool} end
+immutable BabyLB end
 lower_bound{S}(::BabyLB, p::BabyPOMDP, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = (p.r_feed+p.r_hungry)/(1.0-discount(p))
 
 solver = DESPOTSolver{Bool, Bool, Bool, BabyLB, BabyUB}(ub = BabyUB(),
@@ -26,10 +26,10 @@ test_solver(solver, problem, updater=updater(problem))
 test_solver(solver, problem)
 
 
-immutable LightDarkUB <: DESPOTUpperBound{LightDark1DState, Int64, Float64} end
+immutable LightDarkUB end
 upper_bound{S}(::LightDarkUB, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.correct_r/(1.0-discount(p))
 
-immutable LightDarkLB <: DESPOTLowerBound{LightDark1DState, Int64, Float64} end
+immutable LightDarkLB end
 lower_bound{S}(::LightDarkLB, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.incorrect_r/(1.0-discount(p))
 
 solver = DESPOTSolver{LightDark1DState, Int64, Float64, LightDarkLB, LightDarkUB}(ub=LightDarkUB(),
