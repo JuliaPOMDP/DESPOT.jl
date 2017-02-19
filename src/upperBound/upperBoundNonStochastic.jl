@@ -14,9 +14,16 @@ type UpperBoundNonStochastic{S,A,O}
     end
 end
 
-function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
+fringe_upper_bound{S,A,O}(pomdp::POMDP{S,A,O}, state::S) = 
+    error("$(typeof(pomdp)) does not implement fringe_upper_bound")
+
+function init_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
                     pomdp::POMDP{S,A,O},
                     config::DESPOTConfig)
+                    
+# function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
+#                     pomdp::POMDP{S,A,O},
+#                     config::DESPOTConfig)
     
     current_level_ub_memo = Array(Float64, n_states(pomdp))
     next_level_ub_memo = Array(Float64, n_states(pomdp))
@@ -66,7 +73,7 @@ function DESPOT.init_upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
     return nothing
 end
 
-function DESPOT.upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
+function upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
                      pomdp::POMDP{S,A,O},
                      particles::Vector{DESPOTParticle{S}},
                      config::DESPOTConfig)
@@ -79,3 +86,4 @@ function DESPOT.upper_bound{S,A,O}(ub::UpperBoundNonStochastic{S,A,O},
   end
   return total_cost / weight_sum
 end
+

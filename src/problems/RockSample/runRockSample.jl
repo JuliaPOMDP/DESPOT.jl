@@ -6,6 +6,7 @@ include("rockSample.jl")
 include("rockSampleParticleLB.jl")
 include("rockSampleFringeUB.jl")
 include("../../upperBound/upperBoundNonStochastic.jl")
+include("rockSampleBounds.jl")
 include("../../beliefUpdate/beliefUpdateParticle.jl")
 
 function main(;
@@ -132,18 +133,14 @@ function execute(;
     initial_states = initial_state_distribution(pomdp)
     current_belief = initialize_belief(bu, initial_states) 
     updated_belief = create_belief(bu)
- 
-    custom_lb = RockSampleParticleLB{RockSampleState, RockSampleAction, RockSampleObs}(pomdp) # custom lower bound to use with DESPOT solver
-    custom_ub = UpperBoundNonStochastic{RockSampleState, RockSampleAction, RockSampleObs}(pomdp)
+    custom_bounds = RockSampleBounds(pomdp)
       
     solver::DESPOTSolver = DESPOTSolver{RockSampleState,
                                         RockSampleAction,
                                         RockSampleObs,
-                                        RockSampleParticleLB,
-                                        UpperBoundNonStochastic}(
+                                        RockSampleBounds}(
                                # specify the optional keyword parameters
-                               lb = custom_lb, # use the custom lower bound
-                               ub = custom_ub, # use the custom lower bound
+                               bounds = custom_bounds,
                                search_depth = search_depth,                                                                                       
                                main_seed = seed, # specify the main random seed
                                time_per_move = time_per_move,

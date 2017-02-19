@@ -1,10 +1,9 @@
 
-type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
+type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
-    lb::L
-    ub::U
+    bounds::B
     random_streams
-    root::VNode{S,A,O,L,U}
+    root::VNode{S,A,O,B}
     root_default_action::A
     node_count::Int64
     config::DESPOTConfig
@@ -16,8 +15,7 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
 
   # default constructor
     function DESPOTSolver(  ;
-                            lb::L = L(),
-                            ub::U = U(),
+                            bounds::B = B(), #TODO: fix
                             rng::AbstractRNG = Base.GLOBAL_RNG,
                             search_depth::Int64 = 90,
                             main_seed::UInt32 = convert(UInt32, 42),
@@ -40,8 +38,7 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
         this = new()
         
         # supplied variables
-        this.lb     = lb
-        this.ub     = ub
+        this.bounds = bounds
         
         # Instantiate and initialize config
         this.config = DESPOTConfig()
@@ -67,27 +64,25 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
     end
 end
 
-function init_solver{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
+function init_solver{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
                                           
     fill_random_streams!(solver.random_streams, solver.config.rand_max)
-    init_upper_bound(solver.ub, pomdp, solver.config)
-    init_lower_bound(solver.lb, pomdp, solver.config)
+    init_bounds(solver.bounds, pomdp, solver.config)
 
     return nothing
 end
 
-function new_root{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
+function new_root{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
                   pomdp::POMDP{S,A,O},
                   belief::DESPOTBelief{S})
     
     solver.belief = belief
-    solver.root, solver.root_default_action = VNode{S,A,O,L,U}(
+    solver.root, solver.root_default_action = VNode{S,A,O,B}(
                         pomdp,
                         belief.particles,
-                        solver.lb, 
-                        solver.ub,
+                        solver.bounds,
                         0,
                         1.0,
                         false,
@@ -96,7 +91,7 @@ function new_root{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
 end
 
 
-function search{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O})
+function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
     n_trials::Int64 = 0
     start_time::Float64 = time()
     stop_now::Bool = false
@@ -136,7 +131,7 @@ function search{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O})
     return nothing
 end
 
-function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, node::VNode{S,A,O,L,U}, n_trials::Int64)
+function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node::VNode{S,A,O,B}, n_trials::Int64)
 
     n_nodes_added::Int64 = 0
     ubound::Float64 = 0.0
@@ -146,7 +141,7 @@ function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, 
     end
     
     if isempty(node.q_nodes)
-        expand_one_step(solver, pomdp, node, solver.lb, solver.ub)
+        expand_one_step(solver, pomdp, node, solver.bounds)
     end
 
     a_star::A = node.best_ub_action
@@ -199,7 +194,7 @@ function trial{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDP{S,A,O}, 
     return n_nodes_added
 end
 
-function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A,O,L,U}, lb::L, ub::U)
+function expand_one_step{S,A,O,B}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A,O,B}, bounds::B)
   
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
@@ -237,10 +232,9 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
         
         first_step_reward /= node.weight
 
-        new_qnode = QNode{S,A,O,L,U}(
+        new_qnode = QNode{S,A,O,B}(
                           pomdp,
-                          lb,
-                          ub,
+                          bounds,
                           obs_to_particles,
                           node.depth,                                     
                           curr_action,
@@ -261,7 +255,7 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
 end
 
 # fill in pre-allocated variables
-function step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
+function step{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
               pomdp::POMDPs.POMDP{S,A,O},
               state::S,
               rng::AbstractRNG,

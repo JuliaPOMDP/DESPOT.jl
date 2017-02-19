@@ -1,5 +1,3 @@
-import DESPOT:
-        fringe_upper_bound
 
 function fringe_upper_bound(pomdp::RockSample, state::RockSampleState)
     if isterminal(pomdp, state)

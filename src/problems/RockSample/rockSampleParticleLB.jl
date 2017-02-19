@@ -12,12 +12,8 @@
   # sequence, use dynamic programming to look forward in the action
   # sequence to determine if it would be a better idea to first sense the
   # rock instead. (sensing eliminates the bad rocks in the particle set)
-
-import DESPOT:
-        lower_bound,
-        init_lower_bound
         
-type RockSampleParticleLB{S,A,O}
+type RockSampleParticleLB
     weight_sum_of_state::Vector{Float64}
     
     function RockSampleParticleLB(pomdp::RockSample)
@@ -28,16 +24,16 @@ type RockSampleParticleLB{S,A,O}
     end
 end
 
-function init_lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
+function init_bound(lb::RockSampleParticleLB,
                     pomdp::RockSample,
                     config::DESPOTConfig)
     # nothing to do for now
 end
 
-function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
+function lower_bound_and_action(lb::RockSampleParticleLB,
                      pomdp::RockSample,
-                     particles::Vector{DESPOTParticle{S}},
-                     ub_actions::Vector{A},
+                     particles::Vector{DESPOTParticle{RockSampleState}},
+                     ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
     
     weight_sum::Float64 = 0.0
