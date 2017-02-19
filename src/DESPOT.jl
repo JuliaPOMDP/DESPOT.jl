@@ -173,6 +173,11 @@ export
     init_lower_bound,
     init_upper_bound,
     fringe_upper_bound,
-    sample_particles! #TODO: need a better way of doing this, perhaps put in POMDPutils
+    sample_particles!, #TODO: need a better way of doing this, perhaps put in POMDPutils
+    ########## Visualization ##########
+    blink,
+    DESPOTVisualizer
     
+include("visualization.jl")
+
 end #module
