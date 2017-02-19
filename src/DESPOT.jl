@@ -7,6 +7,8 @@ using GenerativeModels
 import POMDPs:
         solve,
         action,
+        initialize_belief,
+        update,
         rand,
         rand!
 
@@ -106,6 +108,19 @@ function action{S,A,O}(policy::DESPOTPolicy{S,A,O}, belief::DESPOTBelief{S})
     return a
 end
 
+# for any kind of belief besides DESPOTBelief
+function action{S,A,O}(p::DESPOTPolicy{S,A,O}, b)
+    N = p.solver.config.n_particles
+    pool = Array(DESPOTParticle{S}, N)
+    w = 1.0/N
+    for i in 1:N
+        pool[i] = DESPOTParticle{S}(rand(p.solver.rng, b), i-1, w)
+    end
+
+    db = DESPOTBelief(pool, History{A,O}())
+    action(p, db)
+end
+
 function solve{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
     @warn_requirements solve(solver, pomdp)
     policy = DESPOTPolicy(solver, pomdp)
@@ -140,6 +155,9 @@ export
     DESPOTDefaultRNG,
     DESPOTRandomNumber,
     DESPOTReward,
+    ######## RANDOM STREAMS ######
+    RandomStreams,
+    MersenneStreamArray,
     ######## HISTORY-RELATED TYPES AND METHODS ######
     History, #TODO: need to handle history-related stuff better, place somewhere else
     add,

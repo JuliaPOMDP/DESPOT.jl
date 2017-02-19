@@ -9,6 +9,8 @@ end
 
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
+include("test_with_other_particle_filter.jl")
+include("test_mersenne.jl")
 
 # Common problem parameters
 n_particles             = 500 # for both solver and belief updater
@@ -60,6 +62,8 @@ if is_apple()
 end
 
 println("DESPOT/RockSample(4,4) batch test status: PASSED")
+
+
 
 # Non-standard RockSample(5,6) test 
 # (non-standard means that the initial state space is generated programmatically)

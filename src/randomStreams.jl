@@ -1,3 +1,15 @@
+#=
+############ Streams ############
+This file contains several random stream types. Any new streams type should implement the following interface:
+
+create_rng(::Stream) creates a (mutable) rng of an appropriate type to be emitted from the stream
+fill_random_streams!(::Stream, rand_max::Int) is called at the beginning of action selection
+set_rng_state!(rng::AbstractRNG, ::Stream, scenario::Int, depth::Int) is called at the beginning of each simulation step to set the rng state to a value appropriate for the given scenario and depth
+###############################
+=#
+
+
+# RandomStreams
 # This type encapsulates the streams of random numbers used in state
 # transitions during simulations. It also provides random-number seeds
 # for different components of the system.
@@ -32,7 +44,7 @@ get_world_seed(streams::RandomStreams) =
 get_model_seed(streams::RandomStreams) =
     streams.seed $ (streams.num_streams + 2)
 
-function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
+function fill_random_streams!(empty_streams::RandomStreams, rand_max::Int64)
     # Populate random streams
     if is_linux()
         ccall((:srand, "libc"), Void, (Cuint,), 1)
@@ -51,3 +63,33 @@ function fill_random_streams(empty_streams::RandomStreams, rand_max::Int64)
         end
     end  
 end
+
+function set_rng_state!(rng::DESPOTRandomNumber, rs::RandomStreams, scenario::Int, depth::Int)
+    rng.number = rs.streams[scenario, depth]
+end
+
+create_rng(::RandomStreams) = DESPOTRandomNumber(-1)
+
+
+### MersenneTwister Streams ###
+
+type MersenneStreamArray
+    rng::AbstractRNG
+    streams::Vector{Vector{MersenneTwister}}
+end
+MersenneStreamArray(rng::AbstractRNG) = MersenneStreamArray(rng, Vector{MersenneTwister}[])
+
+function set_rng_state!(rng::MersenneTwister, sa::MersenneStreamArray, scenario::Int, depth::Int)
+    while length(sa.streams) < scenario
+        push!(sa.streams, MersenneTwister[])
+    end
+    stream = sa.streams[scenario]
+    while length(stream) < depth
+        push!(stream, MersenneTwister(rand(sa.rng, UInt32))) # maybe just advance a large number of steps and copy, rather than seed?
+    end
+    copy!(rng, stream[depth])
+end
+
+fill_random_streams!(streams::MersenneStreamArray, rand_max::Int64) = nothing
+
+create_rng(::MersenneStreamArray) = copy(Base.GLOBAL_RNG)

@@ -3,13 +3,13 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
     lb::L
     ub::U
-    random_streams::RandomStreams
+    random_streams
     root::VNode{S,A,O,L,U}
     root_default_action::A
     node_count::Int64
     config::DESPOTConfig
+    rng::AbstractRNG
     #preallocated for simulations
-    rng::DESPOT.DESPOTRandomNumber
     curr_reward::DESPOTReward
     next_state::S
     curr_obs::O
@@ -18,6 +18,7 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
     function DESPOTSolver(  ;
                             lb::L = L(),
                             ub::U = U(),
+                            rng::AbstractRNG = Base.GLOBAL_RNG,
                             search_depth::Int64 = 90,
                             main_seed::UInt32 = convert(UInt32, 42),
                             time_per_move::Float64 = 1.0,                 # sec
@@ -30,6 +31,7 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
                             max_trials::Int64 = -1,
                             rand_max::Int64 = 2147483647,
                             debug::Int64 = 0,
+                            random_streams = RandomStreams(n_particles, search_depth, main_seed),
                             root_default_action = A(),
                             next_state = S(),
                             curr_obs = O()
@@ -56,11 +58,11 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
         this.config.rand_max = rand_max
         this.config.debug = debug        
         this.root_default_action = root_default_action
-        this.rng = DESPOTRandomNumber(-1)
+        this.rng = rng
         this.next_state = next_state
         this.curr_obs = curr_obs
         this.curr_reward = 0.0
-        
+        this.random_streams = random_streams
         return this
     end
 end
@@ -68,11 +70,8 @@ end
 function init_solver{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
-    solver.random_streams = RandomStreams(solver.config.n_particles,
-                                          solver.config.search_depth,
-                                          solver.config.main_seed)
-                                           
-    fill_random_streams(solver.random_streams, solver.config.rand_max)
+                                          
+    fill_random_streams!(solver.random_streams, solver.config.rand_max)
     init_upper_bound(solver.ub, pomdp, solver.config)
     init_lower_bound(solver.lb, pomdp, solver.config)
 
@@ -205,16 +204,20 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
     remaining_reward::Float64 = 0.0
+    rng = create_rng(solver.random_streams)
     
     for curr_action in iterator(actions(pomdp))
         obs_to_particles = Dict{O,Vector{DESPOTParticle{S}}}()
 
         for p in node.particles
+
+            set_rng_state!(rng, solver.random_streams, p.id+1, node.depth+1)
+
             step(   
                 solver,
                 pomdp,
                 p.state,
-                solver.random_streams.streams[p.id+1, node.depth+1],
+                rng,
                 curr_action)
             
             if isterminal(pomdp, solver.next_state) && !isterminal_obs(pomdp, solver.curr_obs)
@@ -261,12 +264,11 @@ end
 function step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U},
               pomdp::POMDPs.POMDP{S,A,O},
               state::S,
-              rand_num::Float64,
+              rng::AbstractRNG,
               action::A)
               
-    solver.rng.number = rand_num
     solver.next_state, solver.curr_obs, solver.curr_reward =
-        GenerativeModels.generate_sor(pomdp, state, action, solver.rng)
+        GenerativeModels.generate_sor(pomdp, state, action, rng)
 
     return nothing
 end
