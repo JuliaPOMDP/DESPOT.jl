@@ -26,10 +26,10 @@ test_solver(solver, problem, updater=updater(problem))
 test_solver(solver, problem)
 
 
-immutable LightDarkUB <: DESPOTUpperBound{LightDark1DState, Int64, Float64} end
+immutable LightDarkUB end
 upper_bound{S}(::LightDarkUB, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.correct_r/(1.0-discount(p))
 
-immutable LightDarkLB <: DESPOTLowerBound{LightDark1DState, Int64, Float64} end
+immutable LightDarkLB end
 lower_bound{S}(::LightDarkLB, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.incorrect_r/(1.0-discount(p))
 
 solver = DESPOTSolver{LightDark1DState, Int64, Float64, LightDarkLB, LightDarkUB}(ub=LightDarkUB(),
