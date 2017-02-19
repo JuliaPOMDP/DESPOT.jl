@@ -30,8 +30,6 @@ The following DESPOT-specific types are likely to be of interest to problem and 
 |Type				|Supertype		|Comments						|
 |-------------------------------|-----------------------|-------------------------------------------------------|
 |DESPOTSolver			|POMDPs.Solver		|The main solver type 											|
-|DESPOTUpperBound		|Any			|An abstract type for defining types and functions for computing an upper bound			| 
-|DESPOTLowerBound		|Any			|An abstract type for defining types and functions for computing a lower bound			|
 |DESPOTPolicy			|POMDPs.Policy		|A custom policy type											|
 |DESPOTParticle			|Any			|A custom particle type used by the solver and the default belief updater				|
 |DESPOTBelief			|Any			|A custom belief type containing both a particle-based belief and a solver history log		|
@@ -90,10 +88,10 @@ A DESPOT solver can be customized with user-provided upper and lower bound funct
 ### Upper bound estimation ###
 
 The default type of upper bound provided is a non-stochastic estimate based on value iteration, defined in [upperBoundNonStochastic.jl](src/upperBound/upperBoundNonStochastic.jl).
- To add a custom upper bound algorithm, define a custom type as a subtype of *DESPOTUpperBound*, e.g.:
+ To add a custom upper bound algorithm, first define a custom type, e.g.:
 
 ```julia
-type MyUpperBound <: DESPOTUpperBound
+type MyUpperBound
 ```
 then define functions to initialize and compute the upper bound with the following signatures:
 
@@ -122,10 +120,10 @@ solver = DESPOTSolver(pomdp, 			# reference to the problem model
 ### Lower bound estimation ###
 
 An example problem-specific lower bound type and the associated methods are provided for the RockSample problem in [rockSampleParticleLB.jl](/src/problems/RockSample/rockSampleParticleLB.jl). The algorithm for this lower bound estimator is based on dynamic programming.
- Similarly to upper bounds, to add a custom upper bound algorithm, define a custom type as a subtype of *DESPOTLowerBound*, e.g.:
+ Similarly to upper bounds, to add a custom upper bound algorithm, first define a custom type, e.g.:
 
 ```julia
-type MyLowerBound <: DESPOTLowerBound
+type MyLowerBound
 ```
 then define functions to initialize and compute the upper bound with the following signatures:
 

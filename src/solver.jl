@@ -16,9 +16,9 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
 
   # default constructor
     function DESPOTSolver(  ;
-                            lb::DESPOTLowerBound{S,A,O} = L(),
-                            ub::DESPOTUpperBound{S,A,O} = U(),
-                            rng::AbstractRNG = Base.GLOBAL_RNG,
+                            lb::L = L(),
+                            ub::U = U(),
+		            rng::AbstractRNG = Base.GLOBAL_RNG,
                             search_depth::Int64 = 90,
                             main_seed::UInt32 = convert(UInt32, 42),
                             time_per_move::Float64 = 1.0,                 # sec
@@ -220,16 +220,6 @@ function expand_one_step{S,A,O,L,U}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,
                 rng,
                 curr_action)
             
-            #=
-            if isterminal(pomdp, solver.next_state) && !isterminal_obs(pomdp, solver.curr_obs)
-                error("""
-                      Terminal state in a particle mismatches observation.
-                      sp: $(solver.next_state)
-                      o: $(solver.curr_obs)
-                      """)
-            end
-            =#
-
             if !haskey(obs_to_particles, solver.curr_obs)
                 obs_to_particles[solver.curr_obs] = DESPOTParticle{S}[]
             end

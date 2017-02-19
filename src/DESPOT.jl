@@ -14,8 +14,6 @@ import POMDPs:
 
 include("history.jl")
 
-abstract DESPOTUpperBound{S,A,O}
-abstract DESPOTLowerBound{S,A,O}
 abstract DESPOTBeliefUpdate{S,A,O}
 
 typealias DESPOTReward Float64
@@ -77,24 +75,23 @@ end
 
 create_policy{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O}) = DESPOTPolicy(solver, pomdp)
 
-# UPPER and LOWER BOUND FUNCTION INTERFACES
-lower_bound{S,A,O}(lb::DESPOTLowerBound{S,A,O},
+lower_bound{S,A,O,B}(lb::B,
             pomdp::POMDPs.POMDP{S,A,O},
             particles::Vector{DESPOTParticle{S}}, 
             config::DESPOTConfig) = 
     error("no lower_bound method found for $(typeof(lb)) type")
 
-upper_bound{S,A,O}(ub::DESPOTUpperBound{S,A,O},
+upper_bound{S,A,O,B}(ub::B,
             pomdp::POMDP{S,A,O},
             particles::Vector{DESPOTParticle{S}},
             config::DESPOTConfig) = 
     error("no upper_bound method found for $(typeof(lb)) type")
-    
-init_lower_bound{S,A,O}(lb::DESPOTLowerBound{S,A,O},
+
+init_lower_bound{S,A,O,B}(lb::B,
                     pomdp::POMDPs.POMDP{S,A,O},
                     config::DESPOTConfig) = lb
     
-init_upper_bound{S,A,O}(ub::DESPOTUpperBound{S,A,O},
+init_upper_bound{S,A,O,B}(ub::B,
                     pomdp::POMDPs.POMDP{S,A,O},
                     config::DESPOTConfig) = ub
     
@@ -149,8 +146,6 @@ export
     ################## DESPOT TYPES ##################
     DESPOTSolver,
     DESPOTPolicy,
-    DESPOTUpperBound,
-    DESPOTLowerBound,
     DESPOTParticle,
     DESPOTBelief,
     DESPOTBeliefUpdate,
