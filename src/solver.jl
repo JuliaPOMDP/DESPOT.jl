@@ -16,8 +16,8 @@ type DESPOTSolver{S,A,O,L,U} <: POMDPs.Solver
 
   # default constructor
     function DESPOTSolver(  ;
-                            lb::DESPOTLowerBound{S,A,O} = L(),
-                            ub::DESPOTUpperBound{S,A,O} = U(),
+                            lb::L = L(),
+                            ub::U = U(),
                             rng::AbstractRNG = Base.GLOBAL_RNG,
                             search_depth::Int64 = 90,
                             main_seed::UInt32 = convert(UInt32, 42),
@@ -70,7 +70,7 @@ end
 function init_solver{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
-                                           
+                                          
     fill_random_streams!(solver.random_streams, solver.config.rand_max)
     init_upper_bound(solver.ub, pomdp, solver.config)
     init_lower_bound(solver.lb, pomdp, solver.config)

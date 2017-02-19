@@ -1,6 +1,6 @@
 
 
-type UpperBoundNonStochastic{S,A,O} <: DESPOTUpperBound{S,A,O}
+type UpperBoundNonStochastic{S,A,O}
     upper_bound_act::Vector{A}
     upper_bound_memo::Vector{Float64}
     
