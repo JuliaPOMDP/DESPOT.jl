@@ -13,7 +13,7 @@ typealias NodeDict Dict{Int, Dict{String, Any}}
 
 function create_json(v::DESPOTVisualizer)
     node_dict = NodeDict()
-    dict = recursive_push!(node_dict, v.root, :root)
+    dict = recursive_push!(node_dict, v.root, "root (Q values at action nodes are upper bounds)")
     json = JSON.json(node_dict)
     return (json, 1)
 end
@@ -49,7 +49,7 @@ function recursive_push!{S,A,O,L,U}(nd::NodeDict, n::QNode{S,A,O,L,U}, parent_id
                   "tt_tag"=>tooltip_tag(n.action),
                   "N"=>sum(length(v.particles) for v in values(n.obs_to_node)),
                   # "Q"=>"between $(get_lower_bound(n)) and $(get_upper_bound(n))"
-                  "Q"=>0.0
+                  "Q"=>get_upper_bound(n)
                   )
     for (o,c) in n.obs_to_node
         recursive_push!(nd, c, o, id)
