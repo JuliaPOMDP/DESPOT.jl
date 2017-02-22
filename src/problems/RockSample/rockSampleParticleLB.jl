@@ -15,11 +15,14 @@
         
 type RockSampleParticleLB
     weight_sum_of_state::Vector{Float64}
+    best_action::RockSampleAction
     
     function RockSampleParticleLB(pomdp::RockSample)
         this = new()
         this.weight_sum_of_state = Array(Float64, pomdp.n_states)
         fill!(this.weight_sum_of_state, -Inf)
+        this.best_action = RockSampleAction(-1)
+        
         return this
     end
 end
@@ -30,7 +33,7 @@ function init_bound(lb::RockSampleParticleLB,
     # nothing to do for now
 end
 
-function lower_bound_and_action(lb::RockSampleParticleLB,
+function lower_bound(lb::RockSampleParticleLB,
                      pomdp::RockSample,
                      particles::Vector{DESPOTParticle{RockSampleState}},
                      ub_actions::Vector{RockSampleAction},
@@ -44,7 +47,7 @@ function lower_bound_and_action(lb::RockSampleParticleLB,
     # any particle state is ok
     if length(particles) > 0
         if isterminal(pomdp, particles[1].state)
-            return 0.0, RockSampleAction(-1) # lower bound value and best action
+            return 0.0 # lower bound value and best action
         end
     end
 
@@ -129,7 +132,7 @@ function lower_bound_and_action(lb::RockSampleParticleLB,
         s = next_s #TODO: deepcopy?
     end
     
-    best_action = (length(optimal_policy) == 0) ? RockSampleAction(2) : optimal_policy[1]
+    lb.best_action = (length(optimal_policy) == 0) ? RockSampleAction(2) : optimal_policy[1]
 
     # Execute the sequence backwards to allow using the DP trick
     for i = length(optimal_policy):-1:1
@@ -156,5 +159,5 @@ function lower_bound_and_action(lb::RockSampleParticleLB,
             @assert(false)
         end
     end
-    return ret, best_action
+    return ret
 end

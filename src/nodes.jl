@@ -56,14 +56,14 @@ type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
                 this.weight_sum += obs_weight_sum
                 add(this.history, action, obs)
                 remove_last(this.history)
-                this.obs_to_node[obs], a::A = VNode{S,A,O,B}(
-                                            pomdp,
-                                            particles,
-                                            bounds,
-                                            this.depth+1,  # TODO: check depth
-                                            obs_weight_sum,
-                                            false,
-                                            config)
+                this.obs_to_node[obs]   = VNode{S,A,O,B}(
+                                          pomdp,
+                                          particles,
+                                          bounds,
+                                          this.depth+1,  # TODO: check depth
+                                          obs_weight_sum,
+                                          false,
+                                          config)
             end
             return this
         end
@@ -78,11 +78,12 @@ type VNode{S,A,O,B}
   lbound::Float64
   ubound::Float64
   depth::Int64
-  default_value::Float64            # Value of the default policy (= lbound value
+  default_value::Float64            # Value of the default policy (equals to lbound value
                                     # before any backups are performed)
   pruned_action::A                  # Best action at the node after pruning
   weight::Float64                   # Sum of particle weights at this belief
   best_ub_action::A                 # Action that gives the highest upper bound
+  best_lb_action::A                 # Action that gives the highest lower bound
   in_tree::Bool                     # True if the node is visited by trial().
                                     # In order to determine if a node is a fringe node
                                     # of the belief tree, we need to expand it one level.
@@ -111,13 +112,13 @@ type VNode{S,A,O,B}
         this = new()
         this.particles          = particles
         this.lbound,
-        this.ubound,
-        a::A                    = bounds(b, pomdp, particles, config)
+        this.ubound             = bounds(b, pomdp, particles, config)
         this.depth              = depth
         this.default_value      = this.lbound
         this.pruned_action      = A()
         this.weight             = weight
         this.best_ub_action     = A()
+        this.best_lb_action     = b.lb.best_action
         this.in_tree            = in_tree
         this.n_tree_nodes       = in_tree ? 1:0
         this.q_nodes            = Dict{A,QNode{S,A,O,B}}()
@@ -126,7 +127,7 @@ type VNode{S,A,O,B}
         this.q_star             = -Inf
         
         validate_bounds(this.lbound, this.ubound, config)
-        return this,a
+        return this
   end
 end
 

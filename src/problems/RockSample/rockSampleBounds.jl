@@ -21,10 +21,9 @@ function bounds(b::RockSampleBounds,
        config::DESPOTConfig)
        
     ubound::Float64 = upper_bound(b.ub, pomdp, particles, config)
-    lbound::Float64, best_action::RockSampleAction =
-        lower_bound_and_action(b.lb, pomdp, particles, b.ub.upper_bound_act, config)
+    lbound::Float64 = lower_bound(b.lb, pomdp, particles, b.ub.upper_bound_act, config)
        
-    return lbound, ubound, best_action
+    return lbound, ubound
 end
 
 function init_bounds(bounds::RockSampleBounds, pomdp::RockSample, config::DESPOTConfig)
