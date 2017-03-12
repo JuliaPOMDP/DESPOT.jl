@@ -3,9 +3,6 @@ using DESPOT
 using POMDPToolbox
 
 include("rockSample.jl")
-include("rockSampleParticleLB.jl")
-include("rockSampleFringeUB.jl")
-include("../../upperBound/upperBoundNonStochastic.jl")
 include("rockSampleBounds.jl")
 include("../../beliefUpdate/beliefUpdateParticle.jl")
 

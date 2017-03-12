@@ -1,4 +1,7 @@
-# Upper-level bounds type for the RockSample problem
+# Combined (lower and upper) bounds type for the RockSample problem
+include("rockSampleParticleLB.jl")
+include("rockSampleFringeUB.jl")
+include("../../upperBound/upperBoundNonStochastic.jl")
 
 import DESPOT: bounds, init_bounds
 
