@@ -1,4 +1,4 @@
-import POMDPs: update
+import POMDPs: update, initialize_belief
 using DESPOT
 
 type DESPOTBeliefUpdater{S,A,O} <: POMDPs.Updater

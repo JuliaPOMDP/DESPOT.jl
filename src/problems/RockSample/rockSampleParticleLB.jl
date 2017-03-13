@@ -12,32 +12,31 @@
   # sequence, use dynamic programming to look forward in the action
   # sequence to determine if it would be a better idea to first sense the
   # rock instead. (sensing eliminates the bad rocks in the particle set)
-
-import DESPOT:
-        lower_bound,
-        init_lower_bound
         
-type RockSampleParticleLB{S,A,O}
+type RockSampleParticleLB
     weight_sum_of_state::Vector{Float64}
+    best_action::RockSampleAction
     
     function RockSampleParticleLB(pomdp::RockSample)
         this = new()
         this.weight_sum_of_state = Array(Float64, pomdp.n_states)
         fill!(this.weight_sum_of_state, -Inf)
+        this.best_action = RockSampleAction(-1)
+        
         return this
     end
 end
 
-function init_lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
+function init_bound(lb::RockSampleParticleLB,
                     pomdp::RockSample,
                     config::DESPOTConfig)
     # nothing to do for now
 end
 
-function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
+function lower_bound(lb::RockSampleParticleLB,
                      pomdp::RockSample,
-                     particles::Vector{DESPOTParticle{S}},
-                     ub_actions::Vector{A},
+                     particles::Vector{DESPOTParticle{RockSampleState}},
+                     ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
     
     weight_sum::Float64 = 0.0
@@ -48,7 +47,7 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
     # any particle state is ok
     if length(particles) > 0
         if isterminal(pomdp, particles[1].state)
-            return 0.0, RockSampleAction(-1) # lower bound value and best action
+            return 0.0 # lower bound value and best action
         end
     end
 
@@ -133,7 +132,7 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
         s = next_s #TODO: deepcopy?
     end
     
-    best_action = (length(optimal_policy) == 0) ? RockSampleAction(2) : optimal_policy[1]
+    lb.best_action = (length(optimal_policy) == 0) ? RockSampleAction(2) : optimal_policy[1]
 
     # Execute the sequence backwards to allow using the DP trick
     for i = length(optimal_policy):-1:1
@@ -160,5 +159,5 @@ function lower_bound{S,A,O}(lb::RockSampleParticleLB{S,A,O},
             @assert(false)
         end
     end
-    return ret, best_action
+    return ret
 end

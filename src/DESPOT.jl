@@ -68,35 +68,22 @@ include("nodes.jl")
 include("utils.jl")
 include("solver.jl")
 
-type DESPOTPolicy{S,A,O,L,U} <: POMDPs.Policy
-    solver::DESPOTSolver{S,A,O,L,U}
+type DESPOTPolicy{S,A,O,B} <: POMDPs.Policy
+    solver::DESPOTSolver{S,A,O,B}
     pomdp ::POMDPs.POMDP{S,A,O}
 end
 
-create_policy{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O}) = DESPOTPolicy(solver, pomdp)
+create_policy{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDPs.POMDP{S,A,O}) = DESPOTPolicy(solver, pomdp)
 
-lower_bound{S,A,O,B}(lb::B,
-            pomdp::POMDPs.POMDP{S,A,O},
-            particles::Vector{DESPOTParticle{S}}, 
-            config::DESPOTConfig) = 
-    error("no lower_bound method found for $(typeof(lb)) type")
-
-upper_bound{S,A,O,B}(ub::B,
+bounds{S,A,O,B}(bounds::B,
             pomdp::POMDP{S,A,O},
             particles::Vector{DESPOTParticle{S}},
             config::DESPOTConfig) = 
-    error("no upper_bound method found for $(typeof(lb)) type")
-
-init_lower_bound{S,A,O,B}(lb::B,
-                    pomdp::POMDPs.POMDP{S,A,O},
-                    config::DESPOTConfig) = lb
+    error("no bounds() method found for $(typeof(bounds)) type")
     
-init_upper_bound{S,A,O,B}(ub::B,
-                    pomdp::POMDPs.POMDP{S,A,O},
-                    config::DESPOTConfig) = ub
-    
-fringe_upper_bound{S,A,O}(pomdp::POMDP{S,A,O}, state::S) = 
-    error("$(typeof(pomdp)) does not implement fringe_upper_bound")
+init_bounds{S,A,O,B}(bounds::B,
+            pomdp::POMDPs.POMDP{S,A,O},
+            config::DESPOTConfig) = nothing
 
 # FUNCTIONS
 
@@ -119,8 +106,8 @@ function action{S,A,O}(p::DESPOTPolicy{S,A,O}, b)
     action(p, db)
 end
 
-function solve{S,A,O,L,U}(solver::DESPOTSolver{S,A,O,L,U}, pomdp::POMDPs.POMDP{S,A,O})
-    @warn_requirements solve(solver, pomdp) 
+function solve{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDPs.POMDP{S,A,O})
+    @warn_requirements solve(solver, pomdp)
     policy = DESPOTPolicy(solver, pomdp)
     init_solver(solver, pomdp)
     return policy
@@ -168,16 +155,8 @@ export
     start_state,
     create_policy,
     ########## UPPER AND LOWER BOUND METHODS #########
-    lower_bound,
-    upper_bound,
-    init_lower_bound,
-    init_upper_bound,
-    fringe_upper_bound,
-    sample_particles!, #TODO: need a better way of doing this, perhaps put in POMDPutils
-    ########## Visualization ##########
-    blink,
-    DESPOTVisualizer
+    bounds,
+    init_bounds,
+    sample_particles! #TODO: need a better way of doing this, perhaps put in POMDPutils
     
-include("visualization.jl")
-
 end #module

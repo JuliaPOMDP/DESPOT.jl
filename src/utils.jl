@@ -18,8 +18,8 @@ end
 # root: Root of the search tree, passed to facilitate computation of the
 # excess uncertainty
 
-function get_best_weuo{S,A,O,L,U}(qnode::QNode{S,A,O,L,U},
-                       root::VNode{S,A,O,L,U},
+function get_best_weuo{S,A,O,B}(qnode::QNode{S,A,O,B},
+                       root::VNode{S,A,O,B},
                        config::DESPOTConfig,
                        discount::Float64)
   weighted_eu_star::Float64 = -Inf
@@ -44,7 +44,7 @@ function get_best_weuo{S,A,O,L,U}(qnode::QNode{S,A,O,L,U},
 end
 
 # Get WEUO for a single observation branch
-function get_node_weuo{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, root::VNode{S,A,O,L,U}, obs::Int64)
+function get_node_weuo{S,A,O,B}(qnode::QNode{S,A,O,B}, root::VNode{S,A,O,B}, obs::Int64)
    weighted_eu = qnode.obs_to_node[obs].weight / qnode.weight_sum *
                         excess_uncertainty(
                         qnode.obs_to_node[obs].lbound, qnode.obs_to_node[obs].ubound,
@@ -54,7 +54,7 @@ end
 
 #
 # Returns the v-node corresponding to a given observation
-function belief{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, obs::O)
+function belief{S,A,O,B}(qnode::QNode{S,A,O,B}, obs::O)
   return qnode.obs_to_node[obs]
 end
 

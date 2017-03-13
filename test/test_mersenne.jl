@@ -4,17 +4,14 @@ pomdp = RockSample(4, 4)
 
 filter = SIRParticleFilter(pomdp, 500)
 
-custom_lb = RockSampleParticleLB{RockSampleState, RockSampleAction, RockSampleObs}(pomdp) # custom lower bound to use with DESPOT solver
-custom_ub = UpperBoundNonStochastic{RockSampleState, RockSampleAction, RockSampleObs}(pomdp)
+custom_bounds = RockSampleBounds(pomdp) # custom bounds for use with DESPOT solver
   
 solver = DESPOTSolver{RockSampleState,
                       RockSampleAction,
                       RockSampleObs,
-                      RockSampleParticleLB,
-                      UpperBoundNonStochastic}(lb = custom_lb,
-                                               ub = custom_ub,
-                                               random_streams = MersenneStreamArray(MersenneTwister(2)) 
-                                              )
+                      RockSampleBounds}(bounds = custom_bounds,
+                                        random_streams = MersenneStreamArray(MersenneTwister(2)) 
+                                       )
 
 policy = solve(solver, pomdp)
 
