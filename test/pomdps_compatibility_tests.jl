@@ -24,8 +24,6 @@ problem = BabyPOMDP()
 # test_solver is from POMDPToolbox
 test_solver(solver, problem, updater=updater(problem))
 
-blink(solver)
-
 test_solver(solver, problem)
 
 
