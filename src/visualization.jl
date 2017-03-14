@@ -37,7 +37,7 @@ function recursive_push!(nd::NodeDict, n::VNode, obs, parent_id=-1)
     return nd
 end
 
-function recursive_push!{S,A,O,L,U}(nd::NodeDict, n::QNode{S,A,O,L,U}, parent_id=-1)
+function recursive_push!{S,A,O,B}(nd::NodeDict, n::QNode{S,A,O,B}, parent_id=-1)
     id = length(nd) + 1
     if parent_id > 0
         push!(nd[parent_id]["children_ids"], id)

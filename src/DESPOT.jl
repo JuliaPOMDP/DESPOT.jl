@@ -137,6 +137,8 @@ end
     @req iterator(::typeof(as))    
 end
 
+include("visualization.jl")
+
 export
     ################## DESPOT TYPES ##################
     DESPOTSolver,
@@ -165,6 +167,9 @@ export
     ########## UPPER AND LOWER BOUND METHODS #########
     bounds,
     init_bounds,
-    sample_particles! #TODO: need a better way of doing this, perhaps put in POMDPutils
+    sample_particles!, #TODO: need a better way of doing this, perhaps put in POMDPutils
+    ########## Visualization #######
+    blink,
+    DESPOTVisualizer
     
 end #module
