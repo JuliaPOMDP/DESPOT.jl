@@ -4,7 +4,6 @@ type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
     bounds::B
     random_streams
     root::VNode{S,A,O,B}
-    root_default_action::A
     node_count::Int64
     config::DESPOTConfig
     rng::AbstractRNG
@@ -30,7 +29,6 @@ type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
                             rand_max::Int64 = 2147483647,
                             debug::Int64 = 0,
                             random_streams = RandomStreams(n_particles, search_depth, main_seed),
-                            root_default_action = A(),
                             next_state = S(),
                             curr_obs = O()
                            )
@@ -54,7 +52,6 @@ type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
         this.config.max_trials = max_trials
         this.config.rand_max = rand_max
         this.config.debug = debug        
-        this.root_default_action = root_default_action
         this.rng = rng
         this.next_state = next_state
         this.curr_obs = curr_obs
@@ -79,7 +76,7 @@ function new_root{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
                   belief::DESPOTBelief{S})
     
     solver.belief = belief
-    solver.root  = VNode{S,A,O,B}(
+    solver.root = VNode{S,A,O,B}(
                         pomdp,
                         belief.particles,
                         solver.bounds,
@@ -87,9 +84,6 @@ function new_root{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
                         1.0,
                         false,
                         solver.config)
-                        
-    solver.root_default_action = solver.root.best_lb_action
-    
     return nothing
 end
 
@@ -124,10 +118,12 @@ function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
     if solver.config.pruning_constant != 0.0
         total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
         act = solver.root.pruned_action
-        return (act == -1 ? solver.root_default_action : act), n_trials #TODO: fix actions
+        default = default_action(solver.bounds, pomdp, solver.root.particles, solver.config)
+        return (act == -1 ? default : act), n_trials #TODO: fix actions
     elseif !solver.root.in_tree
         println("Root not in tree")
-        return solver.root_default_action, n_trials
+        default = default_action(solver.bounds, pomdp, solver.root.particles, solver.config)
+        return default, n_trials
     else
         return get_lb_action(solver.root, solver.config, discount(pomdp)), n_trials
     end

@@ -3,7 +3,7 @@ include("rockSampleParticleLB.jl")
 include("rockSampleFringeUB.jl")
 include("../../upperBound/upperBoundNonStochastic.jl")
 
-import DESPOT: bounds, init_bounds
+import DESPOT: bounds, init_bounds, default_action
 
 type RockSampleBounds
     lb::RockSampleParticleLB
@@ -32,4 +32,9 @@ end
 function init_bounds(bounds::RockSampleBounds, pomdp::RockSample, config::DESPOTConfig)
     init_bound(bounds.ub, pomdp, config)
     # lower bound init not currently needed
+end
+
+function default_action(b::RockSampleBounds, pomdp::RockSample, particles::Vector, config::DESPOTConfig)
+    bounds(b, pomdp, particles, config)
+    return b.lb.best_action
 end

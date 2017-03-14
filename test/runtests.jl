@@ -1,14 +1,13 @@
 using Base.Test
 
-# uncomment below to include compatibility tests
-# include("pomdps_compatibility_tests.jl")
-
 if is_windows()
     error("This test is only valid on Linux and OS X platforms at this time") 
 end
 
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
+
+include("pomdps_compatibility_tests.jl")
 include("test_with_other_particle_filter.jl")
 include("test_mersenne.jl")
 

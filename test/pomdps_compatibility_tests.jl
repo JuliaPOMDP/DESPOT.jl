@@ -10,9 +10,9 @@ bounds{S}(::BabyBounds, p::BabyPOMDP, ::Vector{DESPOTParticle{S}}, ::DESPOTConfi
 
 solver = DESPOTSolver{Bool, Bool, Bool, BabyBounds}(bounds = BabyBounds(),
                                                     random_streams=MersenneStreamArray(MersenneTwister(1)),
-                                                    root_default_action=false,
                                                     next_state=false,
-                                                    curr_obs=false
+                                                    curr_obs=false,
+                                                    rng=Base.GLOBAL_RNG
                                                     )
 problem = BabyPOMDP()
 
@@ -23,16 +23,11 @@ test_solver(solver, problem)
 
 
 immutable LightDarkBounds end
-upper_bound{S}(::LightDarkUB, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.correct_r/(1.0-discount(p))
+bounds{S}(::LightDarkBounds, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.incorrect_r/(1.0-discount(p)), p.correct_r/(1.0-discount(p))
 
-immutable LightDarkLB end
-lower_bound{S}(::LightDarkLB, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.incorrect_r/(1.0-discount(p))
-
-solver = DESPOTSolver{LightDark1DState, Int64, Float64, LightDarkLB, LightDarkUB}(ub=LightDarkUB(),
-                                                                  lb=LightDarkLB(),
+solver = DESPOTSolver{LightDark1DState, Int64, Float64, LightDarkBounds}(bounds=LightDarkBounds(),
                                                                   random_streams=MersenneStreamArray(MersenneTwister(1)),
-                                                                  root_default_action=false,
-                                                                  next_state=LightDark1DState(),
+                                                                  next_state=LightDark1DState(0, 0.0),
                                                                   curr_obs=0.0
                                                                  )
 
