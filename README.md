@@ -63,6 +63,7 @@ Additional solver parameters (listed below) can either also be passed as keyword
 |tiny						|Float64	|1e-6			|Smallest significant difference between a pair of numbers	|
 |rand_max					|Int64		|2^32-1			|Largest possible random number								|
 |debug						|UInt8		|0				|Level of debug output (0-5), 0 - no output, 5 - most output|
+|random_streams             |           |`RandomStreams`|Source of random numbers. `RandomStreams` is designed to reproduce the behavior in the DESPOT paper, `MersenneStreamArray` is designed to be more widely compatible. See [pomdps_compatibility_tests.jl](test/pomdps_compatibility_tests.jl) for examples.
 
 
 ## Instantiating the default belief updater ##
@@ -83,72 +84,18 @@ Custom belief updaters can be used as well, as long as they are based on the *DE
  
 ## Solver customization ##
 
-A DESPOT solver can be customized with user-provided upper and lower bound functions (which can also be problem-specific).
+### Bounds
 
-### Upper bound estimation ###
+A DESPOT solver can be customized with user-provided bounds (which can also be problem-specific).
 
-The default type of upper bound provided is a non-stochastic estimate based on value iteration, defined in [upperBoundNonStochastic.jl](src/upperBound/upperBoundNonStochastic.jl).
- To add a custom upper bound algorithm, first define a custom type, e.g.:
-
-```julia
-type MyUpperBound
-```
-then define functions to initialize and compute the upper bound with the following signatures:
+To define bounds, a user should define a custom type (e.g. `MyUpperBound`) and implement a function with the following signature
 
 ```julia
-function upper_bound(::MyUpperBound, 			# upper bound variable
-					 ::POMDP,					# problem model
-					 ::Vector{DESPOTParticle}, 	# belief of interest represented via particles
-					 ::DESPOTConfig)			# solver configuration parameters
-
-function init_upper_bound(::MyUpperBound,
-						  ::POMDP,
-						  ::DESPOTConfig)
+DESPOT.bounds{S}(::MyUpperBound, ::POMDP, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig)
 ```
+that returns a tuple containing the lower bound and upper bound values. Some examples can be found in [pomdps_compatibility_tests.jl](test/pomdps_compatibility_tests.jl), [upperBoundNonStochastic.jl](src/upperBound/upperBoundNonStochastic.jl), and [rockSampleParticleLB.jl](/src/problems/RockSample/rockSampleParticleLB.jl).
 
-Instantiate an object of type *MyUpperBound*, e.g.:
-```julia
-my_ub = MyUpperBound(pomdp)
-```
-then pass it to the DESPOT solver as a keyword argument:
-```julia
-solver = DESPOTSolver(pomdp, 			# reference to the problem model
-                      current_belief, 	# reference to the current belief structure
-                      ub = my_ub) 		# reference to the optional custom upper bound
-```
 
-### Lower bound estimation ###
-
-An example problem-specific lower bound type and the associated methods are provided for the RockSample problem in [rockSampleParticleLB.jl](/src/problems/RockSample/rockSampleParticleLB.jl). The algorithm for this lower bound estimator is based on dynamic programming.
- Similarly to upper bounds, to add a custom upper bound algorithm, first define a custom type, e.g.:
-
-```julia
-type MyLowerBound
-```
-then define functions to initialize and compute the upper bound with the following signatures:
-
-```julia
-function upper_bound(::MyLowerBound, 			# upper bound variable
-					 ::POMDP,					# problem model
-					 ::Vector{DESPOTParticle}, 	# belief of interest represented via particles
-					 ::DESPOTConfig)			# solver configuration parameters
-
-function init_upper_bound(::MyLowerBound,
-						  ::POMDP,
-						  ::DESPOTConfig)
-```
-
-Instantiate an object of type *MyLowerBound*, e.g.:
-```julia
-my_lb = MyLowerBound(pomdp)
-```
-Then pass it to the DESPOT solver as a keyword argument:
-```julia
-solver = DESPOTSolver(pomdp,		   	# reference to the problem model
-                      current_belief, 	# reference to the current belief structure
-                      ub = my_ub, 		# reference to the optional custom upper bound
-                      lb = my_lb) 		# reference to the optional custom lower bound
-```
 
 ## Running DESPOT on test problems ##
 
@@ -174,6 +121,10 @@ Number of steps = 11
 Undiscounted return = 20.00  
 Discounted return = 12.62  
 Runtime = 2.45 sec
+
+## Tree Visualization ##
+
+An example of how to visualize the search tree can be found in [test_visualization.jl](test/test_visualization.jl).
 
 ## Performance ##
 Benchmarking results for DESPOT (on RockSample) can be found in [perflog.md](https://github.com/JuliaPOMDP/DESPOT.jl/test/perflog.md). As more problems are tested with DESPOT, their benchmarks will be included as well. 
