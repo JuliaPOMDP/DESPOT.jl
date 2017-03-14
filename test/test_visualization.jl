@@ -8,7 +8,7 @@ import DESPOT: bounds
 immutable BabyBounds end
 bounds{S}(::BabyBounds, p::BabyPOMDP, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = (p.r_feed+p.r_hungry)/(1.0-discount(p)), 0
 
-solver = DESPOTSolver{Bool, Bool, Bool, BabyBounds}(bounds = BabyBounds(),
+solver = DESPOTSolver{Bool, Bool, Bool, BabyBounds, MersenneStreamArray}(bounds = BabyBounds(),
                                                     random_streams=MersenneStreamArray(MersenneTwister(1)),
                                                     next_state=false,
                                                     curr_obs=false,

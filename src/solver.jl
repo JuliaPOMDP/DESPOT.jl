@@ -1,8 +1,8 @@
 
-type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
+type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
     bounds::B
-    random_streams
+    random_streams::RS
     root::VNode{S,A,O,B}
     node_count::Int64
     config::DESPOTConfig
@@ -28,7 +28,7 @@ type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
                             max_trials::Int64 = -1,
                             rand_max::Int64 = 2147483647,
                             debug::Int64 = 0,
-                            random_streams = RandomStreams(n_particles, search_depth, main_seed),
+                            random_streams::RS = RandomStreams(n_particles, search_depth, main_seed),
                             next_state = S(),
                             curr_obs = O()
                            )

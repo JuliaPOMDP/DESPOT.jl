@@ -135,7 +135,9 @@ function execute(;
     solver::DESPOTSolver = DESPOTSolver{RockSampleState,
                                         RockSampleAction,
                                         RockSampleObs,
-                                        RockSampleBounds}(
+                                        RockSampleBounds,
+                                        RandomStreams
+                                       }(
                                # specify the optional keyword parameters
                                bounds = custom_bounds,
                                search_depth = search_depth,                                                                                       
