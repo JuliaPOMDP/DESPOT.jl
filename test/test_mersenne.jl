@@ -9,7 +9,9 @@ custom_bounds = RockSampleBounds(pomdp) # custom bounds for use with DESPOT solv
 solver = DESPOTSolver{RockSampleState,
                       RockSampleAction,
                       RockSampleObs,
-                      RockSampleBounds}(bounds = custom_bounds,
+                      RockSampleBounds,
+                      MersenneStreamArray
+                     }(bounds = custom_bounds,
                                         random_streams = MersenneStreamArray(MersenneTwister(2)) 
                                        )
 

@@ -1,10 +1,10 @@
-import POMDPs: update
+import POMDPs: update, initialize_belief, updater
 using DESPOT
 
 type DESPOTBeliefUpdater{S,A,O} <: POMDPs.Updater
     pomdp::POMDP
     num_updates::Int64
-    rng::DESPOTDefaultRNG
+    rng::AbstractRNG
     seed::UInt32
     rand_max::Int64
     belief_update_seed::UInt32
@@ -25,20 +25,24 @@ type DESPOTBeliefUpdater{S,A,O} <: POMDPs.Updater
                                  rand_max::Int64 = 2147483647,
                                  n_particles = 500,
                                  particle_weight_threshold::Float64 = 1e-20,
-                                 eff_particle_fraction::Float64 = 0.05)
+                                 eff_particle_fraction::Float64 = 0.05,
+                                 next_state::S = S(),
+                                 observation::O = O(),
+                                 rng::AbstractRNG=DESPOTDefaultRNG(convert(UInt32, seed $ (n_particles+1)), rand_max)
+                                )
         this = new()
         this.pomdp = pomdp
         this.num_updates = 0                               
         this.belief_update_seed = seed $ (n_particles + 1)       
-        this.rng = DESPOTDefaultRNG(this.belief_update_seed, rand_max)
+        this.rng = rng
         this.rand_max = rand_max
         this.particle_weight_threshold = particle_weight_threshold
         this.eff_particle_fraction = eff_particle_fraction
         this.n_particles = n_particles
         
         # init preallocated variables
-         this.next_state = S()
-         this.observation = O()
+        this.next_state = next_state
+        this.observation = observation
         this.new_particle = DESPOTParticle{S}(this.next_state, 1, 1) #placeholder
         this.n_sampled = 0
         this.obs_probability = -1.0
@@ -83,7 +87,7 @@ end
 function initialize_belief{S}(bu::DESPOTBeliefUpdater{S}, b)
     new_belief = create_belief(bu)
 
-    pool = Array(DESPOTParticle{S}, n_particles)
+    pool = Array(DESPOTParticle{S}, bu.n_particles)
     w = 1.0/bu.n_particles
     for i in 1:bu.n_particles
         pool[i] = DESPOTParticle{S}(rand(bu.rng, b), i, w)
@@ -94,7 +98,16 @@ function initialize_belief{S}(bu::DESPOTBeliefUpdater{S}, b)
                              bu.n_particles,
                              bu.belief_update_seed,
                              bu.rand_max)
+
+    return new_belief
 end
+
+updater{S,A,O}(p::DESPOTPolicy{S,A,O}) = DESPOTBeliefUpdater{S,A,O}(p.pomdp,
+                                                                    n_particles=p.solver.config.n_particles,
+                                                                    next_state=p.solver.next_state,
+                                                                    observation=p.solver.curr_obs,
+                                                                    rng=p.solver.rng
+                                                                   )
 
 function normalize!{S}(particles::Vector{DESPOTParticle{S}}) 
     prob_sum = 0.0
@@ -120,11 +133,18 @@ function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
     updated_belief.particles = []
 
     #reset RNG
-    bu.rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
+    if isa(bu.rng, DESPOTDefaultRNG)
+        bu.rng = DESPOTDefaultRNG(bu.belief_update_seed, bu.rand_max)
+    end
 
     for p in current_belief.particles
         rand!(bu.rng, random_number)
-        rng = DESPOTRandomNumber(random_number[1])
+
+        if isa(bu.rng, DESPOTDefaultRNG)
+            rng = DESPOTRandomNumber(random_number[1])
+        else
+            rng = bu.rng
+        end
         
         bu.next_state = GenerativeModels.generate_s(bu.pomdp, p.state, action, rng)
 

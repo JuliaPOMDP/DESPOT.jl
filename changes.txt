@@ -1,0 +1,9 @@
+Sat 18 Feb 2017 04:19:42 PM PST
+
+Added visualization
+
+Sat 18 Feb 2017 03:13:56 PM PST (before this, besides pull requests)
+
+got rid of action
+got rid of isterminal - isterminal_obs check
+changed pomdp.discount to discount(pomdp) in many places

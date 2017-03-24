@@ -1,10 +1,9 @@
 
-type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
+type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
     bounds::B
-    random_streams
+    random_streams::RS
     root::VNode{S,A,O,B}
-    root_default_action::A
     node_count::Int64
     config::DESPOTConfig
     rng::AbstractRNG
@@ -13,7 +12,7 @@ type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
     next_state::S
     curr_obs::O
 
-  # default constructor
+    # default constructor
     function DESPOTSolver(  ;
                             bounds::B = B(), #TODO: fix
                             rng::AbstractRNG = Base.GLOBAL_RNG,
@@ -29,8 +28,7 @@ type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
                             max_trials::Int64 = -1,
                             rand_max::Int64 = 2147483647,
                             debug::Int64 = 0,
-                            random_streams = RandomStreams(n_particles, search_depth, main_seed),
-                            root_default_action = A(),
+                            random_streams::RS = RandomStreams(n_particles, search_depth, main_seed),
                             next_state = S(),
                             curr_obs = O()
                            )
@@ -54,7 +52,6 @@ type DESPOTSolver{S,A,O,B} <: POMDPs.Solver
         this.config.max_trials = max_trials
         this.config.rand_max = rand_max
         this.config.debug = debug        
-        this.root_default_action = root_default_action
         this.rng = rng
         this.next_state = next_state
         this.curr_obs = curr_obs
@@ -79,7 +76,7 @@ function new_root{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
                   belief::DESPOTBelief{S})
     
     solver.belief = belief
-    solver.root  = VNode{S,A,O,B}(
+    solver.root = VNode{S,A,O,B}(
                         pomdp,
                         belief.particles,
                         solver.bounds,
@@ -87,9 +84,6 @@ function new_root{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
                         1.0,
                         false,
                         solver.config)
-                        
-    solver.root_default_action = solver.root.best_lb_action
-    
     return nothing
 end
 
@@ -107,7 +101,7 @@ function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
                                 solver.root.ubound,
                                 0,
                                 solver.config.eta,
-                                pomdp.discount) > 1e-6)
+                                discount(pomdp)) > 1e-6)
                                 && !stop_now)
 
         trial(solver, pomdp, solver.root, n_trials)
@@ -124,12 +118,14 @@ function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
     if solver.config.pruning_constant != 0.0
         total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
         act = solver.root.pruned_action
-        return (act == -1 ? solver.root_default_action : act), n_trials #TODO: fix actions
+        default = default_action(solver.bounds, pomdp, solver.root.particles, solver.config)
+        return (act == -1 ? default : act), n_trials #TODO: fix actions
     elseif !solver.root.in_tree
         println("Root not in tree")
-        return solver.root_default_action, n_trials
+        default = default_action(solver.bounds, pomdp, solver.root.particles, solver.config)
+        return default, n_trials
     else
-        return get_lb_action(solver.root, solver.config, pomdp.discount), n_trials
+        return get_lb_action(solver.root, solver.config, discount(pomdp)), n_trials
     end
     return nothing
 end
@@ -153,7 +149,7 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
                                get_best_weuo(node.q_nodes[a_star],
                                              solver.root,
                                              solver.config,
-                                             pomdp.discount) # it's an array!
+                                             discount(pomdp)) # it's an array!
     
     if weighted_eu_star > 0.0
         add(solver.belief.history, a_star, o_star)
@@ -167,7 +163,7 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
 
     # Backup
     potential_lbound = node.q_nodes[a_star].first_step_reward +
-                        pomdp.discount * get_lower_bound(node.q_nodes[a_star])
+                    discount(pomdp) * get_lower_bound(node.q_nodes[a_star])
     node.lbound = max(node.lbound, potential_lbound)
 
     # As the upper bound of a_star may become smaller than the upper bound of
@@ -176,7 +172,7 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
 
     for a in iterator(actions(pomdp))
         ubound = node.q_nodes[a].first_step_reward +
-              pomdp.discount * get_upper_bound(node.q_nodes[a])
+            discount(pomdp) * get_upper_bound(node.q_nodes[a])
         if ubound > node.ubound
             node.ubound = ubound
             node.best_ub_action = a
@@ -218,10 +214,6 @@ function expand_one_step{S,A,O,B}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,
                 rng,
                 curr_action)
             
-            if isterminal(pomdp, solver.next_state) && !isterminal_obs(pomdp, solver.curr_obs)
-                error("Terminal state in a particle mismatches observation")
-            end
-
             if !haskey(obs_to_particles, solver.curr_obs)
                 obs_to_particles[solver.curr_obs] = DESPOTParticle{S}[]
             end
@@ -247,8 +239,8 @@ function expand_one_step{S,A,O,B}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,
         node.q_nodes[curr_action] = new_qnode
         remaining_reward = get_upper_bound(new_qnode)  
         
-        if (first_step_reward + pomdp.discount*remaining_reward) > (q_star + solver.config.tiny)
-            q_star = first_step_reward + pomdp.discount * remaining_reward
+        if (first_step_reward + discount(pomdp)*remaining_reward) > (q_star + solver.config.tiny)
+            q_star = first_step_reward + discount(pomdp) * remaining_reward
             node.best_ub_action = curr_action
         end
         

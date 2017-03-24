@@ -1,14 +1,13 @@
 using Base.Test
 
-# uncomment below to include compatibility tests
-# include("pomdps_compatibility_tests.jl")
-
 if is_windows()
     error("This test is only valid on Linux and OS X platforms at this time") 
 end
 
 # Test on a simple RockSample problem
 include("../src/problems/RockSample/runRockSample.jl")
+
+include("pomdps_compatibility_tests.jl")
 include("test_with_other_particle_filter.jl")
 include("test_mersenne.jl")
 
@@ -72,8 +71,7 @@ grid_size               = 5
 num_rocks               = 6
 
 sim_steps, undiscounted_return, discounted_return, run_time =
-            execute(
-                    grid_size = grid_size,
+            execute(grid_size = grid_size,
                     num_rocks = num_rocks,
                     n_particles = n_particles,
                     main_seed = main_seed,

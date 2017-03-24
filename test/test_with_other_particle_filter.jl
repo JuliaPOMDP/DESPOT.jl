@@ -9,7 +9,8 @@ custom_bounds = RockSampleBounds(pomdp) # custom lower bound to use with DESPOT 
 solver = DESPOTSolver{RockSampleState,
                       RockSampleAction,
                       RockSampleObs,
-                      RockSampleBounds}(bounds = custom_bounds)
+                      RockSampleBounds,
+                      RandomStreams}(bounds = custom_bounds)
 
 policy = solve(solver, pomdp)
 

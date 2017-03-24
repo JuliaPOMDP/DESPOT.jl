@@ -75,6 +75,8 @@ end
 
 create_policy{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDPs.POMDP{S,A,O}) = DESPOTPolicy(solver, pomdp)
 
+# Bounds interface
+
 bounds{S,A,O,B}(bounds::B,
             pomdp::POMDP{S,A,O},
             particles::Vector{DESPOTParticle{S}},
@@ -83,8 +85,15 @@ bounds{S,A,O,B}(bounds::B,
     
 init_bounds{S,A,O,B}(bounds::B,
             pomdp::POMDPs.POMDP{S,A,O},
-            config::DESPOTConfig) =
-    error("$(typeof(bounds)) bound does not implement init_bounds")
+            config::DESPOTConfig) = nothing
+
+# this may change
+"""
+    default_action(bounds, pomdp::POMDP, particles::Vector, config::DESPOTConfig)
+
+Return an action for the case when an action was not determined by the solver. This could be, for example, the best action from the lower bound calculation.
+"""
+function default_action end
 
 # FUNCTIONS
 
@@ -120,15 +129,15 @@ end
     A = action_type(P)
     O = obs_type(P)
     @req actions(::P)
-    @req transition(::P,::S,::A)
-    @req observation(::P,::S,::A,::S)    
+    @req generate_sor(::P,::S,::A,::typeof(create_rng(solver.random_streams)))
     @req reward(::P,::S,::A,::S)
     @req discount(::P)    
     @req isterminal(::P,::S)
-    @req isterminal_obs(::P,::O)
     as = actions(pomdp)
     @req iterator(::typeof(as))    
 end
+
+include("visualization.jl")
 
 export
     ################## DESPOT TYPES ##################
@@ -158,6 +167,9 @@ export
     ########## UPPER AND LOWER BOUND METHODS #########
     bounds,
     init_bounds,
-    sample_particles! #TODO: need a better way of doing this, perhaps put in POMDPutils
+    sample_particles!, #TODO: need a better way of doing this, perhaps put in POMDPutils
+    ########## Visualization #######
+    blink,
+    DESPOTVisualizer
     
 end #module

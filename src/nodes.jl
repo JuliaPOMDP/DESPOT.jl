@@ -115,16 +115,18 @@ type VNode{S,A,O,B}
         this.ubound             = bounds(b, pomdp, particles, config)
         this.depth              = depth
         this.default_value      = this.lbound
-        this.pruned_action      = A()
         this.weight             = weight
-        this.best_ub_action     = A()
-        this.best_lb_action     = b.lb.best_action
         this.in_tree            = in_tree
         this.n_tree_nodes       = in_tree ? 1:0
         this.q_nodes            = Dict{A,QNode{S,A,O,B}}()
         this.n_visits           = 0
         this.n_actions_allowed  = 0
         this.q_star             = -Inf
+
+        # note these are left undefined for now. Are they needed?
+        # this.pruned_action      = #undef
+        # this.best_ub_action     = #undef
+        # this.best_lb_action     = #undef
         
         validate_bounds(this.lbound, this.ubound, config)
         return this
@@ -162,7 +164,7 @@ end
 # end
 
 function get_lb_action{S,A,O,B}(node::VNode{S,A,O,B}, config::DESPOTConfig, discount::Float64)
-  a_star = A()
+  local a_star
   q_star::Float64 = -Inf
   remaining_reward::Float64 = 0.0
   
