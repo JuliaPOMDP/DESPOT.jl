@@ -2,7 +2,6 @@ module DESPOT
 
 using Distributions
 using POMDPs
-using GenerativeModels
 
 import POMDPs:
         solve,

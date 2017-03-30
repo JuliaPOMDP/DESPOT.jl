@@ -146,7 +146,7 @@ function update{S,A,O}(bu::DESPOTBeliefUpdater{S,A,O},
             rng = bu.rng
         end
         
-        bu.next_state = GenerativeModels.generate_s(bu.pomdp, p.state, action, rng)
+        bu.next_state = POMDPs.generate_s(bu.pomdp, p.state, action, rng)
 
         #get observation distribution for (s,a,s') tuple
         od = POMDPs.observation(bu.pomdp, p.state, action, bu.next_state)

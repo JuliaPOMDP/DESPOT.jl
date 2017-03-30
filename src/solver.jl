@@ -257,7 +257,7 @@ function step{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
               action::A)
               
     solver.next_state, solver.curr_obs, solver.curr_reward =
-        GenerativeModels.generate_sor(pomdp, state, action, rng)
+        POMDPs.generate_sor(pomdp, state, action, rng)
 
     return nothing
 end
