@@ -11,6 +11,7 @@ type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
     curr_reward::DESPOTReward
     next_state::S
     curr_obs::O
+    print_bounds::Bool
 
     # default constructor
     function DESPOTSolver(  ;
@@ -30,7 +31,8 @@ type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
                             debug::Int64 = 0,
                             random_streams::RS = RandomStreams(n_particles, search_depth, main_seed),
                             next_state = S(),
-                            curr_obs = O()
+                            curr_obs = O(),
+                            print_bounds = false
                            )
 
         this = new()
@@ -57,6 +59,7 @@ type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
         this.curr_obs = curr_obs
         this.curr_reward = 0.0
         this.random_streams = random_streams
+        this.print_bounds = print_bounds
         return this
     end
 end
@@ -93,7 +96,9 @@ function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
     start_time::Float64 = time()
     stop_now::Bool = false
     
-    @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
+    if solver.print_bounds
+        @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
+    end
                                 
     while ((excess_uncertainty(solver.root.lbound,
                                 solver.root.ubound,
@@ -112,8 +117,10 @@ function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
         end
     end
 
-    @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
-    @printf("Number of trials: %d\n", n_trials)
+    if solver.print_bounds
+        @printf("After:  lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
+        @printf("Number of trials: %d\n", n_trials)
+    end
 
     if solver.config.pruning_constant != 0.0
         total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
