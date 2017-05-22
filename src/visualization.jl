@@ -47,11 +47,11 @@ function recursive_push!{S,A,O,B}(nd::NodeDict, n::QNode{S,A,O,B}, parent_id=-1)
                   "children_ids"=>Array(Int,0),
                   "tag"=>node_tag(n.action),
                   "tt_tag"=>tooltip_tag(n.action),
-                  "N"=>sum(length(v.particles) for v in values(n.obs_to_node)),
+                  "N"=>sum(length(last(pair).particles) for pair in n.obs_and_nodes),
                   # "Q"=>"between $(get_lower_bound(n)) and $(get_upper_bound(n))"
                   "Q"=>get_upper_bound(n)
                   )
-    for (o,c) in n.obs_to_node
+    for (o,c) in n.obs_and_nodes
         recursive_push!(nd, c, o, id)
     end
     return nd

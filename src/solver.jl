@@ -152,17 +152,19 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
 
     a_star::A = node.best_ub_action
 
-    o_star::O, weighted_eu_star::Float64 =
+    i_star::Int, weighted_eu_star::Float64 =
                                get_best_weuo(node.q_nodes[a_star],
                                              solver.root,
                                              solver.config,
                                              discount(pomdp)) # it's an array!
     
+    o_star, vnode_star = node.q_nodes[a_star].obs_and_nodes[i_star]
+
     if weighted_eu_star > 0.0
         add(solver.belief.history, a_star, o_star)
         n_nodes_added = trial(solver,
                             pomdp,
-                            node.q_nodes[a_star].obs_to_node[o_star],
+                            vnode_star,
                             n_trials) 
         remove_last(solver.belief.history)
     end

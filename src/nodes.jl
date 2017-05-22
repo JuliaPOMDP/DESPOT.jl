@@ -22,7 +22,7 @@ type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
     first_step_reward::Float64
     history::History
     weight_sum::Float64
-    obs_to_node::Dict{O,T}
+    obs_and_nodes::Vector{Tuple{O,T}}
     n_visits::Int64                # Needed for large problems
     bounds::B
   
@@ -44,7 +44,7 @@ type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
             this.first_step_reward = first_step_reward
             this.history = history
             this.weight_sum = 0
-            this.obs_to_node = Dict{O,T}()
+            this.obs_and_nodes = Tuple{O,T}[]
             this.n_visits = 0
             this.bounds = bounds
             
@@ -56,14 +56,14 @@ type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
                 this.weight_sum += obs_weight_sum
                 add(this.history, action, obs)
                 remove_last(this.history)
-                this.obs_to_node[obs]   = VNode{S,A,O,B}(
-                                          pomdp,
-                                          particles,
-                                          bounds,
-                                          this.depth+1,  # TODO: check depth
-                                          obs_weight_sum,
-                                          false,
-                                          config)
+                push!(this.obs_and_nodes, (obs,
+                                           VNode{S,A,O,B}(pomdp,
+                                                          particles,
+                                                          bounds,
+                                                          this.depth+1,  # TODO: check depth
+                                                          obs_weight_sum,
+                                                          false,
+                                                          config)))
             end
             return this
         end
@@ -137,7 +137,7 @@ typealias QNode{S,A,O,B} _QNode{S,A,O,B,VNode{S,A,O,B}}
 
 function get_upper_bound{S,A,O,B}(qnode::QNode{S,A,O,B})
   ubound::Float64 = 0.0
-  for (obs, node) in qnode.obs_to_node
+  for (obs, node) in qnode.obs_and_nodes
       ubound += node.ubound * node.weight
   end
   return ubound/qnode.weight_sum
@@ -145,7 +145,7 @@ end
 
 function get_lower_bound{S,A,O,B}(qnode::QNode{S,A,O,B})
   lbound::Float64 = 0.0
-  for (obs, node) in qnode.obs_to_node
+  for (obs, node) in qnode.obs_and_nodes
       lbound += node.lbound * node.weight
   end
   return lbound/qnode.weight_sum

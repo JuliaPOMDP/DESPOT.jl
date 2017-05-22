@@ -23,9 +23,9 @@ function get_best_weuo{S,A,O,B}(qnode::QNode{S,A,O,B},
                        config::DESPOTConfig,
                        discount::Float64)
   weighted_eu_star::Float64 = -Inf
-  oStar = collect(keys(qnode.obs_to_node))[1] # init with something
+  istar = 1
   
-  for (obs,node) in qnode.obs_to_node
+  for (i, (obs,node)) in enumerate(qnode.obs_and_nodes)
         weighted_eu = node.weight / qnode.weight_sum *
                             excess_uncertainty(node.lbound,
                                                node.ubound,
@@ -37,12 +37,15 @@ function get_best_weuo{S,A,O,B}(qnode::QNode{S,A,O,B},
 
         if weighted_eu > weighted_eu_star
             weighted_eu_star = weighted_eu
-            oStar = obs
+            istar = i
         end
   end
-  return oStar, weighted_eu_star
+  return istar, weighted_eu_star
 end
 
+
+# XXX these functions will not work after the change to obs_to_node, but they do not appear to be used in the core algorithm
+#=
 # Get WEUO for a single observation branch
 function get_node_weuo{S,A,O,B}(qnode::QNode{S,A,O,B}, root::VNode{S,A,O,B}, obs::Int64)
    weighted_eu = qnode.obs_to_node[obs].weight / qnode.weight_sum *
@@ -57,6 +60,7 @@ end
 function belief{S,A,O,B}(qnode::QNode{S,A,O,B}, obs::O)
   return qnode.obs_to_node[obs]
 end
+=#
 
 function validate_bounds(lb::Float64, ub::Float64, config::DESPOTConfig)
   if (ub >= lb)
