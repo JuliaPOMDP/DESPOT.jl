@@ -1,13 +1,13 @@
-type History{A,O}
+mutable struct History{A,O}
     actions::Vector{A}
     observations::Vector{O}
-    History() = new(Array(A, 0), Array(O, 0))
+    History{A,O}() where {A,O} = new(Array{A}(0), Array{O}(0))
 end
 
 function add{A,O}(history::History{A,O},
             action::A,
             obs::O)
-    
+
     push!(history.actions, action)
     push!(history.observations, obs)
 end

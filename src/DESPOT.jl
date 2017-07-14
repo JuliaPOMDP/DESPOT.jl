@@ -13,21 +13,21 @@ import POMDPs:
 
 include("history.jl")
 
-abstract DESPOTBeliefUpdate{S,A,O}
+abstract type DESPOTBeliefUpdate{S,A,O} end
 
-typealias DESPOTReward Float64
+const DESPOTReward = Float64
 
-type DESPOTRandomNumber <: POMDPs.AbstractRNG
+mutable struct DESPOTRandomNumber <: POMDPs.AbstractRNG
     number::Float64
 end
 
-type DESPOTParticle{S}
+mutable struct DESPOTParticle{S}
   state::S
   id::Int64
   weight::Float64
 end
 
-type DESPOTBelief{S,A,O}
+mutable struct DESPOTBelief{S,A,O}
     particles::Vector{DESPOTParticle{S}}
     history::History{A,O}
 end
@@ -37,18 +37,18 @@ function rand!(rng::DESPOTRandomNumber, random_number::Array{Float64})
     return nothing
 end
 
-type DESPOTDefaultRNG <: POMDPs.AbstractRNG
+mutable struct DESPOTDefaultRNG <: POMDPs.AbstractRNG
     seed::Array{UInt32,1}
     rand_max::Int64
     debug::Int64
-      
+
     function DESPOTDefaultRNG(seed::UInt32, rand_max::Int64, debug::Int64 = 0)
         this = new()
         this.seed = Cuint[seed]
         this.rand_max = rand_max
         this.debug = debug
         return this
-    end    
+    end
 end
 
 function rand!(rng::DESPOTDefaultRNG, random_number::Array{Float64})
@@ -67,7 +67,7 @@ include("nodes.jl")
 include("utils.jl")
 include("solver.jl")
 
-type DESPOTPolicy{S,A,O,B} <: POMDPs.Policy
+mutable struct DESPOTPolicy{S,A,O,B} <: POMDPs.Policy
     solver::DESPOTSolver{S,A,O,B}
     pomdp ::POMDPs.POMDP{S,A,O}
 end
@@ -79,9 +79,9 @@ create_policy{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDPs.POMDP{S,A,O}
 bounds{S,A,O,B}(bounds::B,
             pomdp::POMDP{S,A,O},
             particles::Vector{DESPOTParticle{S}},
-            config::DESPOTConfig) = 
+            config::DESPOTConfig) =
     error("no bounds() method found for $(typeof(bounds)) type")
-    
+
 init_bounds{S,A,O,B}(bounds::B,
             pomdp::POMDPs.POMDP{S,A,O},
             config::DESPOTConfig) = nothing
@@ -105,7 +105,7 @@ end
 # for any kind of belief besides DESPOTBelief
 function action{S,A,O}(p::DESPOTPolicy{S,A,O}, b)
     N = p.solver.config.n_particles
-    pool = Array(DESPOTParticle{S}, N)
+    pool = Array{DESPOTParticle{S}}(N)
     w = 1.0/N
     for i in 1:N
         pool[i] = DESPOTParticle{S}(rand(p.solver.rng, b), i-1, w)
@@ -130,10 +130,10 @@ end
     @req actions(::P)
     @req generate_sor(::P,::S,::A,::typeof(create_rng(solver.random_streams)))
     @req reward(::P,::S,::A,::S)
-    @req discount(::P)    
+    @req discount(::P)
     @req isterminal(::P,::S)
     as = actions(pomdp)
-    @req iterator(::typeof(as))    
+    @req iterator(::typeof(as))
 end
 
 include("visualization.jl")
@@ -170,5 +170,5 @@ export
     ########## Visualization #######
     blink,
     DESPOTVisualizer
-    
+
 end #module

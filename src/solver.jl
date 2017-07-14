@@ -1,5 +1,5 @@
 
-type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
+mutable struct DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
     belief::DESPOTBelief{S,A,O}
     bounds::B
     random_streams::RS
@@ -36,10 +36,10 @@ type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
                            )
 
         this = new()
-        
+
         # supplied variables
         this.bounds = bounds
-        
+
         # Instantiate and initialize config
         this.config = DESPOTConfig()
         this.config.search_depth = search_depth
@@ -53,7 +53,7 @@ type DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
         this.config.tiny = tiny
         this.config.max_trials = max_trials
         this.config.rand_max = rand_max
-        this.config.debug = debug        
+        this.config.debug = debug
         this.rng = rng
         this.next_state = next_state
         this.curr_obs = curr_obs
@@ -67,7 +67,7 @@ end
 function init_solver{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDPs.POMDP{S,A,O})
 
     # Instantiate random streams
-                                          
+
     fill_random_streams!(solver.random_streams, solver.config.rand_max)
     init_bounds(solver.bounds, pomdp, solver.config)
 
@@ -77,7 +77,7 @@ end
 function new_root{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
                   pomdp::POMDP{S,A,O},
                   belief::DESPOTBelief{S})
-    
+
     solver.belief = belief
     solver.root = VNode{S,A,O,B}(
                         pomdp,
@@ -95,11 +95,11 @@ function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
     n_trials::Int64 = 0
     start_time::Float64 = time()
     stop_now::Bool = false
-    
+
     if solver.print_bounds
         @printf("Before: lBound = %.10f, uBound = %.10f\n", solver.root.lbound, solver.root.ubound)
     end
-                                
+
     while ((excess_uncertainty(solver.root.lbound,
                                 solver.root.ubound,
                                 solver.root.lbound,
@@ -141,11 +141,11 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
 
     n_nodes_added::Int64 = 0
     ubound::Float64 = 0.0
-    
+
     if (node.depth >= solver.config.search_depth) || isterminal(pomdp, node.particles[1].state)
       return 0 # nodes added
     end
-    
+
     if isempty(node.q_nodes)
         expand_one_step(solver, pomdp, node, solver.bounds)
     end
@@ -157,7 +157,7 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
                                              solver.root,
                                              solver.config,
                                              discount(pomdp)) # it's an array!
-    
+
     o_star, vnode_star = node.q_nodes[a_star].obs_and_nodes[i_star]
 
     if weighted_eu_star > 0.0
@@ -165,7 +165,7 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
         n_nodes_added = trial(solver,
                             pomdp,
                             vnode_star,
-                            n_trials) 
+                            n_trials)
         remove_last(solver.belief.history)
     end
     node.n_tree_nodes += n_nodes_added
@@ -203,12 +203,12 @@ function trial{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O}, node
 end
 
 function expand_one_step{S,A,O,B}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,O}, node::VNode{S,A,O,B}, bounds::B)
-  
+
     q_star::Float64 = -Inf
     first_step_reward::Float64 = 0.0
     remaining_reward::Float64 = 0.0
     rng = create_rng(solver.random_streams)
-    
+
     for curr_action in iterator(actions(pomdp))
         obs_to_particles = Dict{O,Vector{DESPOTParticle{S}}}()
 
@@ -216,13 +216,13 @@ function expand_one_step{S,A,O,B}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,
 
             set_rng_state!(rng, solver.random_streams, p.id+1, node.depth+1)
 
-            step(   
+            step(
                 solver,
                 pomdp,
                 p.state,
                 rng,
                 curr_action)
-            
+
             if !haskey(obs_to_particles, solver.curr_obs)
                 obs_to_particles[solver.curr_obs] = DESPOTParticle{S}[]
             end
@@ -233,26 +233,26 @@ function expand_one_step{S,A,O,B}(solver::DESPOTSolver{S,A,O}, pomdp::POMDP{S,A,
                   p.weight))
             first_step_reward += solver.curr_reward * p.weight
         end
-        
+
         first_step_reward /= node.weight
 
         new_qnode = QNode{S,A,O,B}(
                           pomdp,
                           bounds,
                           obs_to_particles,
-                          node.depth,                                     
+                          node.depth,
                           curr_action,
                           first_step_reward,
                           solver.belief.history,
                           solver.config)
         node.q_nodes[curr_action] = new_qnode
-        remaining_reward = get_upper_bound(new_qnode)  
-        
+        remaining_reward = get_upper_bound(new_qnode)
+
         if (first_step_reward + discount(pomdp)*remaining_reward) > (q_star + solver.config.tiny)
             q_star = first_step_reward + discount(pomdp) * remaining_reward
             node.best_ub_action = curr_action
         end
-        
+
         first_step_reward = 0.0
     end # for a
     return node
@@ -264,10 +264,9 @@ function step{S,A,O,B}(solver::DESPOTSolver{S,A,O,B},
               state::S,
               rng::AbstractRNG,
               action::A)
-              
+
     solver.next_state, solver.curr_obs, solver.curr_reward =
         POMDPs.generate_sor(pomdp, state, action, rng)
 
     return nothing
 end
-                                    

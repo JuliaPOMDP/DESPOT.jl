@@ -1,14 +1,14 @@
 import DESPOT:
         lower_bound
 
-type DESPOTDefaultLowerBound
+mutable struct DESPOTDefaultLowerBound
     #placeholder for now
 end
 
 function init_bound{S,A,O}(ub::DESPOTDefaultLowerBound,
                     pomdp::POMDP{S,A,O},
                     config::DESPOTConfig)
-    error("Function init_bound for $(typeof(ub)) has not been implemented yet")                    
+    error("Function init_bound for $(typeof(ub)) has not been implemented yet")
 end
 
 function lower_bound{S,A,O}(lb::DESPOTDefaultLowerBound,

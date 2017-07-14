@@ -1,4 +1,4 @@
-type DESPOTConfig
+mutable struct DESPOTConfig
   # Maximum depth of the search tree
   search_depth::Int64
   # Random-number seed
@@ -21,10 +21,10 @@ type DESPOTConfig
 #   particle_weight_threshold::Float64
 #   eff_particle_fraction::Float64
   tiny::Float64 # tiny number
-  max_trials::Int64 
-  rand_max::Int64 
+  max_trials::Int64
+  rand_max::Int64
   debug::UInt8
-  
+
   # construct empty
   function DESPOTConfig()
    this = new()
