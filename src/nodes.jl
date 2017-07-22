@@ -15,7 +15,7 @@
   # history: history up to the V-node *above* this node.
   # debug: Flag controlling debugging output.
 
-type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
+mutable struct _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
     obs_to_particles::Dict{O, Vector{DESPOTParticle{S}}}
     depth::Int64
     action::A
@@ -25,7 +25,7 @@ type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
     obs_and_nodes::Vector{Tuple{O,T}}
     n_visits::Int64                # Needed for large problems
     bounds::B
-  
+
       # default constructor
       function _QNode(
                     pomdp::POMDP{S,A,O},
@@ -36,7 +36,7 @@ type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
                     first_step_reward::Float64,
                     history::History{A,O},
                     config::DESPOTConfig)
-                      
+
             this = new()
             this.obs_to_particles = obs_to_particles
             this.depth = depth
@@ -47,7 +47,7 @@ type _QNode{S,A,O,B,T} #Workaround to achieve a circular type definition
             this.obs_and_nodes = Tuple{O,T}[]
             this.n_visits = 0
             this.bounds = bounds
-            
+
             for (obs, particles) in this.obs_to_particles
                 obs_weight_sum = 0.0
                 for p in particles
@@ -73,7 +73,7 @@ end
 # belief tree). It stores the set of particles associated with the node, an
 # AND-node for each action, and some bookkeeping information.
 
-type VNode{S,A,O,B}
+mutable struct VNode{S,A,O,B}
   particles::Array{DESPOTParticle{S},1}
   lbound::Float64
   ubound::Float64
@@ -127,13 +127,13 @@ type VNode{S,A,O,B}
         # this.pruned_action      = #undef
         # this.best_ub_action     = #undef
         # this.best_lb_action     = #undef
-        
+
         validate_bounds(this.lbound, this.ubound, config)
         return this
   end
 end
 
-typealias QNode{S,A,O,B} _QNode{S,A,O,B,VNode{S,A,O,B}}
+const QNode{S,A,O,B} = _QNode{S,A,O,B,VNode{S,A,O,B}}
 
 function get_upper_bound{S,A,O,B}(qnode::QNode{S,A,O,B})
   ubound::Float64 = 0.0
@@ -156,7 +156,7 @@ end
 # function prune{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, total_pruned::Int64, config::DESPOTConfig)
 #   cost::Float64 = 0.0
 #   total_pruned::Int64 = 0
-#   
+#
 #   for (obs,node) in qnode.obs_to_node
 #     cost, total_pruned += prune(node, total_pruned, config)
 #   end
@@ -167,7 +167,7 @@ function get_lb_action{S,A,O,B}(node::VNode{S,A,O,B}, config::DESPOTConfig, disc
   local a_star
   q_star::Float64 = -Inf
   remaining_reward::Float64 = 0.0
-  
+
   for (a,q_node) in node.q_nodes
     remaining_reward = get_lower_bound(q_node)
     if q_node.first_step_reward + discount * remaining_reward > q_star + config.tiny
@@ -188,11 +188,11 @@ end
 #     @assert(nodes.n_tree_nodes == 0)
 #     return cost, total_pruned
 #   end
-# 
+#
 #   for q_node in node.q_nodes
 #     first_step_reward = config.discount^depth * weight * q_node.first_step_reward
 #     best_child_value, total_pruned = prune(q_node, total_pruned, config)
-# 
+#
 #     new_cost = first_step_reward + best_child_value - config.pruning_constant
 #     if new_cost > cost
 #       cost = new_cost
@@ -204,4 +204,3 @@ end
 #   end
 #   return cost, total_pruned
 # end
-

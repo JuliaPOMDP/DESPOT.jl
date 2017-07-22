@@ -12,17 +12,17 @@
   # sequence, use dynamic programming to look forward in the action
   # sequence to determine if it would be a better idea to first sense the
   # rock instead. (sensing eliminates the bad rocks in the particle set)
-        
-type RockSampleParticleLB
+
+mutable struct RockSampleParticleLB
     weight_sum_of_state::Vector{Float64}
     best_action::RockSampleAction
-    
+
     function RockSampleParticleLB(pomdp::RockSample)
         this = new()
-        this.weight_sum_of_state = Array(Float64, pomdp.n_states)
+        this.weight_sum_of_state = Array{Float64}(pomdp.n_states)
         fill!(this.weight_sum_of_state, -Inf)
         this.best_action = RockSampleAction(-1)
-        
+
         return this
     end
 end
@@ -38,11 +38,11 @@ function lower_bound(lb::RockSampleParticleLB,
                      particles::Vector{DESPOTParticle{RockSampleState}},
                      ub_actions::Vector{RockSampleAction},
                      config::DESPOTConfig)
-    
+
     weight_sum::Float64 = 0.0
     state_seen::Dict{Int64,Int64} = Dict{Int64,Int64}()
     s_index::Int64 = -1
-    
+
     # Since for this problem the cell that the rover is in is deterministic, picking pretty much
     # any particle state is ok
     if length(particles) > 0
@@ -72,7 +72,7 @@ function lower_bound(lb::RockSampleParticleLB,
             lb.weight_sum_of_state[state_index(pomdp,p.state)+1] += p.weight;
         end
     end
-    
+
     for i in 0:(seen_ptr-1)
         s_index = state_seen[i]
         weight_sum += lb.weight_sum_of_state[s_index+1]
@@ -80,7 +80,7 @@ function lower_bound(lb::RockSampleParticleLB,
             expected_sampling_value[j+1] += lb.weight_sum_of_state[s_index+1] * (rock_status(j, s_index) ? 10.0 : -10.0)
         end
     end
-    
+
     # Reset for next use
     fill!(lb.weight_sum_of_state, -Inf)
 
@@ -110,7 +110,7 @@ function lower_bound(lb::RockSampleParticleLB,
     r::Float64 = 0.0
     trans_distribution = create_transition_distribution(pomdp)
     rng = DESPOTRandomNumber(0) # dummy RNG
-    
+
     while true
         a = ub_actions[state_index(pomdp,s)+1]
         trans_distribution.state = s
@@ -131,7 +131,7 @@ function lower_bound(lb::RockSampleParticleLB,
         end
         s = next_s #TODO: deepcopy?
     end
-    
+
     lb.best_action = (length(optimal_policy) == 0) ? RockSampleAction(2) : optimal_policy[1]
 
     # Execute the sequence backwards to allow using the DP trick

@@ -1,7 +1,7 @@
 using Base.Test
 
 if is_windows()
-    error("This test is only valid on Linux and OS X platforms at this time") 
+    error("This test is only valid on Linux and OS X platforms at this time")
 end
 
 # Test on a simple RockSample problem
@@ -28,7 +28,7 @@ debug                   = 0
 grid_size               = 4
 num_rocks               = 4
 
-# The return values below are batch averages 
+# The return values below are batch averages
 sim_steps, undiscounted_return, discounted_return, run_time =
                 main(
                     grid_size = grid_size,
@@ -38,7 +38,7 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     discount = discount,
                     search_depth = search_depth,
                     time_per_move = time_per_move,
-                    pruning_constant = pruning_constant, 
+                    pruning_constant = pruning_constant,
                     eta = eta,
                     sim_len = sim_len,
                     max_trials = max_trials,
@@ -49,22 +49,22 @@ sim_steps, undiscounted_return, discounted_return, run_time =
 
 #println(sim_steps, undiscounted_return, discounted_return, run_time)
 if is_linux()
-    @test               sim_steps == 11
-    @test_approx_eq_eps discounted_return 12.62 1e-2
-    @test               undiscounted_return == 20.00
+    @test sim_steps == 11
+    @test discounted_return ≈ 12.62 atol=1e-2
+    @test undiscounted_return == 20.00
 end
 # osx tests
 if is_apple()
-    @test               sim_steps == 11
-    @test_approx_eq_eps discounted_return 12.97 1e-2
-    @test               undiscounted_return == 20.00
+    @test sim_steps == 11
+    @test discounted_return ≈ 12.97 atol=1e-2
+    @test undiscounted_return == 20.00
 end
 
 println("DESPOT/RockSample(4,4) batch test status: PASSED")
 
 
 
-# Non-standard RockSample(5,6) test 
+# Non-standard RockSample(5,6) test
 # (non-standard means that the initial state space is generated programmatically)
 
 grid_size               = 5
@@ -78,7 +78,7 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     discount = discount,
                     search_depth = search_depth,
                     time_per_move = time_per_move,
-                    pruning_constant = pruning_constant, 
+                    pruning_constant = pruning_constant,
                     eta = eta,
                     sim_len = sim_len,
                     max_trials = max_trials,
@@ -88,15 +88,15 @@ sim_steps, undiscounted_return, discounted_return, run_time =
 
 println(sim_steps, undiscounted_return, discounted_return, run_time)
 if is_linux()
-    @test               sim_steps == 21
-    @test_approx_eq_eps discounted_return 28.97 1e-2
-    @test               undiscounted_return == 50.00
+    @test sim_steps == 21
+    @test discounted_return ≈ 28.97 atol=1e-2
+    @test undiscounted_return == 50.00
 end
 # osx tests
 if is_apple()
-    @test               sim_steps == 20
-    @test_approx_eq_eps discounted_return 20.80 1e-2
-    @test               undiscounted_return == 40.00
+    @test sim_steps == 20
+    @test discounted_return ≈ 20.80 atol=1e-2
+    @test undiscounted_return == 40.00
 end
 
 println("DESPOT/RockSample(5,6) test status: PASSED")
@@ -116,7 +116,7 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     discount = discount,
                     search_depth = search_depth,
                     time_per_move = time_per_move,
-                    pruning_constant = pruning_constant, 
+                    pruning_constant = pruning_constant,
                     eta = eta,
                     sim_len = sim_len,
                     max_trials = max_trials,
@@ -128,15 +128,15 @@ sim_steps, undiscounted_return, discounted_return, run_time =
 
 
 if is_linux()
-    @test               sim_steps == 32
-    @test_approx_eq_eps discounted_return 24.82 1e-2
-    @test               undiscounted_return == 50.00
+    @test sim_steps == 32
+    @test discounted_return ≈ 24.82 atol=1e-2
+    @test undiscounted_return == 50.00
 end
 # osx tests
 if is_apple()
-    @test               sim_steps == 30
-    @test_approx_eq_eps discounted_return 16.98 1e-2
-    @test               undiscounted_return == 40.00
+    @test sim_steps == 30
+    @test discounted_return ≈ 16.98 atol=1e-2
+    @test undiscounted_return == 40.00
 end
 
 println("DESPOT/RockSample(7,8) test status: PASSED")
@@ -155,7 +155,7 @@ sim_steps, undiscounted_return, discounted_return, run_time =
                     discount = discount,
                     search_depth = search_depth,
                     time_per_move = time_per_move,
-                    pruning_constant = pruning_constant, 
+                    pruning_constant = pruning_constant,
                     eta = eta,
                     sim_len = sim_len,
                     max_trials = max_trials,
@@ -165,15 +165,15 @@ sim_steps, undiscounted_return, discounted_return, run_time =
 
 #println(sim_steps, undiscounted_return, discounted_return, run_time)
 if is_linux()
-    @test               sim_steps == 50
-    @test_approx_eq_eps discounted_return 21.24 1e-2
-    @test               undiscounted_return == 60.00
+    @test sim_steps == 50
+    @test discounted_return ≈ 21.24 atol=1e-2
+    @test undiscounted_return == 60.00
 end
 # osx tests
 if is_apple()
-    @test               sim_steps == 45
-    @test_approx_eq_eps discounted_return 13.5 1e-2
-    @test               undiscounted_return == 40.00
+    @test sim_steps == 45
+    @test discounted_return ≈ 13.5 atol=1e-2
+    @test undiscounted_return == 40.00
 end
 
 println("DESPOT/RockSample(11,11) test status: PASSED")

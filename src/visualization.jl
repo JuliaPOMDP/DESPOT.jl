@@ -1,7 +1,7 @@
 import JSON
 import MCTS: AbstractTreeVisualizer, node_tag, tooltip_tag, create_json, blink
 
-type DESPOTVisualizer <: AbstractTreeVisualizer
+mutable struct DESPOTVisualizer <: AbstractTreeVisualizer
     root::VNode
 end
 
@@ -9,7 +9,7 @@ DESPOTVisualizer(solver::DESPOTSolver) = DESPOTVisualizer(solver.root)
 
 blink(solver::DESPOTSolver) = blink(DESPOTVisualizer(solver))
 
-typealias NodeDict Dict{Int, Dict{String, Any}}
+const NodeDict = Dict{Int, Dict{String, Any}}
 
 function create_json(v::DESPOTVisualizer)
     node_dict = NodeDict()
@@ -26,7 +26,7 @@ function recursive_push!(nd::NodeDict, n::VNode, obs, parent_id=-1)
     @assert n.n_visits==0
     nd[id] = Dict("id"=>id,
                   "type"=>:V,
-                  "children_ids"=>Array(Int,0),
+                  "children_ids"=>Array{Int}(0),
                   "tag"=>node_tag(obs),
                   "tt_tag"=>tooltip_tag(obs),
                   "N"=>length(n.particles)
@@ -44,7 +44,7 @@ function recursive_push!{S,A,O,B}(nd::NodeDict, n::QNode{S,A,O,B}, parent_id=-1)
     end
     nd[id] = Dict("id"=>id,
                   "type"=>:action,
-                  "children_ids"=>Array(Int,0),
+                  "children_ids"=>Array{Int}(0),
                   "tag"=>node_tag(n.action),
                   "tt_tag"=>tooltip_tag(n.action),
                   "N"=>sum(length(last(pair).particles) for pair in n.obs_and_nodes),

@@ -5,10 +5,10 @@ include("../../upperBound/upperBoundNonStochastic.jl")
 
 import DESPOT: bounds, init_bounds, default_action
 
-type RockSampleBounds
+mutable struct RockSampleBounds
     lb::RockSampleParticleLB
     ub::UpperBoundNonStochastic{RockSampleState,RockSampleAction,RockSampleObs}
-    
+
     function RockSampleBounds(pomdp::RockSample)
         this = new()
         this.lb = RockSampleParticleLB(pomdp)
@@ -22,10 +22,10 @@ function bounds(b::RockSampleBounds,
        pomdp::RockSample,
        particles::Vector{DESPOTParticle{RockSampleState}},
        config::DESPOTConfig)
-       
+
     ubound::Float64 = upper_bound(b.ub, pomdp, particles, config)
     lbound::Float64 = lower_bound(b.lb, pomdp, particles, b.ub.upper_bound_act, config)
-       
+
     return lbound, ubound
 end
 

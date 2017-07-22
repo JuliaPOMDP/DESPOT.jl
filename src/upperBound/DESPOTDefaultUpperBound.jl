@@ -1,11 +1,11 @@
-type DESPOTDefaultUpperBound <: DESPOTUpperBound
+mutable struct DESPOTDefaultUpperBound <: DESPOTUpperBound
     #placeholder for now
 end
 
 function init_bound(ub::UpperBoundNonStochastic,
                     pomdp::POMDP,
                     config::DESPOTConfig)
-    error("Function init_bound for $(typeof(ub)) has not been implemented yet")                    
+    error("Function init_bound for $(typeof(ub)) has not been implemented yet")
 end
 
 function lower_bound(lb::DESPOTDefaultUpperBound,

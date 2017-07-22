@@ -5,7 +5,7 @@ using POMDPModels
 
 import DESPOT: bounds
 
-immutable BabyBounds end
+struct BabyBounds end
 bounds{S}(::BabyBounds, p::BabyPOMDP, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = (p.r_feed+p.r_hungry)/(1.0-discount(p)), 0
 
 solver = DESPOTSolver{Bool, Bool, Bool, BabyBounds, MersenneStreamArray}(bounds = BabyBounds(),
@@ -22,7 +22,7 @@ test_solver(solver, problem, updater=updater(problem))
 test_solver(solver, problem)
 
 
-immutable LightDarkBounds end
+struct LightDarkBounds end
 bounds{S}(::LightDarkBounds, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.incorrect_r/(1.0-discount(p)), p.correct_r/(1.0-discount(p))
 
 solver = DESPOTSolver{LightDark1DState, Int64, Float64, LightDarkBounds, MersenneStreamArray}(bounds=LightDarkBounds(),
