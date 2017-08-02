@@ -27,7 +27,7 @@ mutable struct _QNode{S,A,O,B,T} #Workaround to achieve a circular type definiti
     bounds::B
 
       # default constructor
-      function _QNode(
+      function _QNode{S,A,O,B,T}(
                     pomdp::POMDP{S,A,O},
                     bounds::B,
                     obs_to_particles::Dict{O,Vector{DESPOTParticle{S}}},
@@ -35,7 +35,7 @@ mutable struct _QNode{S,A,O,B,T} #Workaround to achieve a circular type definiti
                     action::A,
                     first_step_reward::Float64,
                     history::History{A,O},
-                    config::DESPOTConfig)
+                    config::DESPOTConfig) where {S,A,O,B,T}
 
             this = new()
             this.obs_to_particles = obs_to_particles
@@ -100,14 +100,14 @@ mutable struct VNode{S,A,O,B}
   q_star::Float64                   # best current Q-value, needed for large domains
 
   # default constructor
-  function VNode(
+  function VNode{S,A,O,B}(
                pomdp::POMDP{S,A,O},
                particles::Vector{DESPOTParticle{S}},
                b::B,
                depth::Int64,
                weight::Float64,
                in_tree::Bool,
-               config::DESPOTConfig)
+               config::DESPOTConfig) where {S,A,O,B}
 
         this = new()
         this.particles          = particles

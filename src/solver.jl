@@ -14,7 +14,7 @@ mutable struct DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
     print_bounds::Bool
 
     # default constructor
-    function DESPOTSolver(  ;
+    function DESPOTSolver{S,A,O,B,RS}(  ;
                             bounds::B = B(), #TODO: fix
                             rng::AbstractRNG = Base.GLOBAL_RNG,
                             search_depth::Int64 = 90,
@@ -33,7 +33,7 @@ mutable struct DESPOTSolver{S,A,O,B,RS} <: POMDPs.Solver
                             next_state = S(),
                             curr_obs = O(),
                             print_bounds = false
-                           )
+                           ) where {S,A,O,B,RS}
 
         this = new()
 
