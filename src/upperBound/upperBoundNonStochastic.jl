@@ -5,7 +5,7 @@ mutable struct UpperBoundNonStochastic{S,A,O}
     upper_bound_memo::Vector{Float64}
 
     # Constructor
-    function UpperBoundNonStochastic(pomdp::POMDP{S,A,O})
+    function UpperBoundNonStochastic{S,A,O}(pomdp::POMDP{S,A,O}) where {S,A,O}
         this = new()
         # this executes just once per problem run
         this.upper_bound_act = Array{A}(n_states(pomdp))    # upper_bound_act

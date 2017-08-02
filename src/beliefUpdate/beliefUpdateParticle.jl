@@ -20,7 +20,7 @@ mutable struct DESPOTBeliefUpdater{S,A,O} <: POMDPs.Updater
     obs_probability::Float64
 
     #default constructor
-    function DESPOTBeliefUpdater(pomdp::POMDP{S,A,O};
+    function DESPOTBeliefUpdater{S,A,O}(pomdp::POMDP{S,A,O};
                                  seed::UInt32 = convert(UInt32, 42),
                                  rand_max::Int64 = 2147483647,
                                  n_particles = 500,
@@ -29,7 +29,7 @@ mutable struct DESPOTBeliefUpdater{S,A,O} <: POMDPs.Updater
                                  next_state::S = S(),
                                  observation::O = O(),
                                  rng::AbstractRNG=DESPOTDefaultRNG(convert(UInt32, seed ⊻ (n_particles+1)), rand_max)
-                                )
+                                ) where {S,A,O}
         this = new()
         this.pomdp = pomdp
         this.num_updates = 0
