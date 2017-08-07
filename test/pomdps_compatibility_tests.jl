@@ -21,6 +21,18 @@ test_solver(solver, problem, updater=updater(problem))
 
 test_solver(solver, problem)
 
+# test with pruning
+solver = DESPOTSolver{Bool, Bool, Bool, BabyBounds, MersenneStreamArray}(bounds = BabyBounds(),
+                                                    random_streams=MersenneStreamArray(MersenneTwister(1)),
+                                                    next_state=false,
+                                                    curr_obs=false,
+                                                    rng=Base.GLOBAL_RNG,
+                                                    pruning_constant=0.01
+                                                    )
+
+test_solver(solver, problem)
+println("PRUNED")
+
 
 struct LightDarkBounds end
 bounds{S}(::LightDarkBounds, p::LightDark1D, ::Vector{DESPOTParticle{S}}, ::DESPOTConfig) = p.incorrect_r/(1.0-discount(p)), p.correct_r/(1.0-discount(p))

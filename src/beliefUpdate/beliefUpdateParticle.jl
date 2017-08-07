@@ -102,7 +102,7 @@ function initialize_belief{S}(bu::DESPOTBeliefUpdater{S}, b)
     return new_belief
 end
 
-updater{S,A,O}(p::DESPOTPolicy{S,A,O}) = DESPOTBeliefUpdater{S,A,O}(p.pomdp,
+updater(p::DESPOTPolicy{S,A,O,B}) where {S,A,O,B} = DESPOTBeliefUpdater{S,A,O}(p.pomdp,
                                                                     n_particles=p.solver.config.n_particles,
                                                                     next_state=p.solver.next_state,
                                                                     observation=p.solver.curr_obs,
