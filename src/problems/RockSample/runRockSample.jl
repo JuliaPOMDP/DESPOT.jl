@@ -4,7 +4,6 @@ using POMDPToolbox
 
 include("rockSample.jl")
 include("rockSampleBounds.jl")
-include("../../beliefUpdate/beliefUpdateParticle.jl")
 
 function main(;
                 grid_size::Int64            = 4,

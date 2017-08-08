@@ -1,6 +1,7 @@
 module DESPOT
 
 using Distributions
+using POMDPToolbox # for belief updater
 using POMDPs
 
 import POMDPs:
@@ -8,8 +9,11 @@ import POMDPs:
         action,
         initialize_belief,
         update,
+        updater,
         rand,
         rand!
+        
+import POMDPToolbox: create_belief
 
 include("history.jl")
 
@@ -137,6 +141,7 @@ end
 end
 
 include("visualization.jl")
+include("beliefUpdate/beliefUpdateParticle.jl")
 
 export
     ################## DESPOT TYPES ##################
@@ -169,6 +174,9 @@ export
     sample_particles!, #TODO: need a better way of doing this, perhaps put in POMDPutils
     ########## Visualization #######
     blink,
-    DESPOTVisualizer
+    DESPOTVisualizer,
+    ########## Belief Updater #######
+    DESPOTBeliefUpdater,
+    create_belief
 
 end #module
