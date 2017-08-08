@@ -206,7 +206,7 @@ start_state(pomdp::RockSample) =
     RockSampleState(make_state_index(pomdp, pomdp.robot_start_cell, pomdp.rock_set_start))
 
 # Creates a default belief structure to store the problem's initial belief
-create_belief(pomdp::RockSample)         =
+DESPOT.create_belief(pomdp::RockSample)         =
     ParticleBelief(Array{Particle{RockSampleState}}(0))
 
 create_transition_distribution(pomdp::RockSample)    =

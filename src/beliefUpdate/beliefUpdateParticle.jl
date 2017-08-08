@@ -1,6 +1,3 @@
-import POMDPs: update, initialize_belief, updater
-using DESPOT
-
 mutable struct DESPOTBeliefUpdater{S,A,O} <: POMDPs.Updater
     pomdp::POMDP
     num_updates::Int64

@@ -1,22 +1,18 @@
 using Base.Test
-using POMDPs
 using DESPOT
+using POMDPs
 
 if is_windows()
     error("This test is only valid on Linux and OS X platforms at this time")
 end
 
-using POMDPToolbox
-include("../src/beliefUpdate/beliefUpdateParticle.jl")
-
 # Test on a simple RockSample problem
-# include("../src/problems/RockSample/runRockSample.jl")
+include("../src/problems/RockSample/runRockSample.jl")
 
 include("pomdps_compatibility_tests.jl")
 include("test_with_other_particle_filter.jl")
 include("test_mersenne.jl")
 
-#=
 # Common problem parameters
 n_particles             = 500 # for both solver and belief updater
 main_seed               = 42
@@ -183,4 +179,3 @@ if is_apple()
 end
 
 println("DESPOT/RockSample(11,11) test status: PASSED")
-=#
