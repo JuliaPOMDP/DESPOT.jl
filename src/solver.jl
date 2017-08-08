@@ -123,9 +123,10 @@ function search{S,A,O,B}(solver::DESPOTSolver{S,A,O,B}, pomdp::POMDP{S,A,O})
     end
 
     if solver.config.pruning_constant != 0.0
-        total_pruned = prune(solver.root) # Number of non-child belief nodes pruned
+        total_pruned = prune(solver.root, solver.config, discount(pomdp)) # Number of non-child belief nodes pruned
         act = solver.root.pruned_action
-        default = default_action(solver.bounds, pomdp, solver.root.particles, solver.config)
+        if 
+            default_action(solver.bounds, pomdp, solver.root.particles, solver.config)
         return (act == -1 ? default : act), n_trials #TODO: fix actions
     elseif !solver.root.in_tree
         println("Root not in tree")

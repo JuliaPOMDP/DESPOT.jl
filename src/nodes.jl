@@ -153,15 +153,17 @@ end
 
 #TODO: Fix this
 
-# function prune{S,A,O,L,U}(qnode::QNode{S,A,O,L,U}, total_pruned::Int64, config::DESPOTConfig)
-#   cost::Float64 = 0.0
-#   total_pruned::Int64 = 0
-#
-#   for (obs,node) in qnode.obs_to_node
-#     cost, total_pruned += prune(node, total_pruned, config)
-#   end
-#   return cost, total_pruned
-# end
+function prune(qnode::QNode, config::DESPOTConfig, discount::Float64)
+  cost::Float64 = 0.0
+  total_pruned::Int64 = 0
+
+  for (obs,node) in qnode.obs_and_nodes
+    c, tp = prune(node, config, discount)
+    cost += c
+    total_pruned += tp
+  end
+  return cost, total_pruned
+end
 
 function get_lb_action{S,A,O,B}(node::VNode{S,A,O,B}, config::DESPOTConfig, discount::Float64)
   local a_star
@@ -180,27 +182,29 @@ end
 
 #TODO: fix pruning
 
-# function prune{S,A,O,L,U}(node::VNode{S,A,O,L,U}, total_pruned::Int64, config::DESPOTConfig)
-#   # Cost if the node was pruned
-#   cost = (config.discount^node.depth) * node.weight * node.default_value
-#                 - config.pruning_constant
-#   if !node.inTree # Leaf
-#     @assert(nodes.n_tree_nodes == 0)
-#     return cost, total_pruned
-#   end
-#
-#   for q_node in node.q_nodes
-#     first_step_reward = config.discount^depth * weight * q_node.first_step_reward
-#     best_child_value, total_pruned = prune(q_node, total_pruned, config)
-#
-#     new_cost = first_step_reward + best_child_value - config.pruning_constant
-#     if new_cost > cost
-#       cost = new_cost
-#       pruned_action = q_node.action
-#     end
-#   end
-#   if pruned_action == -1
-#     total_pruned +=1
-#   end
-#   return cost, total_pruned
-# end
+function prune(node::VNode{S,A}, config::DESPOTConfig, discount::Float64) where {S,A}
+  # Cost if the node was pruned
+  cost = (discount^node.depth) * node.weight * node.default_value - config.pruning_constant
+  if !node.in_tree # Leaf
+    @assert(node.n_tree_nodes == 0)
+    return cost, 0
+  end
+
+  total_pruned = 0 #XXX (Zach) Just guessing
+  pruned_action = Nullable{A}() #XXX (Zach) guess
+  for q_node in values(node.q_nodes)
+    first_step_reward = discount^node.depth * node.weight * q_node.first_step_reward # XXX (Zach) guessing
+    best_child_value, tp = prune(q_node, config, discount)
+    total_pruned += tp
+
+    new_cost = first_step_reward + best_child_value - config.pruning_constant
+    if new_cost > cost
+      cost = new_cost
+      pruned_action = Nullable{A}(q_node.action)
+    end
+  end
+  if isnull(pruned_action)
+    total_pruned +=1
+  end
+  return cost, total_pruned
+end
