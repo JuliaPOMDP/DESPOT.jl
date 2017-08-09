@@ -9,7 +9,7 @@ before_script:
   - export PATH=$HOME/.local/bin:$PATH
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaPOMDP/POMDPToolbox.jl"); Pkg.build("DESPOT");'
+  - julia --check-bounds=yes -e 'Pkg.clone(pwd()); Pkg.build("DESPOT");'
   - julia -e 'include(Pkg.dir("DESPOT", "test", "build.jl"))'
   - julia --check-bounds=yes -e 'Pkg.test("DESPOT"; coverage=true)'
 after_success:
