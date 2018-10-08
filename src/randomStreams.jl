@@ -47,7 +47,7 @@ get_model_seed(streams::RandomStreams) =
 function fill_random_streams!(empty_streams::RandomStreams, rand_max::Int64)
     # Populate random streams
     if is_linux()
-        ccall((:srand, "libc"), Void, (Cuint,), 1)
+        ccall((:srand, "libc"), nothing, (Cuint,), 1)
         for i in 1:empty_streams.num_streams
             seed = Cuint[get_stream_seed(empty_streams, convert(UInt32, i-1))]
             ccall( (:rand_r, "libc"), Int, (Ptr{Cuint},), seed)

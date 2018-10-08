@@ -1,3 +1,4 @@
+module runRockSample
 using POMDPs
 using DESPOT
 using POMDPToolbox
@@ -202,3 +203,4 @@ function execute(;
 
     return sim_steps, sum(rewards), discounted_reward, run_time
 end
+end #module runRockSample

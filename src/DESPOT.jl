@@ -1,8 +1,8 @@
 module DESPOT
 
 using Distributions
-using POMDPToolbox # for belief updater
 using POMDPs
+using Random
 
 import POMDPs:
         solve,
@@ -12,7 +12,7 @@ import POMDPs:
         updater,
         rand,
         rand!
-        
+
 import POMDPToolbox: create_belief
 
 include("history.jl")

@@ -117,7 +117,7 @@ mutable struct VNode{S,A,O,B}
         this.default_value      = this.lbound
         this.weight             = weight
         this.in_tree            = in_tree
-        this.n_tree_nodes       = in_tree ? 1:0
+        this.n_tree_nodes       = in_tree ? 1 : 0
         this.q_nodes            = Dict{A,QNode{S,A,O,B}}()
         this.n_visits           = 0
         this.n_actions_allowed  = 0
@@ -135,7 +135,7 @@ end
 
 const QNode{S,A,O,B} = _QNode{S,A,O,B,VNode{S,A,O,B}}
 
-function get_upper_bound{S,A,O,B}(qnode::QNode{S,A,O,B})
+function get_upper_bound(qnode::QNode{S,A,O,B}) where {S,A,O,B}
   ubound::Float64 = 0.0
   for (obs, node) in qnode.obs_and_nodes
       ubound += node.ubound * node.weight
@@ -143,7 +143,7 @@ function get_upper_bound{S,A,O,B}(qnode::QNode{S,A,O,B})
   return ubound/qnode.weight_sum
 end
 
-function get_lower_bound{S,A,O,B}(qnode::QNode{S,A,O,B})
+function get_lower_bound(qnode::QNode{S,A,O,B}) where {S,A,O,B}
   lbound::Float64 = 0.0
   for (obs, node) in qnode.obs_and_nodes
       lbound += node.lbound * node.weight
@@ -163,7 +163,7 @@ end
 #   return cost, total_pruned
 # end
 
-function get_lb_action{S,A,O,B}(node::VNode{S,A,O,B}, config::DESPOTConfig, discount::Float64)
+function get_lb_action(node::VNode{S,A,O,B}, config::DESPOTConfig, discount::Float64) where {S,A,O,B}
   local a_star
   q_star::Float64 = -Inf
   remaining_reward::Float64 = 0.0
